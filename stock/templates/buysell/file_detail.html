@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - 股票分析系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .strategy-section {
+            border-left: 4px solid #007bff;
+            margin-bottom: 2rem;
+        }
+        .strategy-section.评分 { border-left-color: #28a745; }
+        .strategy-section.小市值 { border-left-color: #ffc107; }
+        .strategy-section.主力净占比 { border-left-color: #dc3545; }
+        .strategy-section.超大单占比 { border-left-color: #6f42c1; }
+        .strategy-section.换手率 { border-left-color: #17a2b8; }
+        .strategy-section.手工 { border-left-color: #fd7e14; }
+        .strategy-section.盘口异动 { border-left-color: #e83e8c; }
+        
+        .stock-card {
+            transition: transform 0.2s;
+            border: 1px solid #dee2e6;
+        }
+        .stock-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .stock-code {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        .value-high { color: #28a745; font-weight: bold; }
+        .value-medium { color: #ffc107; font-weight: bold; }
+        .value-low { color: #dc3545; font-weight: bold; }
+        
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        /* Fullscreen modal for flow chart */
+        .flow-chart-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .flow-chart-modal-content {
+            position: relative;
+            margin: auto;
+            padding: 20px;
+            width: 95%;
+            height: 95%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: zoomIn 0.3s;
+        }
+
+        .flow-chart-modal img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(255,255,255,0.1);
+        }
+
+        .flow-chart-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .flow-chart-modal-close:hover {
+            color: #ccc;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.1); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line"></i> 股票分析系统
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">仪表板</a>
+                <a class="nav-link" href="/buysell">买卖策略文件</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- File Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1><i class="fas fa-file-invoice"></i> {{ analysis.file_data.file_info.filename }}</h1>
+                        <p class="text-muted mb-0">
+                            日期: {{ analysis.file_data.file_info.date }} | 
+                            修改时间: {{ analysis.file_data.file_info.modified_datetime }} | 
+                            来源: {{ analysis.file_data.file_info.source|title }}
+                        </p>
+                    </div>
+                    <div>
+                        <a href="/buysell" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回文件列表
+                        </a>
+                        <button class="btn btn-primary" onclick="exportData()">
+                            <i class="fas fa-download"></i> 导出
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card summary-card">
+                    <div class="card-body text-center">
+                        <h3>{{ analysis.file_data.summary.total_stocks }}</h3>
+                        <p class="mb-0">总股票数</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card summary-card">
+                    <div class="card-body text-center">
+                        <h3>{{ analysis.file_data.summary.total_sections }}</h3>
+                        <p class="mb-0">策略数</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card summary-card">
+                    <div class="card-body text-center">
+                        <h3>{{ "{:,}".format(analysis.file_data.summary.total_quantity) }}</h3>
+                        <p class="mb-0">总数量</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card summary-card">
+                    <div class="card-body text-center">
+                        <h3>{{ "{:,.0f}".format(analysis.file_data.summary.total_value) }}</h3>
+                        <p class="mb-0">总价值</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Strategy Sections -->
+        <div class="row">
+            <div class="col-12">
+                {% for section_name, section_data in analysis.file_data.sections.items() %}
+                <div class="strategy-section {{ section_name }}">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-pie"></i> {{ section_data.display_name }}
+                                    <span class="badge bg-secondary ms-2">{{ section_data.stock_count }} stocks</span>
+                                </h5>
+                                <div class="text-muted">
+                                    <small>
+                                        Quantity: {{ "{:,}".format(section_data.total_quantity) }} | 
+                                        Value: {{ "{:,.0f}".format(section_data.total_value) }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if section_data.stocks %}
+                                <div class="row">
+                                    {% for stock in section_data.stocks %}
+                                    <div class="col-md-6 col-lg-4 col-xl-2 mb-3">
+                                        <div class="card stock-card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">
+                                                        <span class="stock-code">{{ stock.code }}</span>
+                                                    </h6>
+                                                    <span class="badge bg-{{ 'success' if stock.total_value > 100000 else 'warning' if stock.total_value > 50000 else 'danger' }}">
+                                                        {{ "{:,.0f}".format(stock.total_value) }}
+                                                    </span>
+                                                </div>
+                                                
+                                                <p class="card-text mb-2">
+                                                    <strong>{{ stock.name or 'N/A' }}</strong><br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock"></i> {{ stock.buy_time }}<br>
+                                                        <i class="fas fa-boxes"></i> {{ "{:,}".format(stock.quantity) }} shares<br>
+                                                        <i class="fas fa-coins"></i> {{ "{:.2f}".format(stock.buy_price) }}
+                                                    </small>
+                                                </p>
+                                                
+                                                {% if stock.note %}
+                                                <p class="card-text">
+                                                    <small class="text-info">
+                                                        <i class="fas fa-sticky-note"></i> {{ stock.note }}
+                                                    </small>
+                                                </p>
+                                                {% endif %}
+                                                
+                                                <div class="d-flex flex-wrap gap-1 justify-content-between align-items-center">
+                                                    <button class="btn btn-outline-primary btn-sm" onclick="analyzeStock('{{ stock.code }}')">
+                                                        <i class="fas fa-search"></i> 
+                                                    </button>
+                                                    <a href="/analysis/{{ stock.code }}" 
+                                                       target="_blank" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-comment"></i> <Caption></Caption>
+                                                    </a>
+                                                    <button class="btn btn-outline-warning btn-sm" onclick="openHistChartModal('{{ stock.code }}')">
+                                                        <i class="fas fa-chart-line"></i> 
+                                                    </button>
+                                                    <a href="https://quote.eastmoney.com/{{ 'sz' if stock.code.startswith(('0', '2', '3')) else 'sh' }}{{ stock.code }}.html" 
+                                                       target="_blank" class="btn btn-outline-info btn-sm">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="fas fa-inbox fa-2x text-muted"></i>
+                                    <p class="text-muted mt-2">No stocks in this strategy</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Top Stocks Summary -->
+        {% if analysis.top_stocks %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-star"></i> Top Stocks by Value (All Strategies)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Strategy</th>
+                                        <th>Quantity</th>
+                                        <th>Buy Price</th>
+                                        <th>Total Value</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stock in analysis.top_stocks[:20] %}
+                                    <tr>
+                                        <td><span class="badge bg-primary">{{ loop.index }}</span></td>
+                                        <td><code class="stock-code">{{ stock.code }}</code></td>
+                                        <td>{{ stock.name or 'N/A' }}</td>
+                                        <td><span class="badge bg-secondary">{{ stock.strategy or 'Unknown' }}</span></td>
+                                        <td>{{ "{:,}".format(stock.quantity) }}</td>
+                                        <td>{{ "{:.2f}".format(stock.buy_price) }}</td>
+                                        <td class="value-{{ 'high' if stock.total_value > 100000 else 'medium' if stock.total_value > 50000 else 'low' }}">
+                                            {{ "{:,.0f}".format(stock.total_value) }}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="analyzeStock('{{ stock.code }}')">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stock Analysis Modal -->
+    <div class="modal fade" id="stockModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-chart-line"></i> Stock Analysis
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="stockAnalysisContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Profit Modal -->
+    <div class="modal fade" id="profitModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calculator"></i> Detailed Profit Analysis
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="profitAnalysisContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flow Chart Fullscreen Modal -->
+    <div id="flowChartModal" class="flow-chart-modal">
+        <span class="flow-chart-modal-close" onclick="closeFlowChartModal()">&times;</span>
+        <div class="flow-chart-modal-content">
+            <img id="modalFlowChartImg" alt="Historical Capital Flow Chart">
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function analyzeStock(stockCode) {
+            const modal = new bootstrap.Modal(document.getElementById('stockModal'));
+            const content = document.getElementById('stockAnalysisContent');
+            
+            // Show loading spinner
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing stock ${stockCode}...</p>
+                </div>
+            `;
+            
+            modal.show();
+            
+            // Load stock analysis
+            fetch(`/buysell/api/stock/${stockCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayStockAnalysis(data, stockCode);
+                    } else {
+                        content.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Error: ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Error loading data: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function displayStockAnalysis(data, stockCode) {
+            const content = document.getElementById('stockAnalysisContent');
+            const analysis = data.analysis;
+            const currentInfo = data.current_info;
+            const profitAnalysis = data.profit_analysis;
+            
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-chart-line"></i> Stock Analysis: ${stockCode}</h4>
+                        <p class="text-muted">Analysis across all buysell files</p>
+                    </div>
+                </div>
+            `;
+            
+            // Current Stock Information Section
+            if (currentInfo.data_available) {
+                // 红涨绿跌: red for gains, green for losses
+                const changeClass = currentInfo.change >= 0 ? 'text-danger' : 'text-success';
+                const changeIcon = currentInfo.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                const tradingClass = currentInfo.is_trading_day ? 'text-success' : 'text-warning';
+                const tradingIcon = currentInfo.is_trading_day ? 'fa-check-circle' : 'fa-exclamation-triangle';
+                
+                html += `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> 当前股票信息</h5>
+                                        <span class="badge ${currentInfo.is_trading_day ? 'bg-success' : 'bg-warning'}">
+                                            <i class="fas ${tradingIcon}"></i> ${currentInfo.trading_note}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">股票名称</h6>
+                                            <h5>${currentInfo.stock_name}</h5>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">当前价格</h6>
+                                            <h4 class="${changeClass}">${(currentInfo.current_price || 0).toFixed(2)}</h4>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">涨跌</h6>
+                                            <h5 class="${changeClass}">
+                                                <i class="fas ${changeIcon}"></i> 
+                                                ${(currentInfo.change || 0) >= 0 ? '+' : ''}${(currentInfo.change || 0).toFixed(2)} 
+                                                (${(currentInfo.change_percent || 0) >= 0 ? '+' : ''}${(currentInfo.change_percent || 0).toFixed(2)}%)
+                                            </h5>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">市值</h6>
+                                            <h5>${currentInfo.market_cap}</h5>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">市盈率</h6>
+                                            <h5>${(currentInfo.pe_ratio || 0).toFixed(2)}</h5>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <h6 class="text-muted">市净率</h6>
+                                            <h5>${(currentInfo.pb_ratio || 0).toFixed(2)}</h5>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-2">
+                                            <small class="text-muted">成交量</small><br>
+                                            <strong>${(currentInfo.volume || 0).toLocaleString()}</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">换手率</small><br>
+                                            <strong>${(currentInfo.turnover_rate || 0).toFixed(2)}%</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">最高</small><br>
+                                            <strong>${(currentInfo.high || 0).toFixed(2)}</strong>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <small class="text-muted">最低</small><br>
+                                            <strong>${(currentInfo.low || 0).toFixed(2)}</strong>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <!-- Empty space for alignment -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                当前股票信息不可用: ${currentInfo.error || '未知错误'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Summary Statistics with Profit Button
+            html += `
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h3>${analysis.appearances.length}</h3>
+                                <p class="mb-0">出现次数</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h3>${(analysis.total_quantity || 0).toLocaleString()}</h3>
+                                <p class="mb-0">总数量</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h3>${(analysis.total_value || 0).toLocaleString()}</h3>
+                                <p class="mb-0">总价值</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h3>${(profitAnalysis.avg_buy_price || 0).toFixed(2)}</h3>
+                                <p class="mb-0">平均买入价</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Profit Analysis Section
+            if (profitAnalysis.profit_available) {
+                const profitClass = profitAnalysis.total_profit >= 0 ? 'text-danger' : 'text-success';
+                const profitIcon = profitAnalysis.total_profit >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                
+                html += `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-${profitAnalysis.total_profit >= 0 ? 'success' : 'danger'}">
+                                <div class="card-header bg-${profitAnalysis.total_profit >= 0 ? 'success' : 'danger'} text-white">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0"><i class="fas fa-chart-line"></i> 盈亏分析</h5>
+                                        <button class="btn btn-light btn-sm" onclick="showDetailedProfit('${stockCode}')">
+                                            <i class="fas fa-calculator"></i> 详细盈亏
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted">当前总价值</h6>
+                                            <h4>${(profitAnalysis.current_total_value || 0).toLocaleString()}</h4>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted">总买入价值</h6>
+                                            <h4>${(profitAnalysis.total_buy_value || 0).toLocaleString()}</h4>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted">总盈亏</h6>
+                                            <h3 class="${profitClass}">
+                                                <i class="fas ${profitIcon}"></i> 
+                                                ${(profitAnalysis.total_profit || 0).toLocaleString()}
+                                            </h3>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h6 class="text-muted">盈亏百分比</h6>
+                                            <h3 class="${profitClass}">
+                                                ${(profitAnalysis.total_profit_percent || 0) >= 0 ? '+' : ''}${(profitAnalysis.total_profit_percent || 0).toFixed(2)}%
+                                            </h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                盈亏分析不可用: ${profitAnalysis.error || '当前价格不可用'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (analysis.appearances.length > 0) {
+                html += `
+                    <div class="row">
+                        <div class="col-12">
+                            <h5><i class="fas fa-history"></i> Appearance History</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>File</th>
+                                            <th>Date</th>
+                                            <th>Strategy</th>
+                                            <th>Quantity</th>
+                                            <th>Buy Price</th>
+                                            <th>Total Value</th>
+                                            <th>Buy Time</th>
+                                            <th>Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                analysis.appearances.forEach(appearance => {
+                    html += `
+                        <tr>
+                            <td><code>${appearance.file}</code></td>
+                            <td>${appearance.file_date}</td>
+                            <td><span class="badge bg-secondary">${appearance.section_display}</span></td>
+                            <td>${(appearance.quantity || 0).toLocaleString()}</td>
+                            <td>${(appearance.buy_price || 0).toFixed(2)}</td>
+                            <td>${(appearance.total_value || 0).toLocaleString()}</td>
+                            <td>${appearance.buy_time}</td>
+                            <td>${appearance.note || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Appearances Found</h5>
+                        <p class="text-muted">This stock does not appear in any buysell files.</p>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+        }
+
+        function showDetailedProfit(stockCode) {
+            const modal = new bootstrap.Modal(document.getElementById('profitModal'));
+            const content = document.getElementById('profitAnalysisContent');
+            
+            // Show loading spinner
+            content.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Calculating detailed profit for ${stockCode}...</p>
+                </div>
+            `;
+            
+            modal.show();
+            
+            // Load stock analysis data
+            fetch(`/buysell/api/stock/${stockCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayDetailedProfit(data, stockCode);
+                    } else {
+                        content.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Error: ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> Error loading data: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function displayDetailedProfit(data, stockCode) {
+            const content = document.getElementById('profitAnalysisContent');
+            const analysis = data.analysis;
+            const currentInfo = data.current_info;
+            const profitAnalysis = data.profit_analysis;
+            
+            if (!profitAnalysis.profit_available) {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Detailed profit analysis not available: ${profitAnalysis.error || 'Current price not available'}
+                    </div>
+                `;
+                return;
+            }
+            
+            const profitClass = profitAnalysis.total_profit >= 0 ? 'text-success' : 'text-danger';
+            const profitIcon = profitAnalysis.total_profit >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-calculator"></i> Detailed Profit Analysis: ${stockCode}</h4>
+                        <p class="text-muted">${currentInfo.stock_name} - Current Price: ${currentInfo.current_price.toFixed(2)}</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Investment Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>Total Quantity:</strong></td>
+                                        <td>${(analysis.total_quantity || 0).toLocaleString()} shares</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Average Buy Price:</strong></td>
+                                        <td>${(profitAnalysis.avg_buy_price || 0).toFixed(2)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Buy Value:</strong></td>
+                                        <td>${(profitAnalysis.total_buy_value || 0).toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Current Price:</strong></td>
+                                        <td>${(currentInfo.current_price || 0).toFixed(2)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Current Total Value:</strong></td>
+                                        <td>${(profitAnalysis.current_total_value || 0).toLocaleString()}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Profit Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center">
+                                    <h2 class="${profitClass}">
+                                        <i class="fas ${profitIcon}"></i> 
+                                        ${(profitAnalysis.total_profit || 0).toLocaleString()}
+                                    </h2>
+                                    <h4 class="${profitClass}">
+                                        ${(profitAnalysis.total_profit_percent || 0) >= 0 ? '+' : ''}${(profitAnalysis.total_profit_percent || 0).toFixed(2)}%
+                                    </h4>
+                                    <p class="text-muted">Total Profit/Loss</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Individual transaction analysis
+            if (analysis.appearances.length > 0) {
+                html += `
+                    <div class="row">
+                        <div class="col-12">
+                            <h5><i class="fas fa-list"></i> Individual Transaction Analysis</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Strategy</th>
+                                            <th>Quantity</th>
+                                            <th>Buy Price</th>
+                                            <th>Buy Value</th>
+                                            <th>Current Value</th>
+                                            <th>Profit/Loss</th>
+                                            <th>Profit %</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                `;
+                
+                analysis.appearances.forEach(appearance => {
+                    const currentValue = currentInfo.current_price * appearance.quantity;
+                    const profit = currentValue - appearance.total_value;
+                    const profitPercent = (profit / appearance.total_value) * 100;
+                    const rowClass = profit >= 0 ? 'table-success' : 'table-danger';
+                    
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>${appearance.file_date}</td>
+                            <td><span class="badge bg-secondary">${appearance.section_display}</span></td>
+                            <td>${(appearance.quantity || 0).toLocaleString()}</td>
+                            <td>${(appearance.buy_price || 0).toFixed(2)}</td>
+                            <td>${(appearance.total_value || 0).toLocaleString()}</td>
+                            <td>${(currentValue || 0).toLocaleString()}</td>
+                            <td class="${profit >= 0 ? 'text-danger' : 'text-success'}">
+                                ${profit >= 0 ? '+' : ''}${profit.toLocaleString()}
+                            </td>
+                            <td class="${profit >= 0 ? 'text-danger' : 'text-success'}">
+                                ${profit >= 0 ? '+' : ''}${profitPercent.toFixed(2)}%
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = html;
+        }
+
+        function exportData() {
+            // Simple CSV export functionality
+            const analysisData = JSON.parse('{{ analysis|tojson|e }}');
+            const filename = '{{ analysis.file_data.file_info.filename }}.json';
+            
+            const blob = new Blob([JSON.stringify(analysisData, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Flow chart modal functions
+        function openFlowChartModal(imageSrc) {
+            const modal = document.getElementById('flowChartModal');
+            const modalImg = document.getElementById('modalFlowChartImg');
+            modalImg.src = imageSrc;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Hist chart modal functions
+        function openHistChartModal(stockCode) {
+            const modal = document.getElementById('flowChartModal');
+            const modalImg = document.getElementById('modalFlowChartImg');
+            
+            // Show loading state
+            modalImg.src = '';
+            modalImg.alt = 'Loading...';
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // Add loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'histLoadingIndicator';
+            loadingDiv.innerHTML = `
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p style="margin-top: 15px;">正在生成资金历史图表...</p>
+                </div>
+            `;
+            loadingDiv.style.position = 'absolute';
+            loadingDiv.style.top = '0';
+            loadingDiv.style.left = '0';
+            loadingDiv.style.width = '100%';
+            loadingDiv.style.height = '100%';
+            loadingDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+            loadingDiv.style.zIndex = '1002';
+            modal.appendChild(loadingDiv);
+            
+            // Try to find existing chart first via API
+            fetch(`/api/generate-flow-chart/${stockCode}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.chart_path) {
+                    // Chart exists, show it
+                    modalImg.src = `/generated/${result.chart_path}`;
+                    modalImg.alt = 'Historical Capital Flow Chart';
+                    removeLoadingIndicator();
+                } else {
+                    // Chart doesn't exist or failed to find, generate it
+                    generateHistChart(stockCode, modalImg, removeLoadingIndicator);
+                }
+            })
+            .catch(error => {
+                console.error('Error finding existing chart:', error);
+                // Fallback: try to generate chart
+                generateHistChart(stockCode, modalImg, removeLoadingIndicator);
+            });
+            
+            function removeLoadingIndicator() {
+                const indicator = document.getElementById('histLoadingIndicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
+
+        function generateHistChart(stockCode, modalImg, onComplete) {
+            // Call the API to generate the chart
+            fetch(`/api/generate-flow-chart/${stockCode}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Use the chart path from API response
+                    modalImg.src = `/generated/${result.chart_path}`;
+                    modalImg.alt = 'Historical Capital Flow Chart';
+                    onComplete();
+                } else {
+                    // Show error message
+                    modalImg.src = '';
+                    modalImg.alt = 'Error generating chart';
+                    const errorDiv = document.createElement('div');
+                    errorDiv.innerHTML = `
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                            <h4>图表生成失败</h4>
+                            <p>${result.error || '未知错误'}</p>
+                            <button class="btn btn-primary" onclick="openHistChartModal('${stockCode}')">重试</button>
+                        </div>
+                    `;
+                    errorDiv.style.position = 'absolute';
+                    errorDiv.style.top = '0';
+                    errorDiv.style.left = '0';
+                    errorDiv.style.width = '100%';
+                    errorDiv.style.height = '100%';
+                    errorDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                    errorDiv.style.zIndex = '1002';
+                    document.getElementById('flowChartModal').appendChild(errorDiv);
+                    onComplete();
+                }
+            })
+            .catch(error => {
+                console.error('Error generating flow chart:', error);
+                modalImg.src = '';
+                modalImg.alt = 'Error generating chart';
+                const errorDiv = document.createElement('div');
+                errorDiv.innerHTML = `
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <h4>图表生成失败</h4>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="openHistChartModal('${stockCode}')">重试</button>
+                    </div>
+                `;
+                errorDiv.style.position = 'absolute';
+                errorDiv.style.top = '0';
+                errorDiv.style.left = '0';
+                errorDiv.style.width = '100%';
+                errorDiv.style.height = '100%';
+                errorDiv.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                errorDiv.style.zIndex = '1002';
+                document.getElementById('flowChartModal').appendChild(errorDiv);
+                onComplete();
+            });
+        }
+
+        function closeFlowChartModal() {
+            const modal = document.getElementById('flowChartModal');
+            
+            // Clean up any loading indicators or error messages
+            const loadingIndicator = document.getElementById('histLoadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
+            
+            // Remove any error divs that might have been added
+            const errorDivs = modal.querySelectorAll('div[style*="position: absolute"]');
+            errorDivs.forEach(div => {
+                if (div.id !== 'histLoadingIndicator') {
+                    div.remove();
+                }
+            });
+            
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when clicking outside the content
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('flowChartModal');
+            
+            // Only process clicks when modal is visible
+            if (modal && modal.style.display === 'block') {
+                // Close modal if clicking on the modal background (not on content or image)
+                if (event.target === modal || event.target.classList.contains('flow-chart-modal-close')) {
+                    closeFlowChartModal();
+                }
+            }
+        });
+
+        // Prevent modal from closing when clicking on the image or content
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('flowChartModal');
+            const modalContent = modal.querySelector('.flow-chart-modal-content');
+            const modalImg = modal.querySelector('#modalFlowChartImg');
+            
+            // Stop event propagation when clicking on content or image
+            if (event.target === modalContent || event.target === modalImg || 
+                modalContent.contains(event.target) || modalImg.contains(event.target)) {
+                event.stopPropagation();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeFlowChartModal();
+            }
+        });
+    </script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

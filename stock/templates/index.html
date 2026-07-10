@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票全息 - Stock Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .left-column {
+            grid-column: 1;
+        }
+
+        .center-column {
+            grid-column: 2;
+        }
+
+        .right-column {
+            grid-column: 3;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo h1 {
+            font-size: 36px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            font-size: 42px;
+        }
+
+        .logo p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .search-section {
+            margin-top: 40px;
+        }
+
+        .search-label {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input-wrap .search-input {
+            width: 100%;
+        }
+
+        .search-suggestions {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .search-suggestions.show {
+            display: block;
+        }
+
+        .search-suggestion-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-suggestion-item:hover,
+        .search-suggestion-item.active {
+            background: #f5f7ff;
+        }
+
+        .search-suggestion-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .search-suggestion-code {
+            font-weight: 600;
+            color: #2c3e50;
+            flex-shrink: 0;
+        }
+
+        .search-suggestion-name {
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-suggestion-pinyin {
+            font-size: 12px;
+            color: #95a5a6;
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .quick-stocks {
+            margin-top: 30px;
+        }
+
+        .quick-stocks-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .quick-stocks-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 12px;
+        }
+
+        .stock-chips {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .recent-empty {
+            font-size: 13px;
+            color: #bdc3c7;
+            padding: 8px 0;
+        }
+
+        .stock-chip {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .stock-chip:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .features {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .market-map-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 30px;
+            padding: 14px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s;
+        }
+
+        .market-map-link + .market-map-link {
+            margin-top: 12px;
+        }
+
+        .market-map-link:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+        }
+
+        .market-map-link .feature-text h3 {
+            margin-bottom: 2px;
+        }
+
+        .market-map-arrow {
+            margin-left: auto;
+            font-size: 18px;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .market-map-link:hover .market-map-arrow {
+            color: #2196f3;
+            transform: translateX(5px);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .feature-item.raw-data-panel {
+            flex-direction: column;
+            background: rgba(173, 216, 230, 0.3);
+            border: 1px solid rgba(135, 206, 250, 0.45);
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            min-width: 0;
+        }
+
+        .feature-item.raw-data-panel:hover {
+            background: rgba(173, 216, 230, 0.45);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.12);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            flex: 1;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .feature-text h3 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .feature-text p {
+            font-size: 13px;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+
+        .raw-data-meta {
+            font-size: 10px;
+            color: #546e7a;
+            margin-bottom: 6px;
+            line-height: 1.4;
+            word-break: break-all;
+        }
+
+        .raw-data-preview {
+            font-size: 9px;
+            line-height: 1.35;
+            max-height: 110px;
+            overflow: auto;
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 6px;
+            padding: 6px 8px;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #37474f;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .raw-data-preview.loading {
+            color: #90a4ae;
+            font-style: italic;
+        }
+
+        .raw-data-preview.error {
+            color: #c62828;
+        }
+
+        .raw-data-preview .raw-stock-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .raw-data-preview .raw-stock-item {
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(120, 144, 156, 0.35);
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .raw-data-preview .raw-stock-item:last-child {
+            border-bottom: none;
+        }
+
+        .raw-stock-name {
+            color: #1565c0;
+        }
+
+        .raw-stock-meta {
+            color: #607d8b;
+            margin-left: 4px;
+        }
+
+        .error-message {
+            display: none;
+            padding: 12px 15px;
+            background: #ffe0e0;
+            color: #c62828;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .data-links {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .data-links-title {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .data-link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .data-link-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+        }
+
+        .data-link-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .data-link-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .data-link-text h3 {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .data-link-text p {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .data-link-arrow {
+            font-size: 18px;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .data-link-item:hover .data-link-arrow {
+            color: #2196f3;
+            transform: translateX(5px);
+        }
+
+        /* Dive In Styles */
+        .dive-in-top {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .dive-in-top h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dive-in-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+
+        .dive-in-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dive-in-item:hover {
+            background: #e8f5e9;
+            border-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+        }
+
+        .dive-in-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dive-in-icon {
+            font-size: 22px;
+        }
+
+        .dive-in-text h3 {
+            font-size: 15px;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .dive-in-text p {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .dive-in-arrow {
+            font-size: 18px;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .dive-in-item:hover .dive-in-arrow {
+            color: #27ae60;
+            transform: translateX(5px);
+        }
+
+        /* Pi 对话抽屉 */
+        .pi-chat-drawer {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease-out;
+            overflow: hidden;
+            border-top: 2px solid #bfdbfe;
+        }
+
+        .pi-chat-drawer.collapsed .pi-chat-drawer-body {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        .pi-chat-handle-wrap {
+            position: relative;
+            width: 100%;
+            padding-top: 8px;
+        }
+
+        .pi-chat-handle-bar {
+            width: 42px;
+            height: 4px;
+            border-radius: 999px;
+            background: #c5d6ea;
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .pi-chat-tab-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px 12px;
+            user-select: none;
+        }
+
+        .pi-chat-drawer-title {
+            color: #2c5282;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .pi-chat-collapse-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 12px;
+            color: #5b7ea8;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: transform 0.28s ease, background 0.2s;
+        }
+
+        .pi-chat-collapse-btn:hover {
+            background: #eef6ff;
+        }
+
+        .pi-chat-drawer.expanded .pi-chat-collapse-btn {
+            transform: rotate(180deg);
+        }
+
+        .pi-chat-drawer-body {
+            display: flex;
+            flex-direction: column;
+            max-height: 420px;
+            padding: 0 18px 16px;
+            opacity: 1;
+            transition: max-height 0.28s ease, opacity 0.2s ease, padding 0.28s ease;
+        }
+
+        .pi-chat-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .pi-chat-status {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-bottom: 6px;
+        }
+
+        .pi-chat-status.error {
+            color: #e74c3c;
+        }
+
+        .pi-chat-status.ok {
+            color: #27ae60;
+        }
+
+        .pi-chat-btn {
+            border: 1px solid #d0d7de;
+            background: #fff;
+            color: #57606a;
+            border-radius: 6px;
+            font-size: 11px;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+
+        .pi-chat-btn:hover {
+            background: #f6f8fa;
+        }
+
+        .pi-chat-messages {
+            flex: 1;
+            min-height: 160px;
+            max-height: 240px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 4px 2px;
+            background: #fafbfc;
+            border: 1px solid #eef1f4;
+            border-radius: 8px;
+        }
+
+        .pi-chat-empty {
+            color: #999;
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 12px 10px;
+        }
+
+        .pi-chat-msg {
+            max-width: 96%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .pi-chat-msg.user {
+            align-self: flex-end;
+            background: #e8f4fd;
+            color: #1a5276;
+        }
+
+        .pi-chat-msg.assistant {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #e6ebf0;
+            color: #2c3e50;
+        }
+
+        .pi-chat-msg.pending {
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .pi-chat-compose {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .pi-chat-input {
+            width: 100%;
+            min-height: 64px;
+            max-height: 120px;
+            resize: vertical;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.45;
+        }
+
+        .pi-chat-send {
+            align-self: flex-end;
+            padding: 7px 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .pi-chat-send:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .container {
+                padding: 25px 20px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            .logo h1 {
+                font-size: 28px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stocks-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script src="/static/recent_stocks.js"></script>
+    <script src="/static/chart_hover.js"></script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Left Column: Quick Stocks -->
+        <div class="left-column">
+            <div class="container">
+                <div class="logo">
+                    <h1>
+                        <span class="logo-icon">📈</span>
+                        股票全息
+                    </h1>
+                    <p>全方位股票分析 · 智能决策支持</p>
+                </div>
+
+                <div class="quick-stocks">
+                    <div class="quick-stocks-grid">
+                        <div class="quick-stocks-col">
+                            <div class="quick-stocks-title">热门股票</div>
+                            <div class="stock-chips">
+                                <div class="stock-chip" data-code="002916">002916 深南电路</div>
+                                <div class="stock-chip" data-code="600000">600000 浦发银行</div>
+                                <div class="stock-chip" data-code="000001">000001 平安银行</div>
+                                <div class="stock-chip" data-code="600519">600519 贵州茅台</div>
+                                <div class="stock-chip" data-code="000858">000858 五粮液</div>
+                                <div class="stock-chip" data-code="300750">300750 宁德时代</div>
+                            </div>
+                        </div>
+                        <div class="quick-stocks-col">
+                            <div class="quick-stocks-title">最近访问</div>
+                            <div class="stock-chips" id="recentStocksList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <a class="market-map-link" href="https://quote.eastmoney.com/stockhotmap/" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-icon">🌌</div>
+                    <div class="feature-text">
+                        <h3>大盘星图</h3>
+                        <p>全市场热力分布一览</p>
+                    </div>
+                    <span class="market-map-arrow">→</span>
+                </a>
+
+                <a class="market-map-link" href="https://data.eastmoney.com/zjlx/detail.html" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-icon">💰</div>
+                    <div class="feature-text">
+                        <h3>资金流向</h3>
+                        <p>大盘及个股资金实时追踪</p>
+                    </div>
+                    <span class="market-map-arrow">→</span>
+                </a>
+
+                <a class="market-map-link" href="https://quote.eastmoney.com/center/hsbk.html" target="_blank" rel="noopener noreferrer">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-text">
+                        <h3>板块资金</h3>
+                        <p>行业板块涨跌与资金一览</p>
+                    </div>
+                    <span class="market-map-arrow">→</span>
+                </a>
+
+                <div class="features">
+                    <div class="features-grid">
+                        <div class="feature-item raw-data-panel" data-href="/stockflows" title="点击查看完整资金流向数据">
+                            <div class="feature-text">
+                                <h3>资金流向</h3>
+                                <div class="raw-data-meta" id="rawZjlxMeta">加载中…</div>
+                                <div class="raw-data-preview loading" id="rawZjlxData">正在拉取 zjlx 原始数据…</div>
+                            </div>
+                        </div>
+                        <div class="feature-item raw-data-panel" data-href="/stockcomments" title="点击查看完整 stockcomment 数据">
+                            <div class="feature-text">
+                                <h3>stockcomment</h3>
+                                <div class="raw-data-meta" id="rawStockcommentMeta">加载中…</div>
+                                <div class="raw-data-preview loading" id="rawStockcommentData">正在拉取 stockcomment 原始数据…</div>
+                            </div>
+                        </div>
+                        <div class="feature-item raw-data-panel" data-href="/pkyd" title="点击查看完整股票异动数据">
+                            <div class="feature-text">
+                                <h3>股票异动</h3>
+                                <div class="raw-data-meta" id="rawPkydMeta">加载中…</div>
+                                <div class="raw-data-preview loading" id="rawPkydData">正在拉取 pkyd 原始数据…</div>
+                            </div>
+                        </div>
+                        <div class="feature-item raw-data-panel" data-href="/quotes" title="点击查看完整行情报价数据">
+                            <div class="feature-text">
+                                <h3>行情报价</h3>
+                                <div class="raw-data-meta" id="rawQuotesMeta">加载中…</div>
+                                <div class="raw-data-preview loading" id="rawQuotesData">正在拉取 quote 原始数据…</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Column: Search and Data Links -->
+        <div class="center-column">
+            <div class="container">
+                <div class="search-section">
+                    <div class="search-label">请输入股票代码、名称或拼音首字母</div>
+                    <form id="searchForm">
+                        <div class="search-box">
+                            <div class="search-input-wrap">
+                                <input 
+                                    type="text" 
+                                    id="stockCodeInput" 
+                                    class="search-input" 
+                                    placeholder="例如: 002916、深南电路、SNDL"
+                                    autocomplete="off"
+                                    required
+                                >
+                                <div id="searchSuggestions" class="search-suggestions"></div>
+                            </div>
+                            <button type="submit" class="search-btn">开始分析</button>
+                        </div>
+                    </form>
+                    <div id="errorMessage" class="error-message"></div>
+                </div>
+
+                <div class="data-links">
+                    <div class="data-links-title">📋 数据查看</div>
+                    <div class="data-link-item" id="stockcommentsLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">📊</div>
+                            <div class="data-link-text">
+                                <h3>股票评论数据</h3>
+                                <p id="stockcommentsUpdateTime">正在加载更新时间...</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                    <div class="data-link-item" id="stockflowsLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">💰</div>
+                            <div class="data-link-text">
+                                <h3>资金流向数据</h3>
+                                <p id="stockflowsUpdateTime">正在加载更新时间...</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                    <div class="data-link-item" id="quotesLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">📈</div>
+                            <div class="data-link-text">
+                                <h3>行情一览数据</h3>
+                                <p id="quotesUpdateTime">正在加载更新时间...</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                    <div class="data-link-item" id="bkFlowLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">💰</div>
+                            <div class="data-link-text">
+                                <h3>板块资金流向</h3>
+                                <p id="bkFlowUpdateTime">正在加载更新时间...</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                    <div class="data-link-item" id="pkydLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">📊</div>
+                            <div class="data-link-text">
+                                <h3>盘口异动数据</h3>
+                                <p id="pkydUpdateTime">正在加载更新时间...</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                    <div class="data-link-item" id="buysellLink">
+                        <div class="data-link-content">
+                            <div class="data-link-icon">💼</div>
+                            <div class="data-link-text">
+                                <h3>买卖策略数据</h3>
+                                <p>查看各策略股票持仓情况</p>
+                            </div>
+                        </div>
+                        <div class="data-link-arrow">→</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="right-column">
+            <div class="pi-chat-drawer collapsed" id="piChatDrawer">
+                <div class="pi-chat-handle-wrap" id="piChatHandleWrap">
+                    <div class="pi-chat-handle-bar"></div>
+                    <div class="pi-chat-tab-bar">
+                        <span class="pi-chat-drawer-title" id="piChatDrawerTitle">Pi 对话</span>
+                        <button type="button" class="pi-chat-collapse-btn" id="piChatCollapseBtn" title="收起/展开">▼</button>
+                    </div>
+                </div>
+                <div class="pi-chat-drawer-body">
+                    <div class="pi-chat-toolbar">
+                        <button type="button" class="pi-chat-btn" id="piChatResetBtn" title="清空会话">新对话</button>
+                    </div>
+                    <div class="pi-chat-status" id="piChatStatus">连接本机 Pi…</div>
+                    <div class="pi-chat-messages" id="piChatMessages">
+                        <div class="pi-chat-empty" id="piChatEmpty">与本机 Pi 助手对话，可询问行情、板块与本地数据；支持 shell 命令分析。</div>
+                    </div>
+                    <div class="pi-chat-compose">
+                        <textarea class="pi-chat-input" id="piChatInput" placeholder="输入问题，Enter 发送，Shift+Enter 换行" rows="3"></textarea>
+                        <button type="button" class="pi-chat-send" id="piChatSendBtn">发送</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dive-in-top">
+                <h2><span>🤿</span> Dive In</h2>
+                <div class="dive-in-item" id="diveInGroupsLink">
+                    <div class="dive-in-content">
+                        <div class="dive-in-icon">📁</div>
+                        <div class="dive-in-text">
+                            <h3>动态选股</h3>
+                            <p>管理分组、导入股票并记忆属性</p>
+                        </div>
+                    </div>
+                    <div class="dive-in-arrow">→</div>
+                </div>
+                <div class="dive-in-item" id="diveInRiseProbLink">
+                    <div class="dive-in-content">
+                        <div class="dive-in-icon">📈</div>
+                        <div class="dive-in-text">
+                            <h3>上涨概率</h3>
+                            <p>按综合评价次日上涨概率排序</p>
+                        </div>
+                    </div>
+                    <div class="dive-in-arrow">→</div>
+                </div>
+                <div class="dive-in-item" id="diveInDataOverviewLink">
+                    <div class="dive-in-content">
+                        <div class="dive-in-icon">📊</div>
+                        <div class="dive-in-text">
+                            <h3>数据概览</h3>
+                            <p id="diveInDataOverviewHint">分组股票数据下载与更新情况</p>
+                        </div>
+                    </div>
+                    <div class="dive-in-arrow">→</div>
+                </div>
+                <div class="dive-in-item" id="diveInSectorPickLink">
+                    <div class="dive-in-content">
+                        <div class="dive-in-icon">🧩</div>
+                        <div class="dive-in-text">
+                            <h3>板块分组</h3>
+                            <p>星图板块瀑布选股，日K/MACD卡片</p>
+                        </div>
+                    </div>
+                    <div class="dive-in-arrow">→</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const stockInput = document.getElementById('stockCodeInput');
+        const searchSuggestions = document.getElementById('searchSuggestions');
+        let suggestionTimer = null;
+        let activeSuggestionIndex = -1;
+        let currentSuggestions = [];
+
+        function navigateToStock(code) {
+            window.location.href = `/analysis/${code}`;
+        }
+
+        async function searchStocks(query) {
+            const response = await fetch(`/api/stock/search?q=${encodeURIComponent(query)}&limit=8`);
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || '搜索失败');
+            }
+            return result.data || [];
+        }
+
+        async function resolveStockQuery(query) {
+            const trimmed = query.trim();
+            if (!trimmed) return null;
+            if (/^\d{6}$/.test(trimmed)) return trimmed;
+
+            const results = await searchStocks(trimmed);
+            return results.length ? results[0].code : null;
+        }
+
+        function hideSuggestions() {
+            searchSuggestions.classList.remove('show');
+            searchSuggestions.innerHTML = '';
+            activeSuggestionIndex = -1;
+            currentSuggestions = [];
+        }
+
+        function renderSuggestions(items) {
+            currentSuggestions = items;
+            activeSuggestionIndex = -1;
+            searchSuggestions.innerHTML = '';
+
+            if (!items.length) {
+                hideSuggestions();
+                return;
+            }
+
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'search-suggestion-item';
+                row.innerHTML = `
+                    <div class="search-suggestion-main">
+                        <span class="search-suggestion-code">${item.code}</span>
+                        <span class="search-suggestion-name">${item.name}</span>
+                    </div>
+                    <span class="search-suggestion-pinyin">${item.pinyin || ''}</span>
+                `;
+                row.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    navigateToStock(item.code);
+                });
+                row.addEventListener('mouseenter', function() {
+                    setActiveSuggestion(index);
+                });
+                searchSuggestions.appendChild(row);
+            });
+
+            searchSuggestions.classList.add('show');
+        }
+
+        function setActiveSuggestion(index) {
+            activeSuggestionIndex = index;
+            searchSuggestions.querySelectorAll('.search-suggestion-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+        }
+
+        function scheduleSuggestionSearch() {
+            clearTimeout(suggestionTimer);
+            const query = stockInput.value.trim();
+            if (!query || /^\d{6}$/.test(query)) {
+                hideSuggestions();
+                return;
+            }
+
+            suggestionTimer = setTimeout(async function() {
+                try {
+                    const results = await searchStocks(query);
+                    renderSuggestions(results);
+                } catch (error) {
+                    hideSuggestions();
+                    console.error('Stock search failed:', error);
+                }
+            }, 250);
+        }
+
+        // Form submission
+        document.getElementById('searchForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const query = stockInput.value.trim();
+
+            if (!query) {
+                showError('请输入股票代码、名称或拼音首字母');
+                return;
+            }
+
+            if (activeSuggestionIndex >= 0 && currentSuggestions[activeSuggestionIndex]) {
+                navigateToStock(currentSuggestions[activeSuggestionIndex].code);
+                return;
+            }
+
+            try {
+                const stockCode = await resolveStockQuery(query);
+                if (!stockCode) {
+                    showError('未找到匹配的股票，请检查输入');
+                    return;
+                }
+                navigateToStock(stockCode);
+            } catch (error) {
+                showError('搜索失败，请稍后重试');
+                console.error('Resolve stock query failed:', error);
+            }
+        });
+
+        stockInput.addEventListener('input', scheduleSuggestionSearch);
+
+        stockInput.addEventListener('keydown', function(e) {
+            if (!currentSuggestions.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActiveSuggestion(Math.min(activeSuggestionIndex + 1, currentSuggestions.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActiveSuggestion(Math.max(activeSuggestionIndex - 1, 0));
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!searchSuggestions.contains(e.target) && e.target !== stockInput) {
+                hideSuggestions();
+            }
+        });
+
+        // Quick stock chips
+        document.querySelectorAll('.stock-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const stockCode = this.getAttribute('data-code');
+                window.location.href = `/analysis/${stockCode}`;
+            });
+        });
+
+        // Error message display
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+            
+            setTimeout(() => {
+                errorDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        // Stock comments link click handler
+        document.getElementById('stockcommentsLink').addEventListener('click', function() {
+            window.location.href = '/stockcomments';
+        });
+
+        // Stock flows link click handler
+        document.getElementById('stockflowsLink').addEventListener('click', function() {
+            window.location.href = '/stockflows';
+        });
+
+        // Quotes link click handler
+        document.getElementById('quotesLink').addEventListener('click', function() {
+            window.location.href = '/quotes';
+        });
+
+        // Pkyd link click handler
+        document.getElementById('pkydLink').addEventListener('click', function() {
+            window.location.href = '/pkyd';
+        });
+
+        // Buysell link click handler
+        document.getElementById('buysellLink').addEventListener('click', function() {
+            window.location.href = '/buysell';
+        });
+
+        // Bk flow link click handler
+        document.getElementById('bkFlowLink').addEventListener('click', function() {
+            window.location.href = '/bk_flow';
+        });
+
+        document.getElementById('diveInGroupsLink').addEventListener('click', function() {
+            window.location.href = '/favorites';
+        });
+
+        document.getElementById('diveInRiseProbLink').addEventListener('click', function() {
+            window.location.href = '/dive-in/rise-probability';
+        });
+
+        document.getElementById('diveInDataOverviewLink').addEventListener('click', function() {
+            window.location.href = '/dive-in/data-overview';
+        });
+
+        document.getElementById('diveInSectorPickLink').addEventListener('click', function() {
+            window.location.href = '/dive-in/sector-pick';
+        });
+
+        function loadDiveInDataOverviewHint() {
+            fetch('/api/dive-in/data-overview')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    const s = data.stats || {};
+                    const hint = document.getElementById('diveInDataOverviewHint');
+                    if (hint) {
+                        hint.textContent = `有效 ${s.valid ?? 0}/${s.total ?? 0} · 未下载 ${s.missing ?? 0} · 过期 ${s.expired ?? 0}`;
+                    }
+                })
+                .catch(() => {});
+        }
+        loadDiveInDataOverviewHint();
+
+        function renderRawDataPanel(apiUrl, metaId, dataId) {
+            const metaEl = document.getElementById(metaId);
+            const dataEl = document.getElementById(dataId);
+            if (!metaEl || !dataEl) return;
+
+            metaEl.textContent = '加载中…';
+            dataEl.classList.add('loading');
+            dataEl.textContent = '正在拉取数据…';
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    dataEl.classList.remove('loading');
+                    if (!data.success) {
+                        metaEl.textContent = data.error || '暂无数据';
+                        dataEl.textContent = JSON.stringify(data, null, 2);
+                        dataEl.classList.add('error');
+                        return;
+                    }
+                    const statusParts = [
+                        data.filename || '—',
+                        data.update_time ? `更新 ${data.update_time}` : '',
+                        data.total_records != null ? `${data.total_records} 条` : '',
+                    ];
+                    if (data.fetched) statusParts.push('已自动拉取');
+                    else if (data.stale) statusParts.push('历史批次');
+                    else if (data.cache_fresh) statusParts.push('缓存有效');
+                    if (data.cache_reason) statusParts.push(data.cache_reason);
+                    metaEl.textContent = statusParts.filter(Boolean).join(' · ');
+                    dataEl.classList.remove('error');
+                    dataEl.innerHTML = buildRawPreviewHtml((data.data || []).slice(0, 5));
+                    if (window.ChartHover) ChartHover.enhanceRawList(dataEl);
+                })
+                .catch(error => {
+                    metaEl.textContent = '加载失败';
+                    dataEl.classList.remove('loading');
+                    dataEl.classList.add('error');
+                    dataEl.textContent = String(error);
+                });
+        }
+
+        function rawRowName(row) {
+            const keys = ['名称', '股票名称', '股票简称', 'SECURITY_NAME_ABBR', 'name'];
+            for (const k of keys) {
+                if (row[k] != null && row[k] !== '') return String(row[k]);
+            }
+            return row._chart_code || '—';
+        }
+
+        function rawRowSummary(row) {
+            const skip = new Set([
+                '名称', '股票名称', '股票简称', 'SECURITY_NAME_ABBR', 'name',
+                '股票代码', '代码', 'SECURITY_CODE', 'code',
+                '_chart_code', 'mini_quote_url', 'intraday_url', 'kline_url',
+            ]);
+            const parts = [];
+            for (const [k, v] of Object.entries(row)) {
+                if (skip.has(k) || v == null || v === '') continue;
+                parts.push(`${k}:${v}`);
+                if (parts.length >= 2) break;
+            }
+            return parts.join(' · ');
+        }
+
+        function buildRawPreviewHtml(rows) {
+            if (!rows.length) return '<div style="color:#90a4ae;">暂无记录</div>';
+            const items = rows.map(row => {
+                const code = row._chart_code || '';
+                const name = rawRowName(row);
+                const meta = rawRowSummary(row);
+                if (!code) {
+                    return `<li class="raw-stock-item"><span>${name}</span>${meta ? `<span class="raw-stock-meta">${meta}</span>` : ''}</li>`;
+                }
+                return `<li class="raw-stock-item"><span class="raw-stock-name" data-code="${code}" data-name="${name.replace(/"/g, '&quot;')}" data-intraday="${row.intraday_url || ''}" data-kline="${row.kline_url || ''}">${name}</span>${meta ? `<span class="raw-stock-meta">${meta}</span>` : ''}</li>`;
+            }).join('');
+            return `<ul class="raw-stock-list">${items}</ul>`;
+        }
+
+        function initRawDataPanels() {
+            renderRawDataPanel('/api/stockflows/latest', 'rawZjlxMeta', 'rawZjlxData');
+            renderRawDataPanel('/api/stockcomments/latest', 'rawStockcommentMeta', 'rawStockcommentData');
+            renderRawDataPanel('/api/pkyd/latest', 'rawPkydMeta', 'rawPkydData');
+            renderRawDataPanel('/api/quotes/latest', 'rawQuotesMeta', 'rawQuotesData');
+
+            document.querySelectorAll('.raw-data-panel[data-href]').forEach(panel => {
+                panel.addEventListener('click', function () {
+                    const href = this.getAttribute('data-href');
+                    if (href) window.location.href = href;
+                });
+            });
+        }
+
+        // Load stock comments update time
+        function loadStockCommentsUpdateTime() {
+            fetch('/api/stockcomments/latest')
+                .then(response => response.json())
+                .then(data => {
+                    const updateTimeElement = document.getElementById('stockcommentsUpdateTime');
+                    if (data.success) {
+                        const timestamp = new Date(data.timestamp || Date.now());
+                        const updateTime = timestamp.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        updateTimeElement.textContent = `最后更新: ${updateTime}`;
+                        updateTimeElement.style.color = '#27ae60';
+                    } else {
+                        updateTimeElement.textContent = '暂无数据';
+                        updateTimeElement.style.color = '#e74c3c';
+                    }
+                })
+                .catch(error => {
+                    const updateTimeElement = document.getElementById('stockcommentsUpdateTime');
+                    updateTimeElement.textContent = '加载失败';
+                    updateTimeElement.style.color = '#e74c3c';
+                    console.error('Error loading stock comments update time:', error);
+                });
+        }
+
+        // Load stock flows update time
+        function loadStockFlowsUpdateTime() {
+            fetch('/api/stockflows/latest')
+                .then(response => response.json())
+                .then(data => {
+                    const updateTimeElement = document.getElementById('stockflowsUpdateTime');
+                    if (data.success) {
+                        const timestamp = new Date(data.timestamp || Date.now());
+                        const updateTime = timestamp.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        updateTimeElement.textContent = `最后更新: ${updateTime}`;
+                        updateTimeElement.style.color = '#27ae60';
+                    } else {
+                        updateTimeElement.textContent = '暂无数据';
+                        updateTimeElement.style.color = '#e74c3c';
+                    }
+                })
+                .catch(error => {
+                    const updateTimeElement = document.getElementById('stockflowsUpdateTime');
+                    updateTimeElement.textContent = '加载失败';
+                    updateTimeElement.style.color = '#e74c3c';
+                    console.error('Error loading stock flows update time:', error);
+                });
+        }
+
+        // Load quotes update time
+        function loadQuotesUpdateTime() {
+            fetch('/api/quotes/latest')
+                .then(response => response.json())
+                .then(data => {
+                    const updateTimeElement = document.getElementById('quotesUpdateTime');
+                    if (data.success) {
+                        const timestamp = new Date(data.timestamp || Date.now());
+                        const updateTime = timestamp.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        updateTimeElement.textContent = `最后更新: ${updateTime}`;
+                        updateTimeElement.style.color = '#27ae60';
+                    } else {
+                        updateTimeElement.textContent = '暂无数据';
+                        updateTimeElement.style.color = '#e74c3c';
+                    }
+                })
+                .catch(error => {
+                    const updateTimeElement = document.getElementById('quotesUpdateTime');
+                    updateTimeElement.textContent = '加载失败';
+                    updateTimeElement.style.color = '#e74c3c';
+                    console.error('Error loading quotes update time:', error);
+                });
+        }
+
+        // Load pkyd update time
+        function loadPkydUpdateTime() {
+            fetch('/api/pkyd/latest')
+                .then(response => response.json())
+                .then(data => {
+                    const updateTimeElement = document.getElementById('pkydUpdateTime');
+                    if (data.success) {
+                        const timestamp = new Date(data.timestamp || Date.now());
+                        const updateTime = timestamp.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        updateTimeElement.textContent = `最后更新: ${updateTime}`;
+                        updateTimeElement.style.color = '#27ae60';
+                    } else {
+                        updateTimeElement.textContent = '暂无数据';
+                        updateTimeElement.style.color = '#e74c3c';
+                    }
+                })
+                .catch(error => {
+                    const updateTimeElement = document.getElementById('pkydUpdateTime');
+                    updateTimeElement.textContent = '加载失败';
+                    updateTimeElement.style.color = '#e74c3c';
+                    console.error('Error loading pkyd update time:', error);
+                });
+        }
+
+        // Load bk flow update time
+        function loadBkFlowUpdateTime() {
+            fetch('/api/bk_flow/latest')
+                .then(response => response.json())
+                .then(data => {
+                    const updateTimeElement = document.getElementById('bkFlowUpdateTime');
+                    if (data.success) {
+                        const timestamp = new Date(data.timestamp || Date.now());
+                        const updateTime = timestamp.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        updateTimeElement.textContent = `最后更新: ${updateTime}`;
+                        updateTimeElement.style.color = '#27ae60';
+                    } else {
+                        updateTimeElement.textContent = '暂无数据';
+                        updateTimeElement.style.color = '#e74c3c';
+                    }
+                })
+                .catch(error => {
+                    const updateTimeElement = document.getElementById('bkFlowUpdateTime');
+                    updateTimeElement.textContent = '加载失败';
+                    updateTimeElement.style.color = '#e74c3c';
+                    console.error('Error loading bk flow update time:', error);
+                });
+        }
+
+        // Load update time on page load
+        const PI_CHAT_SESSION_KEY = 'indexPiChatSessionId';
+        let piChatSessionId = '';
+        let piChatBusy = false;
+        let piChatMessages = [];
+        let piChatExpanded = false;
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function ensurePiChatSessionId() {
+            if (piChatSessionId) return piChatSessionId;
+            try {
+                piChatSessionId = sessionStorage.getItem(PI_CHAT_SESSION_KEY) || '';
+            } catch (_) {
+                piChatSessionId = '';
+            }
+            if (!piChatSessionId) {
+                piChatSessionId = 'idx-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+                try {
+                    sessionStorage.setItem(PI_CHAT_SESSION_KEY, piChatSessionId);
+                } catch (_) {}
+            }
+            return piChatSessionId;
+        }
+
+        function setPiChatStatus(text, kind = '') {
+            const el = document.getElementById('piChatStatus');
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'pi-chat-status' + (kind ? ` ${kind}` : '');
+        }
+
+        function renderPiChatMessages() {
+            const box = document.getElementById('piChatMessages');
+            const empty = document.getElementById('piChatEmpty');
+            if (!box) return;
+            if (!piChatMessages.length) {
+                box.innerHTML = '';
+                if (empty) {
+                    empty.style.display = 'block';
+                    box.appendChild(empty);
+                } else {
+                    box.innerHTML = '<div class="pi-chat-empty">与本机 Pi 助手对话，可询问行情、板块与本地数据；支持 shell 命令分析。</div>';
+                }
+                return;
+            }
+            box.innerHTML = piChatMessages.map(msg =>
+                `<div class="pi-chat-msg ${msg.role}${msg.pending ? ' pending' : ''}">${escapeHtml(msg.text)}</div>`
+            ).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function buildPiChatContext() {
+            const recent = (window.RecentStocks?.load?.() || []).slice(0, 10).map(item => `${item.code} ${item.name}`);
+            const hot = Array.from(document.querySelectorAll('.left-column .stock-chip[data-code]'))
+                .slice(0, 6)
+                .map(chip => chip.textContent.trim());
+            return {
+                page: 'index',
+                recent_stocks: recent,
+                hot_stocks: hot,
+            };
+        }
+
+        async function refreshPiChatStatus() {
+            try {
+                const resp = await fetch('/api/pi/chat/status');
+                const data = await resp.json();
+                if (data.success && data.available) {
+                    setPiChatStatus('本机 Pi 已就绪', 'ok');
+                } else {
+                    setPiChatStatus('未找到本机 pi 命令', 'error');
+                }
+            } catch (error) {
+                setPiChatStatus('Pi 状态检查失败', 'error');
+            }
+        }
+
+        async function sendPiChatMessage() {
+            if (piChatBusy) return;
+            const input = document.getElementById('piChatInput');
+            const sendBtn = document.getElementById('piChatSendBtn');
+            const message = (input?.value || '').trim();
+            if (!message) return;
+
+            ensurePiChatSessionId();
+            piChatBusy = true;
+            if (sendBtn) sendBtn.disabled = true;
+            piChatMessages.push({ role: 'user', text: message });
+            piChatMessages.push({ role: 'assistant', text: '思考中…', pending: true });
+            renderPiChatMessages();
+            if (input) input.value = '';
+            setPiChatStatus('Pi 正在回复…');
+            setPiChatExpanded(true);
+
+            try {
+                const resp = await fetch('/api/pi/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: piChatSessionId,
+                        message,
+                        context: buildPiChatContext(),
+                    }),
+                });
+                const data = await resp.json();
+                piChatMessages = piChatMessages.filter(msg => !msg.pending);
+                if (data.success) {
+                    piChatMessages.push({ role: 'assistant', text: data.reply || '（无回复）' });
+                    setPiChatStatus('本机 Pi 已就绪', 'ok');
+                } else {
+                    piChatMessages.push({ role: 'assistant', text: data.error || '请求失败' });
+                    setPiChatStatus(data.error || 'Pi 对话失败', 'error');
+                }
+            } catch (error) {
+                piChatMessages = piChatMessages.filter(msg => !msg.pending);
+                piChatMessages.push({ role: 'assistant', text: '网络错误: ' + error.message });
+                setPiChatStatus('Pi 对话失败', 'error');
+            } finally {
+                piChatBusy = false;
+                if (sendBtn) sendBtn.disabled = false;
+                renderPiChatMessages();
+            }
+        }
+
+        async function resetPiChatSession() {
+            if (piChatBusy) return;
+            ensurePiChatSessionId();
+            piChatMessages = [];
+            renderPiChatMessages();
+            setPiChatStatus('正在重置会话…');
+            try {
+                const resp = await fetch('/api/pi/chat/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: piChatSessionId }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    setPiChatStatus('已开始新对话', 'ok');
+                } else {
+                    setPiChatStatus(data.error || '重置失败', 'error');
+                }
+            } catch (error) {
+                setPiChatStatus('重置失败', 'error');
+            }
+        }
+
+        function setPiChatExpanded(expanded) {
+            piChatExpanded = expanded;
+            const drawer = document.getElementById('piChatDrawer');
+            if (!drawer) return;
+            drawer.classList.toggle('expanded', expanded);
+            drawer.classList.toggle('collapsed', !expanded);
+        }
+
+        function togglePiChatDrawer() {
+            setPiChatExpanded(!piChatExpanded);
+        }
+
+        function initPiChatDrawer() {
+            const title = document.getElementById('piChatDrawerTitle');
+            const collapseBtn = document.getElementById('piChatCollapseBtn');
+            title?.addEventListener('click', () => {
+                if (!piChatExpanded) setPiChatExpanded(true);
+            });
+            collapseBtn?.addEventListener('click', togglePiChatDrawer);
+        }
+
+        function initPiChat() {
+            ensurePiChatSessionId();
+            renderPiChatMessages();
+            refreshPiChatStatus();
+            initPiChatDrawer();
+
+            const sendBtn = document.getElementById('piChatSendBtn');
+            const input = document.getElementById('piChatInput');
+            const resetBtn = document.getElementById('piChatResetBtn');
+
+            sendBtn?.addEventListener('click', sendPiChatMessage);
+            resetBtn?.addEventListener('click', resetPiChatSession);
+            input?.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendPiChatMessage();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing data...');
+            RecentStocks.render('recentStocksList');
+            initRawDataPanels();
+            loadStockCommentsUpdateTime();
+            loadStockFlowsUpdateTime();
+            loadQuotesUpdateTime();
+            loadPkydUpdateTime();
+            loadBkFlowUpdateTime();
+            setInterval(loadBkFlowUpdateTime, 10 * 60 * 1000);
+            initPiChat();
+        });
+    </script>
+</body>
+</html>
+

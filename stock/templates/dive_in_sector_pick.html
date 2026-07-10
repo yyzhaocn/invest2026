@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dive In · 板块分组</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #eef1f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .app { display: flex; height: 100vh; position: relative; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.28s ease, margin 0.28s ease;
+            z-index: 50;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+            margin-right: -280px;
+        }
+        .sidebar-head {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+        }
+        .sidebar-head h2 { font-size: 16px; color: #2c3e50; margin-bottom: 6px; }
+        .group-name {
+            font-size: 12px;
+            color: #7f8c8d;
+            word-break: break-all;
+        }
+        .group-name strong { color: #3498db; }
+        .pick-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 12px;
+        }
+        .pick-empty {
+            text-align: center;
+            color: #aaa;
+            font-size: 13px;
+            padding: 40px 12px;
+        }
+        .pick-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 6px;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 13px;
+        }
+        .pick-item .name { flex: 1; color: #2c3e50; }
+        .pick-item .code { color: #999; font-size: 11px; }
+        .pick-item .rate { font-weight: 600; min-width: 52px; text-align: right; }
+        .pick-item .remove-pick {
+            border: none; background: none; color: #bbb; cursor: pointer; font-size: 16px;
+        }
+        .pick-item .remove-pick:hover { color: #e74c3c; }
+        .sidebar-foot {
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+        }
+        .btn-done {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-done:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-done:not(:disabled):hover { filter: brightness(1.05); }
+
+        .sidebar-toggle {
+            position: absolute;
+            left: 280px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 56px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+            transition: left 0.28s ease;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+        }
+        .sidebar-toggle.collapsed { left: 0; }
+
+        /* Main */
+        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+        .header {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .header-left h1 { font-size: 20px; color: #2c3e50; }
+        .header-left .meta { font-size: 12px; color: #95a5a6; margin-top: 2px; }
+        .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn {
+            padding: 7px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #555;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+        }
+        .btn:hover { background: #eee; }
+        .btn-reset { border-color: #e74c3c; color: #e74c3c; }
+        .btn-reset:hover { background: #fdecea; }
+        .btn-refresh { background: #3498db; color: #fff; border-color: #3498db; }
+        .btn-refresh:hover { background: #2980b9; }
+
+        .sector-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 6px 10px;
+            background: #f8f9fa;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+        }
+        .sector-filter .filter-title {
+            font-size: 12px;
+            color: #7f8c8d;
+            white-space: nowrap;
+        }
+        .sector-filter select {
+            font-size: 13px;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            color: #2c3e50;
+            min-width: 140px;
+        }
+        .sector-filter select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+        .sector-filter .filter-reset {
+            font-size: 12px;
+            color: #3498db;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .sector-filter .filter-reset:hover { text-decoration: underline; }
+
+        .content { flex: 1; overflow: auto; padding: 16px; }
+
+        /* Waterfall */
+        .waterfall {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 14px;
+        }
+
+        .sector-panel {
+            width: calc(25% - 11px);
+            min-width: 280px;
+            flex: 1 1 280px;
+            max-width: calc(50% - 7px);
+            break-inside: avoid;
+            margin-bottom: 0;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .sector-panel.dragging { opacity: 0.55; }
+        .sector-panel.drag-over { box-shadow: 0 0 0 2px #667eea; }
+        .sector-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            cursor: grab;
+            user-select: none;
+        }
+        .sector-header:active { cursor: grabbing; }
+        .sector-header .drag-hint {
+            color: #ccc;
+            font-size: 12px;
+            letter-spacing: -2px;
+        }
+        .sector-header .title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+            flex: 1;
+        }
+        .sector-header .sector-change { font-size: 13px; font-weight: 600; }
+        .sector-close {
+            border: none; background: none; color: #bbb; cursor: pointer;
+            font-size: 18px; line-height: 1; padding: 0 4px;
+        }
+        .sector-close:hover { color: #e74c3c; }
+
+        .sector-body {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .stock-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .stock-table th {
+            font-size: 11px;
+            color: #999;
+            font-weight: 500;
+            padding: 6px 4px;
+            text-align: right;
+            border-bottom: 1px solid #f0f0f0;
+            position: sticky;
+            top: 0;
+            background: #fff;
+        }
+        .stock-table th.col-name { text-align: left; padding-left: 8px; }
+        .stock-table th.col-check { width: 28px; }
+        .stock-table th.col-spark { width: 56px; }
+        .stock-table th.col-del { width: 28px; }
+
+        .stock-row td {
+            padding: 5px 4px;
+            font-size: 13px;
+            border-bottom: 1px solid #fafafa;
+            text-align: right;
+            vertical-align: middle;
+        }
+        .stock-row td.col-name {
+            text-align: left;
+            padding-left: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .stock-row td.col-check { text-align: center; }
+        .stock-row td.col-spark { padding: 2px; }
+        .stock-row td.col-del { text-align: center; }
+        .stock-row:hover { background: #f5f8ff; }
+        .stock-row.hover-active { background: #fff5f5; }
+
+        .stock-name-text { color: #2c3e50; display: block; font-weight: 500; cursor: help; text-decoration: underline dotted; }
+        .stock-code-text { color: #999; font-size: 11px; display: block; }
+        .sparkline { width: 52px; height: 22px; display: block; object-fit: contain; }
+        .positive { color: #e74c3c; }
+        .negative { color: #27ae60; }
+        .neutral { color: #95a5a6; }
+
+        .btn-del-stock {
+            border: none; background: none; color: #ccc; cursor: pointer;
+            font-size: 15px; line-height: 1;
+        }
+        .btn-del-stock:hover { color: #e74c3c; }
+
+        .resize-handle {
+            height: 8px;
+            background: linear-gradient(to bottom, transparent, #eee);
+            cursor: ns-resize;
+            flex-shrink: 0;
+        }
+        .resize-handle:hover { background: linear-gradient(to bottom, transparent, #ddd); }
+
+        /* Cards view */
+        .cards-view { display: none; }
+        .cards-view.active { display: block; }
+        .waterfall-view.hidden { display: none; }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
+        }
+        .stock-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .card-head .card-title { flex: 1; font-size: 15px; font-weight: 600; color: #2c3e50; }
+        .card-head .card-code { font-size: 12px; color: #999; }
+        .card-close {
+            border: none; background: #f5f5f5; color: #888;
+            width: 28px; height: 28px; border-radius: 50%;
+            cursor: pointer; font-size: 16px; line-height: 1;
+        }
+        .card-close:hover { background: #fdecea; color: #e74c3c; }
+        .card-charts { padding: 10px; }
+        .card-chart-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0;
+        }
+        .card-chart-tab {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 6px 6px 0 0;
+            padding: 5px 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .card-chart-tab.active {
+            background: #fff;
+            border-bottom-color: #fff;
+            color: #ea580c;
+            font-weight: 600;
+        }
+        .chart-half {
+            height: 160px;
+            overflow: hidden;
+            border-radius: 4px;
+            background: #fafafa;
+            margin-bottom: 8px;
+        }
+        /* 爱问财风格：日K + 成交量 + MACD 合成图 */
+        .chart-half.chart-iwencai {
+            height: 365px;
+            background: #fff;
+        }
+        .chart-half.chart-intraday-card {
+            height: 200px;
+            background: #fff;
+        }
+        .chart-half.chart-intraday-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: top center;
+        }
+        .chart-half.chart-iwencai img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            margin-top: 0;
+            object-fit: contain;
+            object-position: center top;
+        }
+        /* 日K：完整显示蜡烛图（勿用下半区裁切） */
+        .chart-half.chart-kline {
+            height: 200px;
+            background: #fff;
+        }
+        .chart-half.chart-kline img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            margin-top: 0;
+            object-fit: contain;
+            object-position: center top;
+        }
+        /* MACD / 指标区：仅显示合成图下半部 */
+        .chart-half.chart-lower img {
+            width: 100%;
+            display: block;
+            margin-top: -46%;
+        }
+        .card-charts .chart-label {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        /* K-line hover popup */
+        .kline-popup {
+            position: fixed;
+            z-index: 200;
+            pointer-events: none;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            padding: 6px;
+            display: none;
+        }
+        .kline-popup.visible { display: block; }
+        .kline-popup .chart-half.chart-intraday { height: 140px; width: 420px; }
+        .kline-popup .chart-half.chart-intraday img { width: 100%; height: 100%; object-fit: contain; margin-top: 0; }
+        .kline-popup .chart-half.chart-kline { height: 365px; width: 520px; }
+        .kline-popup .chart-half.chart-kline img { margin-top: 0; object-fit: contain; }
+        .kline-popup .popup-label {
+            font-size: 10px;
+            color: #90a4ae;
+            margin: 2px 0 4px;
+        }
+        .kline-popup .popup-title {
+            font-size: 12px;
+            color: #666;
+            padding: 4px 6px 6px;
+            text-align: center;
+        }
+
+        .loading, .error-box {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+        .error-box { color: #e74c3c; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <h2>选股结果</h2>
+            <div class="group-name">分组：<strong id="groupNameLabel">—</strong></div>
+        </div>
+        <div class="pick-list" id="pickList">
+            <div class="pick-empty">勾选股票加入分组</div>
+        </div>
+        <div class="sidebar-foot">
+            <button class="btn-done" id="btnDone" disabled>选好了</button>
+        </div>
+    </aside>
+
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开侧边栏">◀</button>
+
+    <div class="main">
+        <header class="header">
+            <div class="header-left">
+                <h1>板块分组 · 星图瀑布</h1>
+                <div class="meta" id="metaInfo">加载中…</div>
+            </div>
+            <div class="toolbar">
+                <div class="sector-filter">
+                    <span class="filter-title">板块选择</span>
+                    <select id="hyLevelSelect" title="行业层级">
+                        <option value="1">东财一级行业</option>
+                        <option value="2" selected>东财二级行业</option>
+                        <option value="3">东财三级行业</option>
+                    </select>
+                    <select id="hyChooseSelect" title="具体板块"></select>
+                    <a href="#" class="filter-reset" id="hyFilterReset" style="display:none;">返回</a>
+                </div>
+                <a href="/" class="btn">← 首页</a>
+                <a href="/dive-in/rise-probability" class="btn">上涨概率</a>
+                <button class="btn btn-refresh" id="btnRefresh">刷新数据</button>
+                <button class="btn btn-reset" id="btnReset">RESET</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div id="loadingBox" class="loading">正在加载星图行情…</div>
+            <div id="errorBox" class="error-box" style="display:none;"></div>
+
+            <div class="waterfall-view" id="waterfallView" style="display:none;">
+                <div class="waterfall" id="waterfall"></div>
+            </div>
+
+            <div class="cards-view" id="cardsView">
+                <div class="cards-grid" id="cardsGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="kline-popup" id="klinePopup">
+    <div class="popup-title" id="klinePopupTitle"></div>
+    <div class="popup-label">最近交易日 · 分时</div>
+    <div class="chart-half chart-intraday"><img id="klinePopupIntraday" alt="分时图" referrerpolicy="no-referrer"></div>
+    <div class="popup-label">日K线</div>
+    <div class="chart-half chart-kline"><img id="klinePopupImg" alt="日K线" referrerpolicy="no-referrer"></div>
+</div>
+
+<script>
+(function () {
+    const DEFAULT_ROW_H = 44;
+    const DEFAULT_HEADER_H = 42;
+    const DEFAULT_VISIBLE_ROWS = 15;
+    const DEFAULT_PANEL_H = DEFAULT_HEADER_H + DEFAULT_ROW_H * DEFAULT_VISIBLE_ROWS + 8;
+
+    let sectors = [];
+    let sectorOrder = [];
+    let groupName = '';
+    let updateTime = '';
+    let groupMode = 'starmap';
+    let sidebarOpen = true;
+    let viewMode = 'waterfall'; // waterfall | cards
+    let dragSectorIdx = null;
+    let hyLevel = 2;
+    let hyCode = 'all';
+    let hyOptions = [];
+
+    (function initFiltersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const level = params.get('hy_level');
+        const code = params.get('hy_code');
+        if (level) {
+            const n = Number(level);
+            if (n >= 1 && n <= 3) hyLevel = n;
+        }
+        if (code) hyCode = code;
+    })();
+
+    const hiddenStocks = new Set();
+    const closedSectors = new Set();
+    const sectorHeights = new Map();
+    const selected = new Map(); // code -> stock
+    const closedCards = new Set();
+
+    const els = {
+        sidebar: document.getElementById('sidebar'),
+        sidebarToggle: document.getElementById('sidebarToggle'),
+        pickList: document.getElementById('pickList'),
+        groupNameLabel: document.getElementById('groupNameLabel'),
+        btnDone: document.getElementById('btnDone'),
+        metaInfo: document.getElementById('metaInfo'),
+        loadingBox: document.getElementById('loadingBox'),
+        errorBox: document.getElementById('errorBox'),
+        waterfallView: document.getElementById('waterfallView'),
+        waterfall: document.getElementById('waterfall'),
+        cardsView: document.getElementById('cardsView'),
+        cardsGrid: document.getElementById('cardsGrid'),
+        klinePopup: document.getElementById('klinePopup'),
+        klinePopupImg: document.getElementById('klinePopupImg'),
+        klinePopupIntraday: document.getElementById('klinePopupIntraday'),
+        klinePopupTitle: document.getElementById('klinePopupTitle'),
+        btnRefresh: document.getElementById('btnRefresh'),
+        btnReset: document.getElementById('btnReset'),
+        hyLevelSelect: document.getElementById('hyLevelSelect'),
+        hyChooseSelect: document.getElementById('hyChooseSelect'),
+        hyFilterReset: document.getElementById('hyFilterReset'),
+    };
+
+    function updateHyFilterUi() {
+        els.hyLevelSelect.value = String(hyLevel);
+        els.hyChooseSelect.innerHTML = hyOptions.map(opt =>
+            `<option value="${opt.code}">${opt.name}</option>`
+        ).join('');
+        if (hyOptions.some(opt => opt.code === hyCode)) {
+            els.hyChooseSelect.value = hyCode;
+        } else {
+            hyCode = 'all';
+            els.hyChooseSelect.value = 'all';
+        }
+        els.hyFilterReset.style.display = hyCode !== 'all' ? '' : 'none';
+    }
+
+    function buildStarmapUrl(forceRefresh) {
+        const params = new URLSearchParams({
+            hy_level: String(hyLevel),
+            hy_code: hyCode,
+        });
+        if (forceRefresh) params.set('force', '1');
+        return `/api/dive-in/sector-pick/starmap?${params.toString()}`;
+    }
+
+    function loadingMessage(forceRefresh) {
+        const h = new Date().getHours();
+        const m = new Date().getMinutes();
+        const mins = h * 60 + m;
+        const trading = (mins >= 9 * 60 + 30 && mins <= 11 * 60 + 30)
+            || (mins >= 13 * 60 && mins <= 15 * 60);
+        if (!trading && !forceRefresh) {
+            return '正在加载最近交易日收盘数据…';
+        }
+        return forceRefresh ? '正在刷新星图实时行情…' : '正在拉取星图实时行情…';
+    }
+
+    function fmtRate(v) {
+        if (v == null || isNaN(v)) return '—';
+        const cls = v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
+        const sign = v > 0 ? '+' : '';
+        return `<span class="${cls}">${sign}${v.toFixed(2)}%</span>`;
+    }
+
+    function fmtPrice(v) {
+        if (v == null || isNaN(v)) return '—';
+        return Number(v).toFixed(2);
+    }
+
+    function fmtChange(v) {
+        if (v == null || isNaN(v)) return '—';
+        const cls = v > 0 ? 'positive' : v < 0 ? 'negative' : 'neutral';
+        const sign = v > 0 ? '+' : '';
+        return `<span class="${cls}">${sign}${Number(v).toFixed(2)}</span>`;
+    }
+
+    function panelHeight(idx) {
+        return sectorHeights.get(idx) || DEFAULT_PANEL_H;
+    }
+
+    function renderPickList() {
+        const items = Array.from(selected.values());
+        els.btnDone.disabled = items.length === 0;
+        if (!items.length) {
+            els.pickList.innerHTML = '<div class="pick-empty">勾选股票加入分组</div>';
+            return;
+        }
+        items.sort((a, b) => b.change_rate - a.change_rate);
+        els.pickList.innerHTML = items.map(s => `
+            <div class="pick-item" data-code="${s.code}">
+                <div>
+                    <div class="name">${s.name}</div>
+                    <div class="code">${s.code}</div>
+                </div>
+                <div class="rate">${fmtRate(s.change_rate)}</div>
+                <button class="remove-pick" title="取消选择" data-code="${s.code}">×</button>
+            </div>
+        `).join('');
+
+        els.pickList.querySelectorAll('.remove-pick').forEach(btn => {
+            btn.addEventListener('click', () => toggleSelect(btn.dataset.code, false));
+        });
+    }
+
+    function syncSectorOrder() {
+        const ids = sectors.map(s => s.sector_index);
+        if (!sectorOrder.length) {
+            sectorOrder = ids.slice();
+            return;
+        }
+        sectorOrder = sectorOrder.filter(id => ids.includes(id));
+        ids.forEach(id => {
+            if (!sectorOrder.includes(id)) sectorOrder.push(id);
+        });
+    }
+
+    function renderWaterfall() {
+        syncSectorOrder();
+        const orderMap = new Map(sectors.map(s => [s.sector_index, s]));
+        const visible = sectorOrder
+            .map(idx => orderMap.get(idx))
+            .filter(s => s && !closedSectors.has(s.sector_index));
+
+        if (!visible.length) {
+            els.waterfall.innerHTML = '<div class="loading">暂无可见板块（点击 RESET 恢复）</div>';
+            return;
+        }
+
+        els.waterfall.innerHTML = visible.map(sector => {
+            const h = panelHeight(sector.sector_index);
+            const stocks = sector.stocks.filter(s => !hiddenStocks.has(s.code));
+            const rows = stocks.map(s => {
+                const checked = selected.has(s.code) ? 'checked' : '';
+                return `
+                    <tr class="stock-row" data-code="${s.code}" data-iwencai="${s.macd_url || ''}" data-intraday="${s.intraday_url || ''}">
+                        <td class="col-check"><input type="checkbox" class="stock-check" data-code="${s.code}" ${checked}></td>
+                        <td class="col-name">
+                            <span class="stock-name-text">${s.name}</span>
+                            <span class="stock-code-text">${s.code}</span>
+                        </td>
+                        <td class="col-spark"><img class="sparkline" src="${s.mini_quote_url}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
+                        <td>${fmtPrice(s.price)}</td>
+                        <td>${fmtChange(s.change)}</td>
+                        <td>${fmtRate(s.change_rate)}</td>
+                        <td class="col-del"><button class="btn-del-stock" data-code="${s.code}" title="隐藏">×</button></td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div class="sector-panel" data-idx="${sector.sector_index}">
+                    <div class="sector-header" draggable="true">
+                        <span class="drag-hint">⋮⋮</span>
+                        <span class="title">${sector.sector_name}</span>
+                        <span class="sector-change">${fmtRate(sector.change_rate)}</span>
+                        <span style="font-size:11px;color:#bbb;">${stocks.length}支</span>
+                        <button class="sector-close" data-idx="${sector.sector_index}" title="关闭板块">×</button>
+                    </div>
+                    <div class="sector-body" style="height:${h}px">
+                        <table class="stock-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-check"></th>
+                                    <th class="col-name">名称/代码</th>
+                                    <th class="col-spark">走势</th>
+                                    <th>现价</th>
+                                    <th>涨跌</th>
+                                    <th>涨幅</th>
+                                    <th class="col-del"></th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#ccc;padding:20px;">该板块股票已全部隐藏</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                    <div class="resize-handle" data-idx="${sector.sector_index}"></div>
+                </div>
+            `;
+        }).join('');
+
+        bindWaterfallEvents();
+    }
+
+    function bindWaterfallEvents() {
+        els.waterfall.querySelectorAll('.stock-check').forEach(cb => {
+            cb.addEventListener('change', e => {
+                toggleSelect(e.target.dataset.code, e.target.checked);
+            });
+        });
+
+        els.waterfall.querySelectorAll('.btn-del-stock').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                hiddenStocks.add(btn.dataset.code);
+                renderWaterfall();
+            });
+        });
+
+        els.waterfall.querySelectorAll('.sector-close').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                closedSectors.add(Number(btn.dataset.idx));
+                renderWaterfall();
+            });
+        });
+
+        els.waterfall.querySelectorAll('.sector-panel').forEach(panel => {
+            const header = panel.querySelector('.sector-header');
+            header.addEventListener('dragstart', e => {
+                dragSectorIdx = Number(panel.dataset.idx);
+                panel.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', panel.dataset.idx);
+            });
+            header.addEventListener('dragend', () => {
+                dragSectorIdx = null;
+                panel.classList.remove('dragging');
+                els.waterfall.querySelectorAll('.sector-panel').forEach(p => p.classList.remove('drag-over'));
+            });
+            panel.addEventListener('dragover', e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                panel.classList.add('drag-over');
+            });
+            panel.addEventListener('dragleave', () => panel.classList.remove('drag-over'));
+            panel.addEventListener('drop', e => {
+                e.preventDefault();
+                panel.classList.remove('drag-over');
+                const fromIdx = Number(e.dataTransfer.getData('text/plain'));
+                const toIdx = Number(panel.dataset.idx);
+                if (!fromIdx || !toIdx || fromIdx === toIdx) return;
+                const fromPos = sectorOrder.indexOf(fromIdx);
+                const toPos = sectorOrder.indexOf(toIdx);
+                if (fromPos < 0 || toPos < 0) return;
+                sectorOrder.splice(fromPos, 1);
+                sectorOrder.splice(toPos, 0, fromIdx);
+                renderWaterfall();
+            });
+        });
+
+        els.waterfall.querySelectorAll('.stock-name-text').forEach(nameEl => {
+            const row = nameEl.closest('.stock-row');
+            if (!row) return;
+            nameEl.addEventListener('mouseenter', e => {
+                showKlinePopup(e, row);
+                row.classList.add('hover-active');
+            });
+            nameEl.addEventListener('mousemove', e => moveKlinePopup(e));
+            nameEl.addEventListener('mouseleave', () => {
+                hideKlinePopup();
+                row.classList.remove('hover-active');
+            });
+        });
+
+        els.waterfall.querySelectorAll('.resize-handle').forEach(handle => {
+            let startY, startH, idx;
+            handle.addEventListener('mousedown', e => {
+                e.preventDefault();
+                idx = Number(handle.dataset.idx);
+                startY = e.clientY;
+                startH = panelHeight(idx);
+                const onMove = ev => {
+                    const nh = Math.max(120, startH + (ev.clientY - startY));
+                    sectorHeights.set(idx, nh);
+                    const body = handle.closest('.sector-panel').querySelector('.sector-body');
+                    if (body) body.style.height = nh + 'px';
+                };
+                const onUp = () => {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                };
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        });
+    }
+
+    function findStock(code) {
+        for (const sec of sectors) {
+            const s = sec.stocks.find(x => x.code === code);
+            if (s) return s;
+        }
+        return null;
+    }
+
+    async function toggleSelect(code, on) {
+        const stock = findStock(code);
+        if (!stock) return;
+
+        const checkbox = document.querySelector(`.stock-check[data-code="${code}"]`);
+        if (checkbox) checkbox.checked = on;
+
+        if (on) {
+            selected.set(code, stock);
+            try {
+                await fetch('/api/favorites/stocks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stock_code: code, group_name: groupName }),
+                });
+            } catch (_) {}
+        } else {
+            selected.delete(code);
+            closedCards.delete(code);
+            try {
+                await fetch(`/api/favorites/stocks/${code}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_name: groupName }),
+                });
+            } catch (_) {}
+            if (viewMode === 'cards') renderCards();
+        }
+        renderPickList();
+    }
+
+    function chartNid(code) {
+        const c = String(code).padStart(6, '0');
+        return (c.startsWith('6') || c.startsWith('9') ? '1.' : '0.') + c;
+    }
+
+    function buildIwencaiKlineUrl(code, period) {
+        const ts = Date.now();
+        const typeMap = { day: '', week: 'W', month: 'M' };
+        const kType = typeMap[period || 'day'] ?? '';
+        return `https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=${chartNid(code)}&type=${kType}&unitWidth=-6&ef=&formula=MACD&AT=1&imageType=KXL&timespan=${ts}`;
+    }
+
+    function buildCardChartUrl(code, tab, stock) {
+        const ts = Date.now();
+        if (tab === 'intraday') {
+            const base = stock?.intraday_url || '';
+            if (base) return base;
+            return `https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=${chartNid(code)}&timespan=${ts}`;
+        }
+        if (tab === 'day' && stock?.macd_url) return stock.macd_url;
+        return buildIwencaiKlineUrl(code, tab);
+    }
+
+    function iwencaiChartUrl(stock) {
+        return stock.macd_url || buildIwencaiKlineUrl(stock.code, 'day');
+    }
+
+    function fallbackIntraday(code) {
+        const ts = Date.now();
+        return `https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=${chartNid(code)}&timespan=${ts}`;
+    }
+
+    function showKlinePopup(e, row) {
+        const name = row.querySelector('.stock-name-text')?.textContent || '';
+        const code = row.dataset.code || '';
+        const intradayBase = row.dataset.intraday || '';
+        const ts = Date.now();
+        els.klinePopupTitle.textContent = name + ' · ' + code;
+        if (els.klinePopupIntraday) {
+            els.klinePopupIntraday.src = intradayBase
+                ? `${intradayBase}&t=${ts}`
+                : fallbackIntraday(code);
+        }
+        els.klinePopupImg.src = (row.dataset.iwencai || buildIwencaiKlineUrl(code)) + `&t=${ts}`;
+        els.klinePopup.classList.add('visible');
+        moveKlinePopup(e);
+    }
+
+    function moveKlinePopup(e) {
+        const pad = 16;
+        let x = e.clientX + pad;
+        let y = e.clientY + pad;
+        const rect = els.klinePopup.getBoundingClientRect();
+        if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - pad;
+        if (y + rect.height > window.innerHeight) y = e.clientY - rect.height - pad;
+        els.klinePopup.style.left = Math.max(8, x) + 'px';
+        els.klinePopup.style.top = Math.max(8, y) + 'px';
+    }
+
+    function hideKlinePopup() {
+        els.klinePopup.classList.remove('visible');
+    }
+
+    function bindCardChartTabs() {
+        els.cardsGrid.querySelectorAll('.card-chart-tabs').forEach(tabBar => {
+            tabBar.querySelectorAll('.card-chart-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const card = tabBar.closest('.stock-card');
+                    const code = card?.dataset.code || '';
+                    const tab = btn.dataset.tab || 'day';
+                    const stock = selected.get(code);
+                    tabBar.querySelectorAll('.card-chart-tab').forEach(b => {
+                        b.classList.toggle('active', b === btn);
+                    });
+                    const box = card.querySelector('.chart-half');
+                    const img = card.querySelector('.card-chart-img');
+                    if (!box || !img) return;
+                    box.classList.toggle('chart-intraday-card', tab === 'intraday');
+                    box.classList.toggle('chart-iwencai', tab !== 'intraday');
+                    const url = buildCardChartUrl(code, tab, stock);
+                    img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                });
+            });
+        });
+    }
+
+    function renderCards() {
+        const items = Array.from(selected.values()).filter(s => !closedCards.has(s.code));
+        if (!items.length) {
+            els.cardsGrid.innerHTML = '<div class="loading">没有可展示的股票（请勾选或 RESET）</div>';
+            return;
+        }
+        els.cardsGrid.innerHTML = items.map(s => {
+            const chartUrl = buildCardChartUrl(s.code, 'day', s);
+            return `
+            <div class="stock-card" data-code="${s.code}">
+                <div class="card-head">
+                    <div>
+                        <div class="card-title">${s.name} <span style="color:#999;font-weight:400;font-size:12px;">${s.code}</span></div>
+                        <div class="card-code">${fmtPrice(s.price)} · ${fmtChange(s.change).replace(/<[^>]+>/g, '')} · ${fmtRate(s.change_rate).replace(/<[^>]+>/g, '')}</div>
+                    </div>
+                    <button class="card-close" data-code="${s.code}" title="关闭">×</button>
+                </div>
+                <div class="card-charts">
+                    <div class="card-chart-tabs">
+                        <button type="button" class="card-chart-tab" data-tab="intraday">分时</button>
+                        <button type="button" class="card-chart-tab active" data-tab="day">日K</button>
+                        <button type="button" class="card-chart-tab" data-tab="week">周K</button>
+                        <button type="button" class="card-chart-tab" data-tab="month">月K</button>
+                    </div>
+                    <div class="chart-half chart-iwencai">
+                        <img class="card-chart-img" src="${chartUrl}&t=${Date.now()}" alt="日K线" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div style=\\'padding:40px;text-align:center;color:#ccc;\\'>暂无数据</div>'">
+                    </div>
+                </div>
+            </div>
+        `}).join('');
+
+        els.cardsGrid.querySelectorAll('.card-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                closedCards.add(btn.dataset.code);
+                renderCards();
+            });
+        });
+        bindCardChartTabs();
+    }
+
+    function setViewMode(mode) {
+        viewMode = mode;
+        if (mode === 'cards') {
+            els.waterfallView.style.display = 'none';
+            els.cardsView.classList.add('active');
+            renderCards();
+        } else {
+            els.waterfallView.style.display = '';
+            els.cardsView.classList.remove('active');
+            renderWaterfall();
+        }
+    }
+
+    function resetAll() {
+        hiddenStocks.clear();
+        closedSectors.clear();
+        sectorHeights.clear();
+        closedCards.clear();
+        sectorOrder = sectors.map(s => s.sector_index);
+        setViewMode('waterfall');
+    }
+
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        els.sidebar.classList.toggle('collapsed', !sidebarOpen);
+        els.sidebarToggle.classList.toggle('collapsed', !sidebarOpen);
+        els.sidebarToggle.textContent = sidebarOpen ? '◀' : '▶';
+    }
+
+    async function loadData(forceRefresh) {
+        els.loadingBox.textContent = loadingMessage(!!forceRefresh);
+        els.loadingBox.style.display = '';
+        els.errorBox.style.display = 'none';
+        els.waterfallView.style.display = 'none';
+
+        try {
+            const res = await fetch(buildStarmapUrl(!!forceRefresh));
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error || '加载失败');
+
+            sectors = data.sectors || [];
+            groupMode = data.group_mode || 'starmap';
+            groupName = data.default_group_name || '';
+            updateTime = data.update_time || '';
+            hyLevel = Number(data.hy_level) || hyLevel;
+            hyCode = data.hy_code || hyCode;
+            hyOptions = data.hy_options || hyOptions;
+            updateHyFilterUi();
+            sectorOrder = sectors.map(s => s.sector_index);
+
+            els.groupNameLabel.textContent = groupName;
+            const levelLabels = { 1: '东财一级', 2: '东财二级', 3: '东财三级' };
+            const levelLabel = levelLabels[hyLevel] || '星图板块';
+            const filterLabel = hyCode === 'all'
+                ? `全部${levelLabel}行业`
+                : (hyOptions.find(o => o.code === hyCode)?.name || hyCode);
+            const modeLabel = data.is_trading
+                ? '实时'
+                : (data.quote_mode === 'close_cache' ? '收盘' : '缓存');
+            els.metaInfo.textContent = `${modeLabel} · 更新 ${updateTime} · ${levelLabel} · ${filterLabel} · ${data.sector_count || 0} 板块 · ${data.total_stocks || 0} 股票`;
+
+            els.loadingBox.style.display = 'none';
+            if (viewMode === 'cards') {
+                setViewMode('cards');
+            } else {
+                els.waterfallView.style.display = '';
+                renderWaterfall();
+            }
+        } catch (err) {
+            els.loadingBox.style.display = 'none';
+            els.errorBox.style.display = '';
+            els.errorBox.textContent = '加载失败：' + err.message;
+        }
+    }
+
+    els.sidebarToggle.addEventListener('click', toggleSidebar);
+
+    els.btnDone.addEventListener('click', async () => {
+        if (!selected.size) return;
+        const codes = Array.from(selected.keys());
+        try {
+            await fetch('/api/dive-in/sector-pick/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codes, group_name: groupName }),
+            });
+        } catch (_) {}
+        closedCards.clear();
+        setViewMode('cards');
+    });
+
+    els.btnReset.addEventListener('click', resetAll);
+    els.btnRefresh.addEventListener('click', () => loadData(true));
+
+    els.hyLevelSelect.addEventListener('change', () => {
+        hyLevel = Number(els.hyLevelSelect.value) || 2;
+        hyCode = 'all';
+        loadData();
+    });
+    els.hyChooseSelect.addEventListener('change', () => {
+        hyCode = els.hyChooseSelect.value || 'all';
+        loadData();
+    });
+    els.hyFilterReset.addEventListener('click', (e) => {
+        e.preventDefault();
+        hyCode = 'all';
+        loadData();
+    });
+
+    loadData();
+})();
+</script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

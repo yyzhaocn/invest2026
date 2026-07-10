@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>盘口异动数据 - Pkyd Data</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #e74c3c;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #2c3e50;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .cache-note {
+            font-size: 13px;
+            color: #546e7a;
+            margin-top: 4px;
+        }
+
+        .file-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .file-info h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .file-info p {
+            color: #7f8c8d;
+            margin: 5px 0;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination a {
+            padding: 8px 12px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .pagination a:hover {
+            background: #2980b9;
+        }
+
+        .pagination .current {
+            padding: 8px 12px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .pagination .disabled {
+            padding: 8px 12px;
+            background: #bdc3c7;
+            color: #7f8c8d;
+            border-radius: 4px;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #e74c3c;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable:hover {
+            background: #e3f2fd;
+        }
+
+        .sort-arrow {
+            margin-left: 5px;
+            font-size: 12px;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .apply-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .apply-btn:hover {
+            background: #2980b9;
+        }
+
+        .clear-btn {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #7f8c8d;
+        }
+
+        .row-hidden {
+            display: none !important;
+        }
+
+        #filterStatus {
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 盘口异动数据</h1>
+            <div class="header-controls">
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshPkyd()">🔄 刷新数据</button>
+                <a href="/" class="back-btn">← 返回首页</a>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="error-message">
+            <strong>错误:</strong> {{ error }}
+        </div>
+        {% else %}
+        
+        {% if file_info %}
+        <div class="file-info">
+            <h3>📁 文件信息</h3>
+            <p><strong>文件名:</strong> {{ file_info.filename }}</p>
+            <p><strong>总记录数:</strong> {{ "{:,}".format(file_info.total_rows_before_filter) }}</p>
+            {% if filter_type or filter_stock %}
+            <p><strong>过滤后记录数:</strong> {{ "{:,}".format(file_info.total_rows) }}</p>
+            {% endif %}
+            {% if pagination %}
+            <p><strong>当前显示:</strong> 第 {{ file_info.start_row }} - {{ file_info.end_row }} 条记录</p>
+            {% endif %}
+            <p><strong>文件大小:</strong> {{ "%.1f"|format(file_info.size / 1024) }} KB</p>
+            <p><strong>修改时间:</strong> {{ file_info.modified }}</p>
+            {% if file_info.cache_reason %}
+            <p class="cache-note"><strong>缓存:</strong> {{ file_info.cache_reason }}{% if file_info.cache_stale %}（历史批次）{% elif file_info.cache_cached %}（命中缓存）{% endif %}</p>
+            {% endif %}
+            <p class="cache-note">📈 悬停表格中<strong>股票名称</strong>可查看分时图 + 日K线</p>
+        </div>
+        {% endif %}
+
+        <!-- Filter Controls -->
+        <div class="filter-section">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">🔍 数据过滤 <span id="filterStatus" style="font-size: 14px; color: #7f8c8d; font-weight: normal;"></span></h3>
+            <form method="get" action="{{ url_for('show_pkyd') }}" id="filterForm" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                <div class="control-group">
+                    <label for="filterType">异动类型:</label>
+                    <select id="filterType" name="filter_type" style="min-width: 150px;" onchange="applyClientFilter()">
+                        <option value="">全部</option>
+                        {% for type in available_types %}
+                        <option value="{{ type }}" {% if filter_type == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="filterStock">股票代码:</label>
+                    <input type="text" id="filterStock" name="filter_stock" value="{{ filter_stock }}" 
+                           placeholder="例如: 600000" style="min-width: 150px;" 
+                           oninput="applyClientFilter()" autocomplete="off">
+                </div>
+                <div class="control-group">
+                    <button type="submit" class="filter-btn apply-btn" title="重新加载并应用过滤">应用过滤</button>
+                    <button type="button" class="filter-btn clear-btn" onclick="clearFilters()">清除过滤</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="perPage">每页显示:</label>
+                <select id="perPage" onchange="changePerPage()">
+                    <option value="50" {% if pagination and pagination.per_page == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if pagination and pagination.per_page == 100 %}selected{% endif %}>100</option>
+                    <option value="200" {% if pagination and pagination.per_page == 200 %}selected{% endif %}>200</option>
+                    <option value="all">全部</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <span>共 {{ file_info.total_rows if file_info else 0 }} 条记录</span>
+            </div>
+        </div>
+
+        <div class="table-container">
+            {% if table_html %}
+                {{ table_html|safe }}
+            {% else %}
+                <div class="loading">
+                    <p>暂无数据</p>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if pagination %}
+        <div class="pagination">
+            {% if pagination.current_page > 1 %}
+            <a href="{{ url_for('show_pkyd', page=pagination.current_page-1, per_page=pagination.per_page, sort_column=sort_column, sort_direction=sort_direction, filter_type=filter_type, filter_stock=filter_stock) }}">← 上一页</a>
+            {% else %}
+            <span class="disabled">← 上一页</span>
+            {% endif %}
+
+            {% for page_num in range(1, pagination.total_pages + 1) %}
+                {% if page_num == pagination.current_page %}
+                <span class="current">{{ page_num }}</span>
+                {% else %}
+                <a href="{{ url_for('show_pkyd', page=page_num, per_page=pagination.per_page, sort_column=sort_column, sort_direction=sort_direction, filter_type=filter_type, filter_stock=filter_stock) }}">{{ page_num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.current_page < pagination.total_pages %}
+            <a href="{{ url_for('show_pkyd', page=pagination.current_page+1, per_page=pagination.per_page, sort_column=sort_column, sort_direction=sort_direction, filter_type=filter_type, filter_stock=filter_stock) }}">下一页 →</a>
+            {% else %}
+            <span class="disabled">下一页 →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+
+    <script>
+        // Add sorting functionality to table headers
+        document.addEventListener('DOMContentLoaded', function() {
+            const headers = document.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                if (header.textContent.trim()) {
+                    header.classList.add('sortable');
+                    header.addEventListener('click', function() {
+                        const currentSort = '{{ sort_column }}';
+                        const currentDirection = '{{ sort_direction }}';
+                        
+                        let newDirection = 'asc';
+                        if (currentSort === index.toString() && currentDirection === 'asc') {
+                            newDirection = 'desc';
+                        }
+                        
+                        const url = new URL(window.location);
+                        url.searchParams.set('sort_column', index);
+                        url.searchParams.set('sort_direction', newDirection);
+                        window.location.href = url.toString();
+                    });
+                    
+                    // Add sort indicator
+                    if ('{{ sort_column }}' === index.toString()) {
+                        const arrow = document.createElement('span');
+                        arrow.className = 'sort-arrow';
+                        arrow.textContent = '{{ sort_direction }}' === 'asc' ? '↑' : '↓';
+                        header.appendChild(arrow);
+                    }
+                }
+            });
+        });
+
+        function changePerPage() {
+            const perPage = document.getElementById('perPage').value;
+            const url = new URL(window.location);
+            url.searchParams.set('per_page', perPage);
+            url.searchParams.set('page', '1'); // Reset to first page
+            window.location.href = url.toString();
+        }
+
+        function clearFilters() {
+            const url = new URL(window.location);
+            url.searchParams.delete('filter_type');
+            url.searchParams.delete('filter_stock');
+            url.searchParams.set('page', '1'); // Reset to first page
+            window.location.href = url.toString();
+        }
+
+        // Client-side real-time filtering
+        function applyClientFilter() {
+            const filterType = document.getElementById('filterType').value.trim().toLowerCase();
+            const filterStock = document.getElementById('filterStock').value.trim().toUpperCase();
+            const table = document.querySelector('#pkyd-table');
+            
+            if (!table) return;
+            
+            const rows = table.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            let totalCount = rows.length;
+            
+            rows.forEach(row => {
+                let showRow = true;
+                
+                // Get cell values
+                const cells = row.querySelectorAll('td');
+                if (cells.length === 0) return;
+                
+                // Find the column indices for 异动类型 and 股票代码
+                const headers = table.querySelectorAll('thead th');
+                let typeIndex = -1;
+                let stockIndex = -1;
+                
+                headers.forEach((header, index) => {
+                    const headerText = header.textContent.trim();
+                    if (headerText === '异动类型') typeIndex = index;
+                    if (headerText === '股票代码') stockIndex = index;
+                });
+                
+                // Apply type filter
+                if (filterType && typeIndex >= 0 && cells[typeIndex]) {
+                    const cellValue = cells[typeIndex].textContent.trim().toLowerCase();
+                    if (cellValue !== filterType) {
+                        showRow = false;
+                    }
+                }
+                
+                // Apply stock code filter (fuzzy match)
+                if (filterStock && stockIndex >= 0 && cells[stockIndex]) {
+                    const cellValue = cells[stockIndex].textContent.trim().toUpperCase();
+                    if (!cellValue.includes(filterStock)) {
+                        showRow = false;
+                    }
+                }
+                
+                // Show or hide row
+                if (showRow) {
+                    row.classList.remove('row-hidden');
+                    visibleCount++;
+                } else {
+                    row.classList.add('row-hidden');
+                }
+            });
+            
+            // Update filter status
+            const statusElement = document.getElementById('filterStatus');
+            if (filterType || filterStock) {
+                statusElement.textContent = `(显示 ${visibleCount} / ${totalCount} 条记录)`;
+                statusElement.style.color = '#e74c3c';
+            } else {
+                statusElement.textContent = '';
+            }
+        }
+
+        // Apply client filter on page load if there are filter values
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterType = document.getElementById('filterType').value;
+            const filterStock = document.getElementById('filterStock').value;
+            
+            if (filterType || filterStock) {
+                applyClientFilter();
+            }
+        });
+
+        async function refreshPkyd() {
+            const btn = document.getElementById('refreshBtn');
+            if (!btn) return;
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = '刷新中…';
+            try {
+                const response = await fetch('/api/pkyd/refresh', { method: 'POST' });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || '刷新失败');
+                }
+                window.location.reload();
+            } catch (err) {
+                alert('刷新失败: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = oldText;
+            }
+        }
+    </script>
+    <script src="/static/chart_hover.js"></script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

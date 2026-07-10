@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分析 - {{ stock_code }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #eef1f5;
+            color: #2c3e50;
+        }
+
+        /* ── Sticky header ── */
+        .instant-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(219, 228, 238, 0.85);
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            padding: 12px 20px;
+            transition: background-color .45s ease, border-color .45s ease, box-shadow .45s ease;
+        }
+
+        .instant-header.heat-cold {
+            background: linear-gradient(180deg, rgba(232, 244, 252, 0.8) 0%, rgba(240, 248, 255, 0.8) 100%);
+            border-bottom-color: rgba(184, 212, 235, 0.85);
+        }
+
+        .instant-header.heat-cool {
+            background: linear-gradient(180deg, rgba(237, 246, 255, 0.8) 0%, rgba(245, 250, 255, 0.8) 100%);
+            border-bottom-color: rgba(197, 217, 236, 0.85);
+        }
+
+        .instant-header.heat-neutral {
+            background: linear-gradient(180deg, rgba(250, 251, 252, 0.8) 0%, rgba(255, 255, 255, 0.8) 100%);
+            border-bottom-color: rgba(224, 224, 224, 0.85);
+        }
+
+        .instant-header.heat-warm {
+            background: linear-gradient(180deg, rgba(255, 248, 235, 0.8) 0%, rgba(255, 253, 245, 0.8) 100%);
+            border-bottom-color: rgba(240, 217, 168, 0.85);
+        }
+
+        .instant-header.heat-hot {
+            background: linear-gradient(180deg, rgba(255, 232, 214, 0.8) 0%, rgba(255, 244, 234, 0.8) 100%);
+            border-bottom-color: rgba(245, 184, 122, 0.85);
+            box-shadow: 0 2px 10px rgba(245, 120, 40, .12);
+        }
+
+        .instant-header.heat-blaze {
+            background: linear-gradient(180deg, rgba(255, 216, 216, 0.8) 0%, rgba(255, 240, 240, 0.8) 100%);
+            border-bottom-color: rgba(240, 138, 138, 0.85);
+            box-shadow: 0 2px 12px rgba(231, 76, 60, .16);
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stock-info {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            padding: 6px 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            text-decoration: none;
+            color: #666;
+            align-self: center;
+        }
+
+        .back-btn:hover { background: #e8e8e8; color: #333; }
+
+        .stock-name { font-size: 22px; font-weight: 600; }
+        .stock-code { font-size: 15px; color: #7f8c8d; }
+        .stock-price { font-size: 22px; font-weight: bold; }
+        .stock-price.positive { color: #e74c3c; }
+        .stock-price.negative { color: #27ae60; }
+        .stock-price.neutral { color: #2c3e50; }
+
+        .stock-change {
+            font-size: 14px;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .stock-change.positive { background: #ffebee; color: #e74c3c; }
+        .stock-change.negative { background: #e8f5e9; color: #27ae60; }
+        .stock-change.neutral { background: #f5f5f5; color: #757575; }
+
+        .quote-time { font-size: 12px; color: #95a5a6; }
+
+        .stock-turnover {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .55);
+            color: #5d6d7e;
+            border: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        .status-badge.live { background: #e8f5e9; color: #27ae60; }
+        .status-badge.cached { background: #fff3e0; color: #e65100; }
+
+        .stock-industry {
+            display: inline-flex;
+            align-items: center;
+            font-size: 11px;
+            white-space: nowrap;
+            max-width: 320px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .stock-industry-link {
+            color: #7f8c8d;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .stock-industry-link:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+        .stock-industry-plain {
+            color: #7f8c8d;
+            flex-shrink: 0;
+        }
+        .stock-industry-sep {
+            color: #bdc3c7;
+            margin: 0 1px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 7px 14px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-size: 13px;
+            color: #555;
+            text-decoration: none;
+            transition: background .2s;
+        }
+        .btn:hover { background: #e8e8e8; color: #333; }
+        .btn.primary { background: #3498db; color: #fff; border-color: #3498db; }
+        .btn.primary:hover { background: #2980b9; }
+        .btn.close-btn { background: none; border: none; font-size: 22px; color: #999; padding: 4px 8px; }
+        .btn.close-btn:hover { color: #333; }
+
+        /* ── Body ── */
+        .instant-body { padding: 16px 20px 40px; max-width: 1920px; margin: 0 auto; }
+
+        /* ── Flow charts (side-by-side like East Money) ── */
+        .flow-panel {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            margin-bottom: 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .flow-charts-row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(340px, 1fr));
+            min-width: 1020px;
+            border-bottom: 1px solid #e8eaec;
+        }
+
+        .flow-chart-box {
+            padding: 12px 16px 8px;
+            min-height: 340px;
+        }
+
+        .flow-chart-box + .flow-chart-box {
+            border-left: 1px solid #e8eaec;
+        }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+            border-bottom: 2px solid #3498db;
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .chart-header .chart-meta {
+            font-size: 12px;
+            font-weight: 400;
+            color: #7f8c8d;
+        }
+
+        .chart-area { width: 100%; height: 300px; }
+
+        .chart-image {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            background: #fff;
+            display: block;
+        }
+
+        .chart-error, .chart-loading-inline {
+            height: 300px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+            font-size: 13px;
+            background: #fafafa;
+        }
+
+        .chart-loading-inline.visible { display: flex; }
+
+        .flow-loading, .flow-empty {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+
+        /* ── Module panels: 3-column grid ── */
+        .panels-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .module-panel {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.08);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: linear-gradient(#e3f2fd, #bbdefb);
+            font-size: 15px;
+            font-weight: 600;
+            color: #1565c0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .panel-title .meta { font-size: 12px; font-weight: 400; color: #7f8c8d; }
+
+        .module-panel .panel-title { cursor: default; }
+
+        .module-frame-wrap {
+            position: relative;
+            min-height: 100px;
+        }
+
+        .module-frame {
+            width: 100%;
+            border: none;
+            display: block;
+            min-height: 420px;
+        }
+
+        .module-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            color: #95a5a6;
+            font-size: 14px;
+        }
+
+        .module-loading.hidden { display: none; }
+
+        @media (max-width: 1200px) {
+            .panels-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .stock-name { font-size: 18px; }
+            .flow-charts-row { grid-template-columns: 1fr; }
+            .flow-chart-box + .flow-chart-box { border-left: none; border-top: 1px solid #e8eaec; }
+            .panels-grid { grid-template-columns: 1fr; }
+            .module-frame { min-height: 360px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="instant-header">
+        <div class="header-row">
+            <div class="stock-info">
+                <a href="/" class="back-btn">← 返回</a>
+                <span class="stock-name" id="stockName">加载中...</span>
+                <div class="stock-switcher">
+                    <form class="stock-switcher-form" id="stockSwitchForm">
+                        <input type="text" class="stock-switcher-input" id="stockSwitchInput" placeholder="切换股票" autocomplete="off" maxlength="20" aria-label="切换股票">
+                        <button type="submit" class="stock-switcher-btn" title="跳转">→</button>
+                    </form>
+                    <div class="stock-switcher-suggestions" id="stockSwitchSuggestions"></div>
+                </div>
+                <span class="stock-code">{{ stock_code }}</span>
+                <span class="stock-price neutral" id="stockPrice">--</span>
+                <span class="stock-change neutral" id="stockChange">--</span>
+                <span class="stock-turnover" id="stockTurnover" title="换手率">换手 --</span>
+                <span class="quote-time" id="quoteTime"></span>
+            </div>
+            <div class="header-actions">
+                <span class="stock-industry" id="stockIndustry" style="display:none;" title="板块分组"></span>
+                <span class="status-badge cached" id="statusBadge">缓存</span>
+                <button class="btn" id="refreshBtn" title="刷新行情">↻ 刷新</button>
+                <button class="btn primary" id="fullAnalysisBtn" type="button" title="打开完整分析">完整分析</button>
+                <button class="btn close-btn" id="closeBtn" title="关闭" style="display:none;">×</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="instant-body">
+        <!-- Quote charts: intraday + K-line RSI + capital flow -->
+        <div class="flow-panel">
+            <div class="flow-charts-row" id="flowChartsRow">
+                <div class="flow-chart-box">
+                    <div class="chart-header">
+                        <span>分时走势</span>
+                        <span class="chart-meta" id="intradayMeta">东财</span>
+                    </div>
+                    <img class="chart-image" id="intradayImg" alt="分时走势"
+                         onerror="this.style.display='none';document.getElementById('intradayError').style.display='flex';">
+                    <div class="chart-error" id="intradayError">分时图加载失败</div>
+                </div>
+                <div class="flow-chart-box">
+                    <div class="chart-header">
+                        <span>日K · RSI</span>
+                        <span class="chart-meta" id="klineMeta">东财</span>
+                    </div>
+                    <img class="chart-image" id="klineRsiImg" alt="日K RSI"
+                         onerror="this.style.display='none';document.getElementById('klineError').style.display='flex';">
+                    <div class="chart-error" id="klineError">K线图加载失败</div>
+                </div>
+                <div class="flow-chart-box">
+                    <div class="chart-header">
+                        <span>实时资金流向图</span>
+                        <span class="chart-meta" id="flowLineMeta">单位: 元</span>
+                    </div>
+                    <div class="chart-loading-inline visible" id="flowLineLoading">正在加载资金流向...</div>
+                    <div id="flowLineChart" class="chart-area" style="display:none;"></div>
+                    <div class="chart-error" id="flowLineEmpty">暂无实时资金数据</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis panels: 3 columns -->
+        <div class="panels-grid">
+        <div class="module-panel" data-module="comprehensive">
+            <div class="panel-title">综合评价</div>
+            <div class="module-frame-wrap">
+                <div class="module-loading">加载综合评价...</div>
+                <iframe class="module-frame" data-src="/module/comprehensive/{{ stock_code }}?embed=1" loading="lazy"></iframe>
+            </div>
+        </div>
+
+        <div class="module-panel" data-module="sentiment">
+            <div class="panel-title">舆情监控</div>
+            <div class="module-frame-wrap">
+                <div class="module-loading">加载舆情监控...</div>
+                <iframe class="module-frame" data-src="/module/sentiment/{{ stock_code }}?embed=1" loading="lazy"></iframe>
+            </div>
+        </div>
+
+        <div class="module-panel" data-module="capital">
+            <div class="panel-title">资金动向</div>
+            <div class="module-frame-wrap">
+                <div class="module-loading">加载资金动向...</div>
+                <iframe class="module-frame" data-src="/module/capital/{{ stock_code }}?embed=1" loading="lazy"></iframe>
+            </div>
+        </div>
+
+        <div class="module-panel" data-module="trend">
+            <div class="panel-title">趋势研判</div>
+            <div class="module-frame-wrap">
+                <div class="module-loading">加载趋势研判...</div>
+                <iframe class="module-frame" data-src="/module/trend/{{ stock_code }}?embed=1" loading="lazy"></iframe>
+            </div>
+        </div>
+        </div>
+    </div>
+
+<script src="/static/full_analysis.js?v=3"></script>
+<script src="/static/stock_header_input.js?v=1"></script>
+<script src="/static/app_nav_shortcuts.js?v=3"></script>
+<script>
+const stockCode = '{{ stock_code }}';
+let isTrading = false;
+let flowLineChart = null;
+let quoteTimer = null;
+let quoteFetchSeq = 0;
+
+function getMarketCode(code) {
+    const c = String(code).padStart(6, '0');
+    if (c.startsWith('60') || c.startsWith('68')) return '1.' + c;
+    return '0.' + c;
+}
+
+function updateQuoteChartImages() {
+    const nid = getMarketCode(stockCode);
+    const ts = Date.now();
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const stamp = `${pad(now.getHours())}:${pad(now.getMinutes())} 更新`;
+    const intradayImg = document.getElementById('intradayImg');
+    const klineImg = document.getElementById('klineRsiImg');
+    intradayImg.style.display = 'block';
+    klineImg.style.display = 'block';
+    document.getElementById('intradayError').style.display = 'none';
+    document.getElementById('klineError').style.display = 'none';
+    document.getElementById('intradayMeta').textContent = stamp;
+    document.getElementById('klineMeta').textContent = stamp;
+    intradayImg.src = 'https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=' + nid + '&timespan=' + ts;
+    klineImg.src = 'https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=' + nid + '&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=' + ts;
+}
+
+function fmtMoneyYuan(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '--';
+    const abs = Math.abs(n);
+    if (abs >= 1e8) return (n / 1e8).toFixed(2) + '亿';
+    if (abs >= 1e4) return (n / 1e4).toFixed(2) + '万';
+    return n.toFixed(0);
+}
+
+function fmtMoneyYiFromYi(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '--';
+    return n.toFixed(2) + '亿';
+}
+
+function fmtQuoteTime(raw, trading) {
+    if (!raw) return '';
+    const text = String(raw).trim();
+    const parsed = new Date(text.includes('T') ? text : text.replace(' ', 'T'));
+    if (!Number.isNaN(parsed.getTime())) {
+        const pad = n => String(n).padStart(2, '0');
+        const time = `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}:${pad(parsed.getSeconds())}`;
+        const now = new Date();
+        let label = parsed.toDateString() === now.toDateString()
+            ? time
+            : `${parsed.getFullYear()}-${pad(parsed.getMonth()+1)}-${pad(parsed.getDate())} ${time}`;
+        if (!trading && /15:00:00/.test(text)) label += ' 收盘';
+        return label;
+    }
+    const m = text.match(/(\d{2}:\d{2}(:\d{2})?)/);
+    return m ? m[1] : text;
+}
+
+function normalizeTurnoverRate(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n;
+}
+
+function headerHeatClass(rate) {
+    if (rate == null) return 'heat-neutral';
+    if (rate < 0.8) return 'heat-cold';
+    if (rate < 2) return 'heat-cool';
+    if (rate < 4) return 'heat-neutral';
+    if (rate < 8) return 'heat-warm';
+    if (rate < 15) return 'heat-hot';
+    return 'heat-blaze';
+}
+
+function applyHeaderHeat(turnoverRate) {
+    const header = document.querySelector('.instant-header');
+    if (!header) return;
+
+    const rate = normalizeTurnoverRate(turnoverRate);
+    const heatClasses = ['heat-cold', 'heat-cool', 'heat-neutral', 'heat-warm', 'heat-hot', 'heat-blaze'];
+    heatClasses.forEach(cls => header.classList.remove(cls));
+    header.classList.add(headerHeatClass(rate));
+
+    const turnoverEl = document.getElementById('stockTurnover');
+    if (turnoverEl) {
+        turnoverEl.textContent = rate == null ? '换手 --' : `换手 ${rate.toFixed(2)}%`;
+        turnoverEl.title = rate == null ? '换手率' : `换手率 ${rate.toFixed(2)}%`;
+    }
+}
+
+function fillIndustryLinks(container, data) {
+    if (!container) return;
+    container.innerHTML = '';
+    const levels = (data && data.industry_levels) || [];
+    if (!levels.length) {
+        container.style.display = 'none';
+        return;
+    }
+    levels.forEach((item, index) => {
+        if (index > 0) {
+            const sep = document.createElement('span');
+            sep.className = 'stock-industry-sep';
+            sep.textContent = '｜';
+            container.appendChild(sep);
+        }
+        const name = item.name || '';
+        const level = item.level;
+        const code = item.code;
+        if (level && code) {
+            const link = document.createElement('a');
+            link.className = 'stock-industry-link';
+            link.href = `/dive-in/sector-pick?hy_level=${level}&hy_code=${encodeURIComponent(code)}`;
+            link.textContent = name;
+            link.title = name;
+            container.appendChild(link);
+        } else {
+            const plain = document.createElement('span');
+            plain.className = 'stock-industry-plain';
+            plain.textContent = name;
+            container.appendChild(plain);
+        }
+    });
+    container.title = levels.map(item => item.name).filter(Boolean).join('｜');
+    container.style.display = '';
+}
+
+function applyQuote(data, trading) {
+    if (data.name) document.getElementById('stockName').textContent = data.name;
+
+    const priceEl = document.getElementById('stockPrice');
+    if (data.price != null) {
+        priceEl.textContent = Number(data.price).toFixed(2);
+        priceEl.className = 'stock-price';
+        if (data.change > 0) priceEl.classList.add('positive');
+        else if (data.change < 0) priceEl.classList.add('negative');
+        else priceEl.classList.add('neutral');
+    }
+
+    const changeEl = document.getElementById('stockChange');
+    if (data.change != null && data.change_percent != null) {
+        const sign = data.change >= 0 ? '+' : '';
+        changeEl.textContent = `${sign}${Number(data.change).toFixed(2)} (${sign}${Number(data.change_percent).toFixed(2)}%)`;
+        changeEl.className = 'stock-change';
+        if (data.change > 0) changeEl.classList.add('positive');
+        else if (data.change < 0) changeEl.classList.add('negative');
+        else changeEl.classList.add('neutral');
+    }
+
+    const timeEl = document.getElementById('quoteTime');
+    const formatted = fmtQuoteTime(data.updated_at, trading);
+    if (formatted) {
+        timeEl.textContent = formatted;
+        timeEl.title = data.updated_at || formatted;
+    }
+
+    const badge = document.getElementById('statusBadge');
+    if (trading) {
+        badge.textContent = '实时';
+        badge.className = 'status-badge live';
+    } else {
+        badge.textContent = '缓存';
+        badge.className = 'status-badge cached';
+    }
+
+    fillIndustryLinks(document.getElementById('stockIndustry'), data);
+
+    if (data.turnover_rate != null && data.turnover_rate !== '') {
+        applyHeaderHeat(data.turnover_rate);
+    }
+}
+
+async function fetchQuote() {
+    const seq = ++quoteFetchSeq;
+    const url = `/api/stock/${stockCode}/info?fresh=1&_=${Date.now()}`;
+    try {
+        const res = await fetch(url, { cache: 'no-store' });
+        const result = await res.json();
+        if (seq !== quoteFetchSeq) return;
+        if (result.success) {
+            const wasTrading = isTrading;
+            isTrading = !!result.is_trading;
+            applyQuote(result.data, isTrading);
+            if (wasTrading !== isTrading) startQuotePolling();
+        }
+    } catch (e) {
+        console.error('Quote fetch failed:', e);
+    }
+}
+
+function buildTradingTimeline() {
+    const slots = [];
+    const pushRange = (h0, m0, h1, m1) => {
+        let h = h0;
+        let m = m0;
+        while (h < h1 || (h === h1 && m <= m1)) {
+            slots.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+            m += 1;
+            if (m >= 60) { m = 0; h += 1; }
+        }
+    };
+    pushRange(9, 31, 11, 30);
+    pushRange(13, 0, 15, 0);
+    return slots;
+}
+
+function padSeriesToTradingDay(series) {
+    const timeline = buildTradingTimeline();
+    const byTime = Object.fromEntries(series.map(r => [r.time, r]));
+    const keys = ['super_net', 'big_net', 'main_net', 'mid_net', 'small_net'];
+    const padded = timeline.map(t => {
+        const row = byTime[t];
+        if (row) return row;
+        const empty = { time: t };
+        keys.forEach(k => { empty[k] = null; });
+        return empty;
+    });
+    let lastIdx = -1;
+    padded.forEach((row, i) => {
+        if (row.main_net != null) lastIdx = i;
+    });
+    return { timeline, padded, lastIdx };
+}
+
+function scheduleFlowChartResize() {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if (flowLineChart) flowLineChart.resize();
+        });
+    });
+}
+
+function renderFlowLineChart(series, updatedAt) {
+    if (typeof echarts === 'undefined') {
+        setTimeout(() => renderFlowLineChart(series, updatedAt), 200);
+        return;
+    }
+    const el = document.getElementById('flowLineChart');
+    document.getElementById('flowLineLoading').classList.remove('visible');
+    document.getElementById('flowLineEmpty').style.display = 'none';
+    el.style.display = 'block';
+
+    if (!flowLineChart) flowLineChart = echarts.init(el);
+
+    const { timeline, padded, lastIdx } = padSeriesToTradingDay(series);
+    const lineDefs = [
+        { key: 'super_net', name: '超大单净流入', color: '#A86868', width: 1.5, opacity: 0.4 },
+        { key: 'big_net', name: '大单净流入', color: '#C97A8A', width: 1.5, opacity: 0.4 },
+        { key: 'main_net', name: '主力净流入', color: '#FF6B6B', width: 4, opacity: 1 },
+        { key: 'mid_net', name: '中单净流入', color: '#C9A86C', width: 1.2, opacity: 0.4 },
+        { key: 'small_net', name: '小单净流入', color: '#8EB4C9', width: 1.2, opacity: 0.4 },
+    ];
+
+    const meta = document.getElementById('flowLineMeta');
+    meta.textContent = `单位: 元${updatedAt ? ' · 更新 ' + updatedAt : ''}`;
+
+    const labelInterval = Math.max(0, Math.floor(timeline.length / 8) - 1);
+
+    flowLineChart.setOption({
+        tooltip: {
+            trigger: 'axis',
+            formatter: params => {
+                const idx = params[0]?.dataIndex ?? -1;
+                if (idx > lastIdx) return timeline[idx] + '<br/>（待更新）';
+                let html = params[0].axisValue + '<br/>';
+                params.forEach(p => {
+                    if (p.value == null) return;
+                    html += `${p.marker}${p.seriesName}: <b>${fmtMoneyYiFromYi(p.value)}</b><br/>`;
+                });
+                return html;
+            }
+        },
+        legend: {
+            data: lineDefs.map(d => d.name),
+            top: 0,
+            right: 10,
+            textStyle: { fontSize: 11 },
+            inactiveColor: '#ccc',
+        },
+        grid: { left: 55, right: 20, top: 36, bottom: 28 },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: timeline,
+            axisLabel: {
+                fontSize: 10,
+                interval: labelInterval,
+                showMaxLabel: true
+            }
+        },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                fontSize: 10,
+                formatter: v => (v === 0 ? '0' : v.toFixed(1) + '亿')
+            },
+            splitLine: { lineStyle: { color: '#eee' } }
+        },
+        series: lineDefs.map(d => ({
+            name: d.name,
+            type: 'line',
+            smooth: true,
+            showSymbol: false,
+            connectNulls: false,
+            lineStyle: { width: d.width, color: d.color, opacity: d.opacity },
+            itemStyle: { color: d.color, opacity: d.opacity },
+            data: padded.map((r, i) => (i <= lastIdx ? r[d.key] : null))
+        }))
+    }, true);
+    scheduleFlowChartResize();
+}
+
+async function fetchFlow(force) {
+    const tryFetch = async (withForce) => {
+        const url = `/api/stock/${stockCode}/realtime-flow${withForce ? '?force=1' : ''}`;
+        const res = await fetch(url);
+        return res.json();
+    };
+
+    document.getElementById('flowLineLoading').classList.add('visible');
+    document.getElementById('flowLineEmpty').style.display = 'none';
+    document.getElementById('flowLineChart').style.display = 'none';
+
+    try {
+        let result = await tryFetch(!!force);
+        if (!result.success && !force) {
+            result = await tryFetch(true);
+        }
+        if (result.success && result.data && result.data.length) {
+            const ts = result.updated_at ? result.updated_at.slice(-8, -3) || result.updated_at.slice(11, 16) : '';
+            renderFlowLineChart(result.data, ts);
+        } else {
+            document.getElementById('flowLineLoading').classList.remove('visible');
+            document.getElementById('flowLineChart').style.display = 'none';
+            document.getElementById('flowLineEmpty').style.display = 'flex';
+            document.getElementById('flowLineMeta').textContent = result.error || '无数据';
+        }
+    } catch (e) {
+        console.error('Flow fetch failed:', e);
+        document.getElementById('flowLineLoading').classList.remove('visible');
+        document.getElementById('flowLineChart').style.display = 'none';
+        document.getElementById('flowLineEmpty').style.display = 'flex';
+    }
+}
+
+function startQuotePolling() {
+    if (quoteTimer) clearInterval(quoteTimer);
+    const ms = isTrading ? 15000 : 60000;
+    quoteTimer = setInterval(() => {
+        fetchQuote();
+        if (isTrading) {
+            updateQuoteChartImages();
+            fetchFlow(false);
+        }
+    }, ms);
+}
+
+function loadModuleIframes() {
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const wrap = entry.target;
+            const iframe = wrap.querySelector('iframe[data-src]');
+            if (!iframe) return;
+            iframe.src = iframe.dataset.src;
+            iframe.removeAttribute('data-src');
+            iframe.addEventListener('load', () => {
+                const loading = wrap.querySelector('.module-loading');
+                if (loading) loading.classList.add('hidden');
+                try {
+                    const h = iframe.contentDocument?.body?.scrollHeight;
+                    if (h && h > 200) iframe.style.height = Math.min(h + 20, 900) + 'px';
+                } catch (_) { /* cross-origin */ }
+            });
+            observer.unobserve(wrap);
+        });
+    }, { rootMargin: '200px' });
+
+    document.querySelectorAll('.module-frame-wrap').forEach(w => observer.observe(w));
+}
+
+document.getElementById('fullAnalysisBtn').addEventListener('click', () => {
+    FullAnalysis.open(stockCode);
+});
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+    fetchQuote();
+    updateQuoteChartImages();
+    fetchFlow(true);
+});
+
+document.getElementById('closeBtn').addEventListener('click', () => {
+    if (window.parent !== window) {
+        window.parent.postMessage({ type: 'instantAnalysisClose' }, '*');
+    } else {
+        window.close();
+    }
+});
+
+if (window.parent !== window) {
+    document.getElementById('closeBtn').style.display = '';
+}
+
+window.addEventListener('resize', () => {
+    if (flowLineChart) flowLineChart.resize();
+});
+
+(function observeFlowChartResize() {
+    const row = document.getElementById('flowChartsRow');
+    if (!row || typeof ResizeObserver === 'undefined') return;
+    new ResizeObserver(() => scheduleFlowChartResize()).observe(row);
+})();
+
+// Parent header owns quote — ignore stale iframe postMessage updates
+window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'stockHeaderUpdate') return;
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') fetchQuote();
+});
+
+(async () => {
+    StockHeaderInput.init({ routeBase: '/analysis', currentCode: stockCode });
+    updateQuoteChartImages();
+    await Promise.all([fetchQuote(), fetchFlow(true)]);
+    startQuotePolling();
+    loadModuleIframes();
+})();
+</script>
+</body>
+</html>

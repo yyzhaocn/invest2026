@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dive In · 上涨概率</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+        }
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title { font-size: 22px; color: #2c3e50; font-weight: 600; }
+        .subtitle { color: #7f8c8d; font-size: 13px; margin-top: 4px; }
+        .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .btn, .back-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f5f5f5;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .btn-primary { background: #3498db; color: #fff; border-color: #3498db; }
+        .btn:hover, .back-btn:hover { background: #e8e8e8; }
+        .btn-primary:hover { background: #2980b9; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .info-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .info-bar-stats {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .info-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .info-filter label {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+        }
+        .info-filter select {
+            min-width: 160px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            color: #2c3e50;
+        }
+        .info-label { color: #7f8c8d; font-size: 12px; }
+        .info-value { color: #2c3e50; font-size: 16px; font-weight: 600; }
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: auto;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        thead { background: #f8f9fa; position: sticky; top: 0; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        th { color: #2c3e50; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .positive { color: #e74c3c; font-weight: 600; }
+        .neutral { color: #7f8c8d; }
+        .score-cell { color: #2c3e50; font-weight: 600; }
+        .rank-cell { color: #3498db; font-weight: 500; white-space: nowrap; }
+        .rank-tip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted #3498db;
+        }
+        .rank-tip .tip-box {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: calc(100% + 6px);
+            z-index: 50;
+            min-width: 160px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.5;
+            white-space: nowrap;
+        }
+        .rank-tip:hover .tip-box { display: block; }
+        .stock-link { color: #3498db; text-decoration: none; font-weight: 500; }
+        .stock-link:hover { text-decoration: underline; }
+        .group-tag {
+            display: inline-block;
+            background: #eef6ff;
+            color: #3498db;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin: 2px 4px 2px 0;
+        }
+        .prop-tip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted #3498db;
+        }
+        .prop-tip .tip-box {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: calc(100% + 6px);
+            z-index: 50;
+            min-width: 180px;
+            max-width: 360px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .prop-tip:hover .tip-box { display: block; }
+        .loading, .error, .empty {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error { color: #c0392b; background: #fee; border-radius: 8px; margin-bottom: 16px; }
+        .sort-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 12px 15px 0;
+            font-size: 13px;
+            color: #666;
+        }
+        .sort-bar select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            background: white;
+        }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        th.sortable:hover { background: #eef2f7; }
+        th.sortable .sort-indicator {
+            margin-left: 4px;
+            color: #3498db;
+            font-size: 11px;
+        }
+        .mini-quote {
+            width: 120px;
+            height: 40px;
+            object-fit: contain;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            display: block;
+        }
+        td.quote-cell { padding: 8px 10px; }
+        .stock-code-link.kline-hover {
+            cursor: help;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px dashed #3498db;
+        }
+        .stock-code-link.kline-hover:hover { color: #2980b9; }
+        .kline-popup {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            padding: 10px 12px;
+            pointer-events: none;
+        }
+        .kline-popup.visible { display: block; }
+        .kline-popup .popup-title {
+            font-size: 13px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .kline-popup .chart-kline img {
+            display: block;
+            width: 420px;
+            height: 260px;
+            object-fit: contain;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <a href="/" class="back-btn">← 返回首页</a>
+                <h1 class="title" style="margin-top: 10px;">Dive In · 上涨概率</h1>
+                <div class="subtitle">所有分组股票 · 可按次日上涨概率等字段排序</div>
+                <div class="nav-links" style="display:flex;gap:8px;margin-top:10px;">
+                    <a href="/dive-in/data-overview" style="font-size:13px;color:#3498db;text-decoration:none;padding:4px 10px;border-radius:6px;background:#eef6ff;">数据概览</a>
+                    <a href="/dive-in/sector-pick" style="font-size:13px;color:#3498db;text-decoration:none;padding:4px 10px;border-radius:6px;background:#eef6ff;">板块分组</a>
+                    <a href="/favorites" style="font-size:13px;color:#3498db;text-decoration:none;padding:4px 10px;border-radius:6px;background:#eef6ff;">动态选股</a>
+                </div>
+            </div>
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="loadData(true)">拉取缺失数据</button>
+                <button class="btn" onclick="loadData(false)">刷新</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="errorBox" class="error" style="display:none;"></div>
+        <div class="info-bar">
+            <div class="info-bar-stats">
+                <div><div class="info-label">股票总数</div><div class="info-value" id="totalCount">--</div></div>
+                <div><div class="info-label">有得分/排名</div><div class="info-value" id="withScoreCount">--</div></div>
+                <div><div class="info-label">有概率数据</div><div class="info-value" id="withDataCount">--</div></div>
+                <div><div class="info-label">数据来源</div><div class="info-value" style="font-size:13px;">综合评价缓存 + stockcomment 回退</div></div>
+            </div>
+            <div class="info-filter">
+                <label for="groupFilter">股票分组</label>
+                <select id="groupFilter" onchange="onGroupFilterChange()">
+                    <option value="">全部分组</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-container">
+            <div class="sort-bar">
+                <span>排序：</span>
+                <select id="sortField" onchange="applySortAndRender()">
+                    <option value="rise_1_probability" selected>次日上涨概率</option>
+                    <option value="rise_5_probability">5日上涨概率</option>
+                    <option value="compre_score">综合得分</option>
+                    <option value="market_rank">综合排名</option>
+                    <option value="name">股票名称</option>
+                    <option value="code">股票代码</option>
+                </select>
+                <select id="sortDir" onchange="applySortAndRender()">
+                    <option value="desc" selected>降序</option>
+                    <option value="asc">升序</option>
+                </select>
+            </div>
+            <div class="loading" id="loading">加载中...</div>
+            <div id="tableWrap"></div>
+        </div>
+    </div>
+
+    <div class="kline-popup" id="klinePopup">
+        <div class="popup-title" id="klinePopupTitle"></div>
+        <div class="chart-kline"><img id="klinePopupImg" alt="日K线" referrerpolicy="no-referrer"></div>
+    </div>
+
+    <script>
+        let allStocksData = [];
+        let selectedGroup = '';
+        let sortState = { field: 'rise_1_probability', dir: 'desc' };
+
+        function getFilteredStocks() {
+            if (!selectedGroup) return allStocksData;
+            return allStocksData.filter(s => (s.groups || []).includes(selectedGroup));
+        }
+
+        function updateStats(stocks) {
+            document.getElementById('totalCount').textContent = stocks.length;
+            const withScore = stocks.filter(s => s.compre_score != null || s.market_rank != null).length;
+            const withData = stocks.filter(s => s.rise_1_probability != null).length;
+            document.getElementById('withScoreCount').textContent = withScore;
+            document.getElementById('withDataCount').textContent = withData;
+        }
+
+        function onGroupFilterChange() {
+            selectedGroup = document.getElementById('groupFilter').value;
+            applySortAndRender();
+        }
+
+        async function loadGroupOptions() {
+            try {
+                const resp = await fetch('/api/favorites/groups');
+                const data = await resp.json();
+                if (!data.success) return;
+                const select = document.getElementById('groupFilter');
+                const current = select.value;
+                select.innerHTML = '<option value="">全部分组</option>';
+                (data.groups || []).forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+                if (current && [...select.options].some(o => o.value === current)) {
+                    select.value = current;
+                }
+                selectedGroup = select.value;
+            } catch (e) {
+                console.error('加载分组失败', e);
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function fmtPct(v) {
+            if (v == null || v === '') return '--';
+            const n = Number(v);
+            return Number.isFinite(n) ? n.toFixed(2) + '%' : '--';
+        }
+
+        function fmtScore(v) {
+            if (v == null || v === '') return '--';
+            const n = Number(v);
+            return Number.isFinite(n) ? n.toFixed(2) : '--';
+        }
+
+        function renderMarketRankCell(stock) {
+            const rank = stock.market_rank;
+            if (rank == null || rank === '') return '<span class="neutral">--</span>';
+            const rankText = `第 ${rank} 名`;
+            const parts = [];
+            if (stock.rank_percentile != null) {
+                parts.push(`打败 ${Number(stock.rank_percentile).toFixed(2)}% 股票`);
+            }
+            if (stock.industry_rank != null) {
+                const industry = stock.industry_name ? escapeHtml(stock.industry_name) : '行业';
+                parts.push(`${industry} 第 ${stock.industry_rank} 名`);
+            }
+            if (!parts.length) return `<span class="rank-cell">${rankText}</span>`;
+            const tip = parts.join('<br>');
+            return `<span class="rank-tip rank-cell">${rankText}<span class="tip-box">${tip}</span></span>`;
+        }
+
+        function getMiniQuoteUrl(code) {
+            const c = String(code).padStart(6, '0');
+            const prefix = /^[69]/.test(c) ? '1' : '0';
+            const rnd = Date.now() + Math.floor(Math.random() * 1000);
+            return `https://webquotepic.eastmoney.com/GetPic.aspx?nid=${prefix}.${c}&imageType=RJY&token=44c9d251add88e27b65ed86506f6e5da&rnd=${rnd}`;
+        }
+
+        function renderMiniQuoteCell(stock) {
+            const url = stock.mini_quote_url || getMiniQuoteUrl(stock.code);
+            const alt = escapeHtml(stock.name || stock.code);
+            return `<img class="mini-quote" src="${url}" alt="${alt}走势" loading="lazy" referrerpolicy="no-referrer">`;
+        }
+
+        function buildKlineUrl(code) {
+            const c = String(code).padStart(6, '0');
+            const prefix = /^[69]/.test(c) ? '1' : '0';
+            return 'https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid='
+                + prefix + '.' + c
+                + '&type=&unitWidth=-6&ef=&AT=1&imageType=KL&timespan=' + Date.now();
+        }
+
+        function renderCodeCell(stock) {
+            const code = stock.code;
+            const name = escapeHtml(stock.name || code);
+            const klineUrl = stock.kline_url || buildKlineUrl(code);
+            return `<a href="/analysis/${code}" class="stock-code-link kline-hover" `
+                + `data-code="${code}" data-kline="${klineUrl}" data-name="${name}">${code}</a>`;
+        }
+
+        function showKlinePopup(e, link) {
+            const name = link.dataset.name || link.dataset.code || '';
+            const url = (link.dataset.kline || '') + '&t=' + Date.now();
+            document.getElementById('klinePopupTitle').textContent = name + ' · 日K线';
+            document.getElementById('klinePopupImg').src = url;
+            document.getElementById('klinePopup').classList.add('visible');
+            moveKlinePopup(e);
+        }
+
+        function moveKlinePopup(e) {
+            const popup = document.getElementById('klinePopup');
+            const pad = 16;
+            let x = e.clientX + pad;
+            let y = e.clientY + pad;
+            const rect = popup.getBoundingClientRect();
+            if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - pad;
+            if (y + rect.height > window.innerHeight) y = e.clientY - rect.height - pad;
+            popup.style.left = Math.max(8, x) + 'px';
+            popup.style.top = Math.max(8, y) + 'px';
+        }
+
+        function hideKlinePopup() {
+            document.getElementById('klinePopup').classList.remove('visible');
+        }
+
+        function bindKlineHover() {
+            document.querySelectorAll('#tableWrap .kline-hover').forEach(link => {
+                link.addEventListener('mouseenter', e => showKlinePopup(e, link));
+                link.addEventListener('mousemove', moveKlinePopup);
+                link.addEventListener('mouseleave', hideKlinePopup);
+            });
+        }
+
+        function compareValues(a, b, field) {
+            if (field === 'rise_1_probability' || field === 'rise_5_probability' || field === 'compre_score') {
+                const av = a[field];
+                const bv = b[field];
+                if (av == null && bv == null) return 0;
+                if (av == null) return 1;
+                if (bv == null) return -1;
+                return av - bv;
+            }
+            if (field === 'market_rank' || field === 'industry_rank') {
+                const av = a[field === 'market_rank' ? 'market_rank' : 'industry_rank'];
+                const bv = b[field === 'market_rank' ? 'market_rank' : 'industry_rank'];
+                if (av == null && bv == null) return 0;
+                if (av == null) return 1;
+                if (bv == null) return -1;
+                return av - bv;
+            }
+            if (field === 'code') {
+                return String(a.code).localeCompare(String(b.code), 'zh-CN');
+            }
+            return String(a.name || a.code).localeCompare(String(b.name || b.code), 'zh-CN');
+        }
+
+        function sortStocks(stocks) {
+            const field = sortState.field;
+            const dir = sortState.dir === 'asc' ? 1 : -1;
+            return [...stocks].sort((a, b) => compareValues(a, b, field) * dir);
+        }
+
+        function toggleSort(field) {
+            if (sortState.field === field) {
+                sortState.dir = sortState.dir === 'desc' ? 'asc' : 'desc';
+            } else {
+                sortState.field = field;
+                if (field === 'market_rank' || field === 'industry_rank') {
+                    sortState.dir = 'asc';
+                } else {
+                    sortState.dir = field.startsWith('rise_') || field === 'compre_score' ? 'desc' : 'asc';
+                }
+            }
+            document.getElementById('sortField').value = sortState.field;
+            document.getElementById('sortDir').value = sortState.dir;
+            applySortAndRender();
+        }
+
+        function applySortAndRender() {
+            sortState.field = document.getElementById('sortField').value;
+            sortState.dir = document.getElementById('sortDir').value;
+            const filtered = getFilteredStocks();
+            updateStats(filtered);
+            renderTable(sortStocks(filtered));
+        }
+
+        function sortHeader(label, field) {
+            const active = sortState.field === field;
+            const arrow = active ? (sortState.dir === 'desc' ? '↓' : '↑') : '';
+            return `<th class="sortable" onclick="toggleSort('${field}')">${label}<span class="sort-indicator">${arrow}</span></th>`;
+        }
+
+        function renderNameCell(stock) {
+            const props = stock.properties || [];
+            const name = escapeHtml(stock.name || stock.code);
+            const link = `<a class="stock-link" href="/analysis/${stock.code}">${name}</a>`;
+            if (!props.length) return link;
+            const tip = props.map((p, i) => `${i + 1}. ${escapeHtml(p)}`).join('<br>');
+            return `<span class="prop-tip">${link}<span class="tip-box">${tip}</span></span>`;
+        }
+
+        function renderTable(stocks) {
+            const wrap = document.getElementById('tableWrap');
+            if (!stocks.length) {
+                const msg = selectedGroup
+                    ? `分组「${escapeHtml(selectedGroup)}」暂无股票`
+                    : '暂无分组股票，请先在「动态选股」中添加';
+                wrap.innerHTML = `<div class="empty">${msg}</div>`;
+                return;
+            }
+            let html = '<table><thead><tr>';
+            html += '<th>#</th><th>股票</th><th>代码</th><th>分组</th><th>走势</th>';
+            html += sortHeader('得分', 'compre_score');
+            html += sortHeader('综合排名', 'market_rank');
+            html += sortHeader('次日上涨概率', 'rise_1_probability');
+            html += sortHeader('5日上涨概率', 'rise_5_probability');
+            html += '</tr></thead><tbody>';
+            stocks.forEach((s, i) => {
+                const cls = s.rise_1_probability != null ? 'positive' : 'neutral';
+                const scoreCls = s.compre_score != null ? 'score-cell' : 'neutral';
+                const groups = (s.groups || []).map(g => `<span class="group-tag">${escapeHtml(g)}</span>`).join('');
+                html += '<tr>';
+                html += `<td>${i + 1}</td>`;
+                html += `<td>${renderNameCell(s)}</td>`;
+                html += `<td>${renderCodeCell(s)}</td>`;
+                html += `<td>${groups || '--'}</td>`;
+                html += `<td class="quote-cell">${renderMiniQuoteCell(s)}</td>`;
+                html += `<td class="${scoreCls}">${fmtScore(s.compre_score)}</td>`;
+                html += `<td>${renderMarketRankCell(s)}</td>`;
+                html += `<td class="${cls}">${fmtPct(s.rise_1_probability)}</td>`;
+                html += `<td class="${cls}">${fmtPct(s.rise_5_probability)}</td>`;
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            wrap.innerHTML = html;
+            bindKlineHover();
+        }
+
+        async function loadData(fetchMissing) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('tableWrap').innerHTML = '';
+            document.getElementById('errorBox').style.display = 'none';
+            try {
+                const url = '/api/dive-in/rise-probability?fetch_missing=' + (fetchMissing ? '1' : '0');
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (!data.success) throw new Error(data.error || '加载失败');
+                allStocksData = data.stocks || [];
+                applySortAndRender();
+            } catch (e) {
+                document.getElementById('errorBox').textContent = e.message;
+                document.getElementById('errorBox').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadGroupOptions();
+            loadData(false);
+        });
+    </script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

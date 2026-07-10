@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>综合评价 - {{ stock_code }}</title>
+    {% if embed %}
+    <style>
+        body { padding: 8px !important; background: #fff !important; }
+        .container { box-shadow: none !important; padding: 12px !important; margin: 0 !important; max-width: none !important; }
+        .header { display: none !important; }
+        .raw-data-container { display: none !important; }
+    </style>
+    {% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e8eaec;
+        }
+
+        .header h1 { font-size: 28px; color: #2c3e50; }
+        .header .date { font-size: 14px; color: #7f8c8d; }
+
+        .loading-banner {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .loading-banner.hidden { display: none; }
+
+        .raw-data-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .raw-data-header {
+            background: #343a40;
+            color: white;
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .raw-data-header:hover { background: #495057; }
+
+        .raw-data-toggle {
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+
+        .raw-data-toggle.collapsed { transform: rotate(-90deg); }
+
+        .raw-data-content {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .raw-data-content.collapsed { display: none; }
+
+        .raw-data-json {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #495057;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1100px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+
+        .gauge-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #gauge-chart { width: 100%; height: 300px; }
+
+        .gauge-info { text-align: center; margin-top: 10px; width: 100%; }
+
+        .gauge-info h3 {
+            font-size: 22px;
+            color: #e74c3c;
+            margin-bottom: 10px;
+        }
+
+        .gauge-info p { color: #666; line-height: 1.8; margin: 8px 0; font-size: 14px; }
+
+        .recommendation-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .recommendation-badge.positive { background: #fdecea; color: #e74c3c; }
+        .recommendation-badge.neutral { background: #f0f0f0; color: #666; }
+        .recommendation-badge.negative { background: #e8f5e9; color: #27ae60; }
+
+        .sub-scores {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            width: 100%;
+        }
+
+        .sub-score-item {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .sub-score-item .val { font-size: 18px; font-weight: bold; color: #3498db; }
+        .sub-score-item .lbl { font-size: 11px; color: #7f8c8d; margin-top: 4px; }
+
+        .analysis-list {
+            text-align: left;
+            margin-top: 16px;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 6px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+
+        .analysis-list li {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-left: 16px;
+            margin-bottom: 4px;
+        }
+
+        .prediction-section {
+            background: #f0f8ff;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .prediction-section h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-item h3 { font-size: 16px; color: #2c3e50; margin-bottom: 15px; }
+
+        .prediction-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .prediction-stats .label { color: #7f8c8d; }
+        .prediction-stats .value { font-weight: bold; font-size: 18px; }
+        .value.positive { color: #e74c3c; }
+        .value.negative { color: #27ae60; }
+        .value.neutral { color: #95a5a6; }
+
+        .sample-count { color: #95a5a6; font-size: 14px; margin-top: 10px; }
+
+        .ranking-section {
+            background: #fff9e6;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .ranking-section h2 { font-size: 18px; color: #2c3e50; margin-bottom: 20px; }
+        .ranking-group { margin-bottom: 30px; }
+        .ranking-group h3 { font-size: 16px; color: #2c3e50; margin-bottom: 15px; }
+
+        .ranking-list { list-style: none; }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-item .rank { color: #7f8c8d; width: 28px; flex-shrink: 0; }
+        .ranking-item .name { flex: 1; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ranking-item .score { font-weight: bold; margin: 0 10px; flex-shrink: 0; }
+        .ranking-item .change { flex-shrink: 0; min-width: 60px; text-align: right; }
+        .change.up { color: #e74c3c; }
+        .change.down { color: #27ae60; }
+
+        .current-stock {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .current-stock .name { font-size: 16px; color: #2c3e50; margin-bottom: 5px; font-weight: 600; }
+        .current-stock .position { color: #7f8c8d; font-size: 14px; }
+
+        .range-bar {
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(to right, #4caf50 0%, #ffeb3b 50%, #f44336 100%);
+            border-radius: 15px;
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .range-bar .marker {
+            position: absolute;
+            top: -5px;
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 3px solid #2c3e50;
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+
+        .range-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .ranking-note {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .empty-ranking {
+            color: #95a5a6;
+            font-size: 13px;
+            padding: 10px 0;
+            text-align: center;
+        }
+
+        .chart-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .chart-section h2 { font-size: 18px; color: #2c3e50; margin-bottom: 15px; }
+        #history-chart { width: 100%; height: 360px; }
+
+        .metrics-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .metric-card .val { font-size: 20px; font-weight: bold; color: #2c3e50; }
+        .metric-card .lbl { font-size: 12px; color: #7f8c8d; margin-top: 6px; }
+
+        .help-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            cursor: help;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>综合评价</h1>
+            <div class="date" id="evaluationDate">加载中...</div>
+        </div>
+
+        <div class="loading-banner" id="loadingBanner">正在加载综合评价数据...</div>
+
+        <div class="metrics-strip" id="metricsStrip" style="display:none;"></div>
+
+        <div class="content-grid" id="contentGrid" style="display:none;">
+            <div class="gauge-section">
+                <div id="gauge-chart"></div>
+                <div class="gauge-info">
+                    <div id="recommendationBadge" class="recommendation-badge neutral">--</div>
+                    <h3 id="gaugeHeadline">--</h3>
+                    <p id="gaugeRiseProb">--</p>
+                    <p id="gaugeAnalysis">--</p>
+                    <div class="sub-scores" id="subScores"></div>
+                    <ul class="analysis-list" id="analysisList"></ul>
+                </div>
+            </div>
+
+            <div class="prediction-section">
+                <h2>涨跌预测 <span class="help-icon" title="基于历史相似评分样本统计">?</span></h2>
+                <div class="prediction-item">
+                    <h3>次日</h3>
+                    <div class="prediction-stats">
+                        <div><span class="label">上涨概率</span><br><span class="value positive" id="rise1Prob">--</span></div>
+                        <div><span class="label">平均涨跌</span><br><span class="value" id="avg1Change">--</span></div>
+                    </div>
+                    <div class="sample-count" id="count1">样本数量：--</div>
+                </div>
+                <div class="prediction-item">
+                    <h3>5日</h3>
+                    <div class="prediction-stats">
+                        <div><span class="label">上涨概率</span><br><span class="value positive" id="rise5Prob">--</span></div>
+                        <div><span class="label">平均涨跌</span><br><span class="value" id="avg5Change">--</span></div>
+                    </div>
+                    <div class="sample-count" id="count5">样本数量：--</div>
+                </div>
+                <div class="chart-section">
+                    <h2>历史评分</h2>
+                    <div id="history-chart"></div>
+                </div>
+            </div>
+
+            <div class="ranking-section">
+                <h2>个股综合排名</h2>
+                <div class="ranking-group" id="industryRankingGroup">
+                    <h3 id="industryTitle">行业内</h3>
+                    <ul class="ranking-list" id="industryRankingList"></ul>
+                    <div class="current-stock" id="industryCurrentStock">
+                        <div class="name" id="industryCurrentName">--</div>
+                        <div class="position" id="industryCurrentPos">--</div>
+                    </div>
+                    <div class="range-bar"><div class="marker" id="industryMarker" style="left:50%;"></div></div>
+                    <div class="range-labels">
+                        <span id="industryLow">最低<br>--</span>
+                        <span id="industryAvg">行业平均<br>--</span>
+                        <span id="industryHigh">最高<br>--</span>
+                    </div>
+                    <p class="ranking-note" id="industryNote">--</p>
+                </div>
+                <div class="ranking-group">
+                    <h3>全市场</h3>
+                    <ul class="ranking-list" id="marketRankingList"></ul>
+                    <div class="current-stock">
+                        <div class="name" id="marketCurrentName">--</div>
+                        <div class="position" id="marketCurrentPos">--</div>
+                    </div>
+                    <div class="range-bar"><div class="marker" id="marketMarker" style="left:50%;"></div></div>
+                    <div class="range-labels">
+                        <span id="marketLow">最低<br>--</span>
+                        <span id="marketAvg">市场平均<br>--</span>
+                        <span id="marketHigh">最高<br>--</span>
+                    </div>
+                    <p class="ranking-note" id="marketNote">--</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="raw-data-container">
+            <div class="raw-data-header" onclick="toggleRawData()">
+                <span id="rawDataTitle">📊 Raw Data (Module 1 - Comprehensive)</span>
+                <span class="raw-data-toggle collapsed">▼</span>
+            </div>
+            <div class="raw-data-content collapsed" id="rawDataContent">
+                <div class="raw-data-json" id="rawDataJson">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const stockCode = '{{ stock_code }}';
+        const isEmbed = {{ 'true' if embed else 'false' }};
+        let gaugeChart = null;
+        let historyChart = null;
+
+        function extractRows(obj) {
+            return (obj && obj.result && obj.result.data) ? obj.result.data : [];
+        }
+
+        function fmtNum(v, digits = 2) {
+            if (v === null || v === undefined || v === '' || isNaN(Number(v))) return '--';
+            return Number(v).toFixed(digits);
+        }
+
+        function fmtPct(v, signed = false) {
+            if (v === null || v === undefined || isNaN(Number(v))) return '--';
+            const n = Number(v);
+            const prefix = signed && n > 0 ? '+' : '';
+            return prefix + n.toFixed(2) + '%';
+        }
+
+        function fmtDate(raw) {
+            if (!raw) return '--';
+            const d = new Date(String(raw).replace(' ', 'T'));
+            if (isNaN(d.getTime())) return String(raw).slice(0, 10);
+            return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+
+        function fmtShortDate(raw) {
+            if (!raw) return '';
+            const d = new Date(String(raw).replace(' ', 'T'));
+            if (isNaN(d.getTime())) return String(raw).slice(5, 10);
+            return (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+        }
+
+        function changeClass(v) {
+            const n = Number(v);
+            if (isNaN(n) || n === 0) return 'neutral';
+            return n > 0 ? 'positive' : 'negative';
+        }
+
+        function rangePosition(score, low, high) {
+            const s = Number(score), lo = Number(low), hi = Number(high);
+            if (isNaN(s) || isNaN(lo) || isNaN(hi) || hi <= lo) return 50;
+            return Math.min(98, Math.max(2, ((s - lo) / (hi - lo)) * 100));
+        }
+
+        function recommendationLabel(rec) {
+            const map = { positive: '积极', neutral: '中性', negative: '谨慎', negative_watch: '谨慎' };
+            return map[rec] || rec || '中性';
+        }
+
+        function recommendationClass(rec) {
+            if (rec === 'positive') return 'positive';
+            if (rec === 'negative' || rec === 'negative_watch') return 'negative';
+            return 'neutral';
+        }
+
+        function parseComprehensive(moduleWrapper) {
+            const inner = (moduleWrapper && moduleWrapper.data) ? moduleWrapper.data : (moduleWrapper || {});
+            const summary = inner.evaluation_summary || {};
+            const pk = extractRows(inner.pk_ranking_analysis)[0] || {};
+            const change = extractRows(inner.change_rate_analysis)[0] || {};
+            const history = extractRows(inner.score_history_analysis)
+                .slice()
+                .sort((a, b) => new Date(a.DIAGNOSE_DATE) - new Date(b.DIAGNOSE_DATE));
+
+            const industryTop = extractRows(inner.industry_top_performers);
+            const marketTop = extractRows(inner.market_top_performers);
+            const summaryIndustry = ((summary.industry_comparison || {}).top_performers) || [];
+            const summaryMarket = ((summary.market_position || {}).top_performers) || [];
+
+            const ranking = summary.ranking_metrics || {};
+            const keyMetrics = summary.key_metrics || {};
+            const historical = summary.historical_metrics || {};
+
+            const overallScore = Number(
+                summary.overall_score ?? pk.COMPRE_SCORE ?? historical.latest_score ?? 0
+            );
+
+            return {
+                timestamp: moduleWrapper.timestamp || inner.timestamp,
+                stockName: pk.SECURITY_NAME_ABBR || stockCode,
+                overallScore,
+                recommendation: summary.recommendation,
+                analysis: summary.analysis || [],
+                subScores: {
+                    main_force: summary.main_force_score,
+                    satisfaction: summary.satisfaction_score,
+                    change_rate: summary.change_rate_score,
+                    historical: summary.historical_score,
+                    ranking: summary.ranking_score,
+                },
+                keyMetrics,
+                ranking,
+                pk,
+                change,
+                history,
+                industryTop: industryTop.length ? industryTop : summaryIndustry,
+                marketTop: marketTop.length ? marketTop : summaryMarket,
+            };
+        }
+
+        function renderRankingList(container, items, limit = 3) {
+            container.innerHTML = '';
+            if (!items || !items.length) {
+                container.innerHTML = '<li class="empty-ranking">暂无排行数据</li>';
+                return;
+            }
+            items.slice(0, limit).forEach((item, idx) => {
+                const rank = item.INDUSTRY_RANK || item.MARKET_RANK || item.rank || (idx + 1);
+                const name = item.SECURITY_NAME_ABBR || item.name || '--';
+                const score = item.COMPRE_SCORE ?? item.score;
+                const chg = item.CHANGE_RATE ?? item.change_rate;
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+                li.innerHTML =
+                    '<span class="rank">' + rank + '</span>' +
+                    '<span class="name">' + name + '</span>' +
+                    '<span class="score">' + fmtNum(score) + '分</span>' +
+                    '<span class="change ' + (Number(chg) >= 0 ? 'up' : 'down') + '">' + fmtPct(chg, true) + '</span>';
+                container.appendChild(li);
+            });
+        }
+
+        function renderSubScores(scores) {
+            const labels = [
+                ['main_force', '主力控盘'],
+                ['satisfaction', '满意度'],
+                ['change_rate', '涨跌概率'],
+                ['historical', '历史评分'],
+                ['ranking', '综合排名'],
+            ];
+            const el = document.getElementById('subScores');
+            el.innerHTML = labels.map(([k, lbl]) =>
+                '<div class="sub-score-item"><div class="val">' + fmtNum(scores[k], 0) + '</div><div class="lbl">' + lbl + '</div></div>'
+            ).join('');
+        }
+
+        function renderMetricsStrip(km) {
+            const strip = document.getElementById('metricsStrip');
+            const cards = [
+                ['收盘价', '¥' + fmtNum(km.close_price)],
+                ['涨跌幅', fmtPct(km.change_rate, true)],
+                ['换手率', fmtPct(km.turnover_rate)],
+                ['机构参与', fmtPct((km.participate_ratio || 0) * 100)],
+                ['PE(TTM)', fmtNum(km.pe_ratio, 1)],
+            ];
+            strip.innerHTML = cards.map(([lbl, val]) =>
+                '<div class="metric-card"><div class="val">' + val + '</div><div class="lbl">' + lbl + '</div></div>'
+            ).join('');
+            strip.style.display = 'grid';
+        }
+
+        function renderGauge(parsed) {
+            if (!gaugeChart) gaugeChart = echarts.init(document.getElementById('gauge-chart'));
+            const chg = parsed.keyMetrics.change_rate;
+            const subtitle = (chg !== undefined && chg !== null)
+                ? ('今日 ' + fmtPct(chg, true))
+                : parsed.stockName;
+
+            gaugeChart.setOption({
+                series: [{
+                    type: 'gauge',
+                    startAngle: 180,
+                    endAngle: 0,
+                    center: ['50%', '75%'],
+                    radius: '120%',
+                    min: 0,
+                    max: 100,
+                    splitNumber: 10,
+                    axisLine: {
+                        lineStyle: {
+                            width: 25,
+                            color: [[0.4, '#5cb85c'], [0.7, '#ffc107'], [1, '#dc3545']]
+                        }
+                    },
+                    pointer: {
+                        icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z',
+                        length: '70%',
+                        width: 8,
+                        offsetCenter: [0, '-60%'],
+                        itemStyle: { color: '#2c3e50' }
+                    },
+                    axisTick: { length: 8, lineStyle: { color: 'auto', width: 2 } },
+                    splitLine: { length: 12, lineStyle: { color: 'auto', width: 3 } },
+                    axisLabel: { show: false },
+                    title: { offsetCenter: [0, '10%'], fontSize: 16, color: '#2c3e50' },
+                    detail: {
+                        fontSize: 40,
+                        offsetCenter: [0, '-20%'],
+                        valueAnimation: true,
+                        formatter: (value) => '{value|' + value.toFixed(1) + '}\n{unit|评分}',
+                        rich: {
+                            value: { fontSize: 44, fontWeight: 'bold', color: '#2c3e50' },
+                            unit: { fontSize: 14, color: '#7f8c8d', padding: [8, 0, 0, 0] }
+                        }
+                    },
+                    data: [{ value: parsed.overallScore, name: subtitle }]
+                }]
+            }, true);
+        }
+
+        function renderHistoryChart(history) {
+            if (!historyChart) historyChart = echarts.init(document.getElementById('history-chart'));
+            const dates = history.map(r => fmtShortDate(r.DIAGNOSE_DATE));
+            const prices = history.map(r => r.CLOSE);
+            const scores = history.map(r => r.TOTAL_SCORE);
+
+            const priceMin = Math.min(...prices.filter(v => v != null));
+            const priceMax = Math.max(...prices.filter(v => v != null));
+            const scoreMin = Math.min(...scores.filter(v => v != null));
+            const scoreMax = Math.max(...scores.filter(v => v != null));
+
+            historyChart.setOption({
+                tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+                legend: { data: ['股价', '评分'], top: 0 },
+                grid: { left: '10%', right: '10%', bottom: '15%', top: '15%' },
+                xAxis: { type: 'category', data: dates, boundaryGap: false },
+                yAxis: [
+                    {
+                        type: 'value', name: '股价/元', position: 'left',
+                        min: Math.floor(priceMin * 0.95),
+                        max: Math.ceil(priceMax * 1.05)
+                    },
+                    {
+                        type: 'value', name: '评分/分', position: 'right',
+                        min: Math.floor(scoreMin - 5),
+                        max: Math.ceil(scoreMax + 5)
+                    }
+                ],
+                series: [
+                    {
+                        name: '股价', type: 'line', data: prices, smooth: true,
+                        lineStyle: { color: '#3498db', width: 2 },
+                        itemStyle: { color: '#3498db' }
+                    },
+                    {
+                        name: '评分', type: 'line', yAxisIndex: 1, data: scores, smooth: true,
+                        lineStyle: { color: '#e74c3c', width: 2 },
+                        itemStyle: { color: '#e74c3c' }
+                    }
+                ]
+            }, true);
+        }
+
+        function updateUI(moduleWrapper) {
+            document.title = '综合评价 - ' + stockCode;
+            const parsed = parseComprehensive(moduleWrapper);
+
+            document.getElementById('loadingBanner').classList.add('hidden');
+            document.getElementById('contentGrid').style.display = 'grid';
+
+            document.getElementById('evaluationDate').textContent =
+                fmtDate(parsed.timestamp) + (parsed.pk.TRADE_DATE ? ' · 诊断日 ' + fmtDate(parsed.pk.TRADE_DATE) : '');
+
+            const badge = document.getElementById('recommendationBadge');
+            badge.textContent = recommendationLabel(parsed.recommendation);
+            badge.className = 'recommendation-badge ' + recommendationClass(parsed.recommendation);
+
+            const percentile = parsed.ranking.rank_percentile ?? parsed.pk.STOCK_RANK_RATIO;
+            document.getElementById('gaugeHeadline').textContent =
+                percentile != null ? ('打败了' + fmtNum(percentile, 2) + '%的股票') : '综合评分';
+
+            const rise1 = parsed.change.RISE_1_PROBABILITY;
+            document.getElementById('gaugeRiseProb').innerHTML =
+                rise1 != null ? ('次日上涨概率 <strong>' + fmtPct(rise1) + '</strong>') : '';
+
+            const shortAnalysis = parsed.analysis.slice(0, 3).join('。');
+            document.getElementById('gaugeAnalysis').textContent = shortAnalysis || '暂无分析摘要';
+
+            renderSubScores(parsed.subScores);
+            renderMetricsStrip(parsed.keyMetrics);
+            renderGauge(parsed);
+
+            document.getElementById('rise1Prob').textContent = fmtPct(parsed.change.RISE_1_PROBABILITY);
+            document.getElementById('rise5Prob').textContent = fmtPct(parsed.change.RISE_5_PROBABILITY);
+            const avg1 = document.getElementById('avg1Change');
+            avg1.textContent = fmtPct(parsed.change.AVERAGE_1_INCREASE, true);
+            avg1.className = 'value ' + changeClass(parsed.change.AVERAGE_1_INCREASE);
+            const avg5 = document.getElementById('avg5Change');
+            avg5.textContent = fmtPct(parsed.change.AVERAGE_5_INCREASE, true);
+            avg5.className = 'value ' + changeClass(parsed.change.AVERAGE_5_INCREASE);
+            document.getElementById('count1').textContent = '样本数量：' + (parsed.change.ALL_COUNT_1 || '--') + '个';
+            document.getElementById('count5').textContent = '样本数量：' + (parsed.change.ALL_COUNT_5 || '--') + '个';
+
+            if (parsed.history.length) renderHistoryChart(parsed.history);
+
+            const pk = parsed.pk;
+            const industry = parsed.ranking.industry || pk.BOARD_NAME || '行业内';
+            document.getElementById('industryTitle').textContent = industry;
+
+            renderRankingList(document.getElementById('industryRankingList'), parsed.industryTop, 3);
+            renderRankingList(document.getElementById('marketRankingList'), parsed.marketTop, 3);
+
+            const score = pk.COMPRE_SCORE ?? parsed.overallScore;
+            document.getElementById('industryCurrentName').textContent =
+                (pk.SECURITY_NAME_ABBR || parsed.stockName) + ' ' + fmtNum(score) + '分';
+            document.getElementById('industryCurrentPos').textContent =
+                pk.INDUSTRY_RANK ? ('第' + pk.INDUSTRY_RANK + '名 · ' + industry) : '--';
+            document.getElementById('industryMarker').style.left =
+                rangePosition(score, pk.INDUSTRY_SCORE_LOW, pk.INDUSTRY_SCORE_HIGH) + '%';
+            document.getElementById('industryLow').innerHTML = '最低<br>' + fmtNum(pk.INDUSTRY_SCORE_LOW) + '分';
+            document.getElementById('industryAvg').innerHTML = '行业平均<br>' + fmtNum(pk.INDUSTRY_SCORE_AVG) + '分';
+            document.getElementById('industryHigh').innerHTML = '最高<br>' + fmtNum(pk.INDUSTRY_SCORE_HIGH) + '分';
+            document.getElementById('industryNote').textContent =
+                industry + '共' + (pk.INDUSTRY_STOCK_NUM || '--') + '只，已评' + (pk.EVALUATE_INDUSTRY_NUM || '--') + '只';
+
+            document.getElementById('marketCurrentName').textContent =
+                (pk.SECURITY_NAME_ABBR || parsed.stockName) + ' ' + fmtNum(score) + '分';
+            document.getElementById('marketCurrentPos').textContent =
+                percentile != null ? ('打败' + fmtNum(percentile, 2) + '% · 市场第' + (pk.MARKET_RANK || parsed.ranking.market_rank || '--') + '名') : '--';
+            document.getElementById('marketMarker').style.left =
+                rangePosition(score, pk.MARKET_SCORE_LOW, pk.MARKET_SCORE_HIGH) + '%';
+            document.getElementById('marketLow').innerHTML = '最低<br>' + fmtNum(pk.MARKET_SCORE_LOW) + '分';
+            document.getElementById('marketAvg').innerHTML = '市场平均<br>' + fmtNum(pk.MARKET_SCORE_AVG) + '分';
+            document.getElementById('marketHigh').innerHTML = '最高<br>' + fmtNum(pk.MARKET_SCORE_HIGH) + '分';
+            document.getElementById('marketNote').textContent =
+                '沪深市场共' + (pk.MARKET_STOCK_NUM || '--') + '只，已评' + (pk.EVALUATE_MARKET_NUM || parsed.ranking.total_market_stocks || '--') + '只';
+
+            const list = document.getElementById('analysisList');
+            list.innerHTML = parsed.analysis.map(t => '<li>' + t + '</li>').join('');
+
+            syncParentHeader(parsed);
+        }
+
+        function syncParentHeader(parsed) {
+            if (isEmbed || window.parent === window) return;
+            const price = parsed.keyMetrics.close_price;
+            const changeRate = parsed.keyMetrics.change_rate;
+            if (price == null || changeRate == null) return;
+            const priceNum = Number(price);
+            const rateNum = Number(changeRate);
+            const prevClose = rateNum !== -100 ? priceNum / (1 + rateNum / 100) : priceNum;
+            window.parent.postMessage({
+                type: 'stockHeaderUpdate',
+                name: parsed.stockName,
+                price: priceNum,
+                change: priceNum - prevClose,
+                change_percent: rateNum,
+                turnover_rate: parsed.keyMetrics.turnover_rate,
+            }, '*');
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/stock/' + stockCode + '/comprehensive');
+                const result = await response.json();
+                updateRawData(result);
+                if (result.cache_file_path) updateCacheFilePath(result.cache_file_path);
+                if (result.success && result.data) {
+                    updateUI(result.data);
+                } else {
+                    document.getElementById('loadingBanner').textContent =
+                        '加载失败: ' + (result.error || '未知错误');
+                }
+            } catch (error) {
+                console.error(error);
+                updateRawData({ error: error.message });
+                document.getElementById('loadingBanner').textContent = '加载失败: ' + error.message;
+            }
+        }
+
+        function updateRawData(data) {
+            document.getElementById('rawDataJson').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function updateCacheFilePath(cacheFilePath) {
+            const title = document.getElementById('rawDataTitle');
+            if (title && cacheFilePath) {
+                const filename = cacheFilePath.split('/').pop();
+                title.innerHTML = '📊 Raw Data (Module 1) <span style="color:#aaa;font-size:12px;margin-left:8px;">📁 ' + filename + '</span>';
+            }
+        }
+
+        function toggleRawData() {
+            const content = document.getElementById('rawDataContent');
+            const toggle = document.querySelector('.raw-data-toggle');
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        window.addEventListener('resize', () => {
+            if (gaugeChart) gaugeChart.resize();
+            if (historyChart) historyChart.resize();
+        });
+
+        window.addEventListener('load', fetchData);
+    </script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

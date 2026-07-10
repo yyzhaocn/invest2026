@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factor Explorer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            min-height: calc(100vh - 40px);
+        }
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+        }
+        .right-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+            font-weight: 300;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-item label {
+            font-weight: 600;
+            color: #333;
+        }
+        .control-item select, .control-item input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        .btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background: #0056CC;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .files-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .file-card {
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+        }
+        .file-card:hover {
+            border-color: #007AFF;
+            box-shadow: 0 2px 8px rgba(0,122,255,0.1);
+            transform: translateY(-1px);
+        }
+        .file-card.selected {
+            border-color: #007AFF;
+            background: #f0f8ff;
+        }
+        .file-card.later {
+            opacity: 0.5;
+            background: #f8f8f8;
+            border-color: #ccc;
+        }
+        .file-card.later:hover {
+            opacity: 0.7;
+            border-color: #999;
+        }
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        .file-type {
+            display: inline-block;
+            background: #007AFF;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .data-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        .data-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .data-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .data-info {
+            font-size: 14px;
+            color: #666;
+        }
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            max-height: 70vh;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #ffe6e6;
+            color: #d63384;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .json-viewer {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 70vh;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .text-viewer {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 70vh;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .control-item {
+                min-width: auto;
+            }
+            .files-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="header">
+                <h1>📊 Factor Explorer</h1>
+                <p>Explore financial data files by date and type</p>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <div class="control-item">
+                        <label for="dateSelect">Date Directory:</label>
+                        <select id="dateSelect">
+                            {% for date in dates %}
+                            <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>{{ date }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label for="typeSelect">File Type:</label>
+                        <select id="typeSelect">
+                            <option value="">All Types</option>
+                            {% for prefix, description in file_types %}
+                            <option value="{{ prefix }}">{{ description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label for="timeSelect">Time Point:</label>
+                        <select id="timeSelect" disabled>
+                            <option value="">All Times (Default)</option>
+                        </select>
+                    </div>
+                    <div class="control-item">
+                        <label for="maxRows">Max Rows:</label>
+                        <input type="number" id="maxRows" value="1000" min="100" max="10000" step="100">
+                    </div>
+                    <div class="control-item">
+                        <button class="btn" onclick="loadFiles()">Refresh Files</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="files-section">
+                <h3>📁 Available Files</h3>
+                <div id="filesContainer" class="files-grid">
+                    <div class="loading">Loading files...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="data-section">
+                <div class="data-header">
+                    <div>
+                        <div class="data-title">📈 Data Viewer</div>
+                        <div class="data-info" id="dataInfo">Select a file to view its contents</div>
+                    </div>
+                </div>
+                <div id="dataContainer">
+                    <div class="empty-state">
+                        <h3>No file selected</h3>
+                        <p>Choose a file from the list above to view its data</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        function loadQuoteTimes() {
+            const dateSelect = document.getElementById('dateSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            
+            if (!dateSelect.value) {
+                timeSelect.innerHTML = '<option value="">All Times</option>';
+                return;
+            }
+
+            fetch(`/api/quote-times/${dateSelect.value}`)
+                .then(response => response.json())
+                .then(times => {
+                    timeSelect.innerHTML = '<option value="">All Times</option>' + 
+                        times.map(time => `<option value="${time}">${time}</option>`).join('');
+                    timeSelect.disabled = false; // Enable the dropdown
+                })
+                .catch(error => {
+                    console.error('Error loading quote times:', error);
+                    timeSelect.innerHTML = '<option value="">All Times</option>';
+                    timeSelect.disabled = false; // Enable the dropdown even on error
+                });
+        }
+
+        function loadFiles() {
+            const dateSelect = document.getElementById('dateSelect');
+            const typeSelect = document.getElementById('typeSelect');
+            const timeSelect = document.getElementById('timeSelect');
+            const filesContainer = document.getElementById('filesContainer');
+            
+            if (!dateSelect.value) {
+                filesContainer.innerHTML = '<div class="empty-state"><h3>No date selected</h3></div>';
+                return;
+            }
+
+            filesContainer.innerHTML = '<div class="loading">Loading files...</div>';
+
+            let url = `/api/files/${dateSelect.value}`;
+            const params = [];
+            
+            if (typeSelect.value) {
+                params.push(`type=${encodeURIComponent(typeSelect.value)}`);
+            }
+            
+            if (timeSelect.value) {
+                params.push(`cutoff_time=${encodeURIComponent(timeSelect.value)}`);
+            }
+            
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(files => {
+                    if (files.length === 0) {
+                        filesContainer.innerHTML = '<div class="empty-state"><h3>No files found</h3><p>Try selecting a different date or file type</p></div>';
+                        return;
+                    }
+
+                    filesContainer.innerHTML = files.map(file => {
+                        const laterClass = file.is_later ? ' later' : '';
+                        const timeSelect = document.getElementById('timeSelect');
+                        const showTime = timeSelect.value !== ''; // Only show time info when a time is selected
+                        const timeInfo = (file.time && showTime) ? `<div class="file-info">Time: ${file.time}</div>` : '';
+                        
+                        return `
+                            <div class="file-card${laterClass}" onclick="selectFile('${file.path}', '${file.name}', '${file.type}')">
+                                <div class="file-name">${file.name}</div>
+                                <div class="file-info">Size: ${formatFileSize(file.size)}</div>
+                                ${timeInfo}
+                                <div class="file-info">Modified: ${file.modified}</div>
+                                <div class="file-type">${file.description || 'Unknown Type'}</div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(error => {
+                    console.error('Error loading files:', error);
+                    filesContainer.innerHTML = '<div class="error">Error loading files: ' + error.message + '</div>';
+                });
+        }
+
+        function selectFile(path, name, type) {
+            selectedFile = { path, name, type };
+            
+            // Update UI
+            document.querySelectorAll('.file-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.file-card').classList.add('selected');
+
+            // Load data
+            loadFileData(path, name);
+        }
+
+        function loadFileData(path, name) {
+            const dataContainer = document.getElementById('dataContainer');
+            const dataInfo = document.getElementById('dataInfo');
+            const maxRows = document.getElementById('maxRows').value;
+
+            dataContainer.innerHTML = '<div class="loading">Loading data...</div>';
+            dataInfo.textContent = `Loading ${name}...`;
+
+            fetch(`/api/data?path=${encodeURIComponent(path)}&max_rows=${maxRows}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        dataContainer.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                        dataInfo.textContent = `Error loading ${name}`;
+                        return;
+                    }
+
+                    if (data.json_data) {
+                        // Display JSON data
+                        dataContainer.innerHTML = `
+                            <div class="json-viewer">${JSON.stringify(data.json_data, null, 2)}</div>
+                        `;
+                        dataInfo.textContent = `${name} (JSON data, ${data.json_data.length || 1} items)`;
+                    } else if (data.text_data) {
+                        // Display text data
+                        dataContainer.innerHTML = `
+                            <div class="text-viewer">${data.text_data}</div>
+                        `;
+                        dataInfo.textContent = `${name} (Text file)`;
+                    } else {
+                        // Display CSV data
+                        const table = createTable(data.columns, data.data);
+                        dataContainer.innerHTML = `<div class="table-container">${table}</div>`;
+                        dataInfo.textContent = `${name} (${data.shape[0]} rows × ${data.shape[1]} columns)`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                    dataContainer.innerHTML = '<div class="error">Error loading data: ' + error.message + '</div>';
+                    dataInfo.textContent = `Error loading ${name}`;
+                });
+        }
+
+        function createTable(columns, data) {
+            const headerRow = columns.map(col => `<th>${col}</th>`).join('');
+            const dataRows = data.map(row => 
+                `<tr>${row.map(cell => `<td>${cell !== null ? cell : ''}</td>`).join('')}</tr>`
+            ).join('');
+
+            return `
+                <table>
+                    <thead><tr>${headerRow}</tr></thead>
+                    <tbody>${dataRows}</tbody>
+                </table>
+            `;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadQuoteTimes();
+            loadFiles();
+            
+            // Add event listeners for controls
+            document.getElementById('dateSelect').addEventListener('change', function() {
+                loadQuoteTimes();
+                loadFiles();
+            });
+            document.getElementById('typeSelect').addEventListener('change', loadFiles);
+            document.getElementById('timeSelect').addEventListener('change', loadFiles);
+        });
+    </script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

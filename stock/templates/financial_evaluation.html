@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务评估 - {{ stock_code }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1500px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 3px solid #3498db; }
+        .page-header h1 { font-size: 28px; color: #2c3e50; }
+        .page-header .date { font-size: 14px; color: #7f8c8d; }
+        .loading-banner { text-align: center; padding: 40px; color: #7f8c8d; }
+        .loading-banner.hidden { display: none; }
+        .comment-header { display: flex; align-items: flex-start; padding: 15px 20px; background: #f5f5f5; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ff9800; }
+        .comment-header .icon { width: 28px; height: 28px; background: #ff9800; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 12px; }
+        .comment-header .text { color: #2c3e50; font-size: 15px; line-height: 1.8; }
+        .score-row { display: grid; grid-template-columns: 220px 1fr; gap: 20px; margin-bottom: 24px; }
+        @media (max-width: 900px) { .score-row { grid-template-columns: 1fr; } }
+        .score-card { background: linear-gradient(135deg, #1abc9c, #16a085); color: white; border-radius: 10px; padding: 24px; text-align: center; }
+        .score-card .big { font-size: 48px; font-weight: bold; }
+        .score-card .rec { display: inline-block; margin-top: 10px; padding: 4px 14px; border-radius: 20px; background: rgba(255,255,255,0.25); font-size: 13px; }
+        .sub-scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .sub-score { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 14px; text-align: center; }
+        .sub-score .val { font-size: 22px; font-weight: bold; color: #16a085; }
+        .sub-score .lbl { font-size: 12px; color: #7f8c8d; margin-top: 6px; }
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-panel { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; }
+        .panel-title { font-size: 17px; font-weight: 500; color: #2c3e50; text-align: center; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #e0e0e0; }
+        .chart-box { width: 100%; height: 380px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .metric-item { background: white; border-radius: 6px; padding: 12px; text-align: center; border: 1px solid #eee; }
+        .metric-item .val { font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .metric-item .lbl { font-size: 12px; color: #7f8c8d; margin-top: 4px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #95a5a6; }
+        .analysis-panel { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+        .analysis-list { list-style: none; }
+        .analysis-list li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 14px; color: #555; }
+        .risk-list li { color: #c0392b; }
+        .raw-data-container { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; overflow: hidden; }
+        .raw-data-header { background: #343a40; color: white; padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+        .raw-data-toggle.collapsed { transform: rotate(-90deg); }
+        .raw-data-content.collapsed { display: none; }
+        .raw-data-content { padding: 16px; max-height: 400px; overflow-y: auto; background: white; }
+        .raw-data-json { font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+        #mainContent { display: none; }
+        #mainContent.visible { display: block; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header"><h1>财务评估</h1><div class="date" id="pageDate">加载中...</div></div>
+    <div class="loading-banner" id="loadingBanner">正在加载财务评估数据...</div>
+    <div id="mainContent">
+        <div class="comment-header"><div class="icon">💡</div><div class="text" id="headerText"><strong>点评</strong> | --</div></div>
+        <div class="score-row">
+            <div class="score-card"><div class="big" id="overallScore">--</div><div>财务综合分</div><div class="rec" id="recommendation">--</div></div>
+            <div class="sub-scores" id="subScores"></div>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-panel">
+                <div class="panel-title">财务能力雷达</div>
+                <div class="chart-box" id="ratio-chart"></div>
+            </div>
+            <div class="chart-panel">
+                <div class="panel-title">财务指标明细</div>
+                <div class="metrics-grid" id="metricsGrid"></div>
+                <div class="chart-box" id="bar-chart" style="margin-top:16px;height:280px;"></div>
+            </div>
+        </div>
+        <div class="analysis-panel">
+            <h3>财务分析</h3>
+            <ul class="analysis-list" id="analysisList"></ul>
+            <ul class="analysis-list risk-list" id="riskList"></ul>
+        </div>
+    </div>
+    <div class="raw-data-container">
+        <div class="raw-data-header" onclick="toggleRawData()"><span id="rawDataTitle">📊 Raw Data (Module 7)</span><span class="raw-data-toggle collapsed">▼</span></div>
+        <div class="raw-data-content collapsed" id="rawDataContent"><div class="raw-data-json" id="rawDataJson">Loading...</div></div>
+    </div>
+</div>
+<script>
+const stockCode = '{{ stock_code }}';
+let ratioChart, barChart;
+
+function extractRows(obj) {
+    if (!obj || obj.result == null) return [];
+    return Array.isArray(obj.result.data) ? obj.result.data : [];
+}
+function fmtNum(v,d=1){return (v==null||isNaN(Number(v)))?'--':Number(v).toFixed(d);}
+
+function parseModule(mw) {
+    const raw = mw.raw_data || {};
+    const analysisRows = extractRows(raw.financial_analysis);
+    const signalRows = extractRows(raw.financial_evaluation);
+    return {
+        summary: mw.summary || {},
+        analysisRows,
+        signalRows,
+        latest: analysisRows[0] || signalRows[0] || {},
+    };
+}
+
+function fieldMap(row) {
+    return {
+        total: row.TOTAL_SCORE ?? row.total_score,
+        profit: row.PROFIT_SCORE ?? row.profit_score ?? row.PROFITABILITY_SCORE,
+        growth: row.GROWTH_SCORE ?? row.growth_score,
+        safety: row.SAFETY_SCORE ?? row.safety_score ?? row.DEBT_SCORE,
+        roe: row.WEIGHT_ROE ?? row.ROE ?? row.roe,
+        gross: row.GROSS_RPOFIT_RATIO ?? row.GROSS_PROFIT_RATIO ?? row.gross_margin,
+        net: row.SALE_NPR ?? row.NET_PROFIT_RATIO ?? row.net_margin,
+        debt: row.DEBT_ASSET_RATIO ?? row.debt_ratio,
+        revenue_growth: row.TOTAL_OPERATE_INCOME_RATIO ?? row.REVENUE_GROWTH ?? row.revenue_growth,
+        profit_growth: row.NETPROFIT_YOY_RATIO ?? row.profit_growth,
+        report_date: row.REPORT_DATE ?? row.LABEL_DATE,
+        date_type: row.DATE_TYPE,
+    };
+}
+
+function updateUI(mw) {
+    const p = parseModule(mw);
+    const s = p.summary;
+    const fm = s.financial_metrics || {};
+    const row = p.latest;
+    const f = fieldMap(row);
+
+    const total = Number(fm.total_score ?? f.total ?? s.overall_financial_score ?? 0);
+    const profit = Number(fm.profit_score ?? f.profit ?? s.profitability_score ?? 0);
+    const growth = Number(fm.growth_score ?? f.growth ?? s.growth_score ?? 0);
+    const safety = Number(fm.safety_score ?? f.safety ?? s.financial_health_score ?? 0);
+    const hasData = total > 0 || profit > 0 || growth > 0 || safety > 0
+        || p.analysisRows.length > 0 || p.signalRows.length > 0
+        || (fm.roe != null) || (fm.debt_ratio != null);
+
+    document.getElementById('loadingBanner').classList.add('hidden');
+    document.getElementById('mainContent').classList.add('visible');
+    document.title = '财务评估 - '+stockCode;
+    document.getElementById('pageDate').textContent = f.report_date ? String(f.report_date).slice(0,10) : (f.date_type || new Date().toLocaleDateString('zh-CN'));
+
+    if (!hasData) {
+        document.getElementById('headerText').textContent = '暂无财务评估数据，请稍后刷新或查看 Raw Data';
+        document.getElementById('overallScore').textContent = '--';
+        document.getElementById('recommendation').textContent = '无数据';
+        document.getElementById('subScores').innerHTML = '<div class="empty-state" style="grid-column:1/-1;">财务 API 暂未返回数据</div>';
+        document.getElementById('metricsGrid').innerHTML = '';
+        document.getElementById('analysisList').innerHTML = (s.analysis||[]).map(t=>'<li>'+t+'</li>').join('') || '<li>无法获取财务评估数据</li>';
+        return;
+    }
+
+    document.getElementById('headerText').textContent = (s.analysis||[]).join('；') || ('财务综合评分 '+fmtNum(total)+' 分');
+    document.getElementById('overallScore').textContent = fmtNum(total, 1);
+    document.getElementById('recommendation').textContent = s.recommendation || '中性';
+
+    document.getElementById('subScores').innerHTML = [
+        ['profitability_score','盈利能力', profit], ['growth_score','成长能力', growth], ['financial_health_score','财务安全', safety]
+    ].map(([k,l,v])=>'<div class="sub-score"><div class="val">'+fmtNum(v,0)+'</div><div class="lbl">'+l+'</div></div>').join('');
+
+    const metrics = [
+        ['ROE', f.roe, '%'], ['毛利率', f.gross, '%'], ['净利率', f.net, '%'],
+        ['资产负债率', f.debt, '%'], ['营收增长', f.revenue_growth, '%'], ['净利增长', f.profit_growth, '%'],
+        ['报告期', f.report_date ? String(f.report_date).slice(0,10) : (f.date_type || '--'), '']
+    ];
+    document.getElementById('metricsGrid').innerHTML = metrics.map(([l,v,u]) =>
+        '<div class="metric-item"><div class="val">'+(u && v!=null ? fmtNum(v)+u : (v||'--'))+'</div><div class="lbl">'+l+'</div></div>'
+    ).join('');
+
+    if (!ratioChart) ratioChart = echarts.init(document.getElementById('ratio-chart'));
+    ratioChart.setOption({
+        tooltip: {},
+        legend: { data: ['评分'], top: 0 },
+        radar: {
+            indicator: [
+                { name: '盈利能力\n'+fmtNum(profit), max: 100 },
+                { name: '成长能力\n'+fmtNum(growth), max: 100 },
+                { name: '财务安全\n'+fmtNum(safety), max: 100 },
+                { name: '综合评分\n'+fmtNum(total), max: 100 },
+            ],
+            splitNumber: 4,
+        },
+        series: [{ type: 'radar', data: [{ value: [profit, growth, safety, total], name: '评分', areaStyle: { color: 'rgba(26,188,156,0.2)' }, lineStyle: { color: '#16a085' } }] }]
+    }, true);
+
+    if (!barChart) barChart = echarts.init(document.getElementById('bar-chart'));
+    barChart.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: '12%', right: '8%', bottom: '12%', top: '8%' },
+        xAxis: { type: 'category', data: ['盈利','成长','安全','综合'] },
+        yAxis: { type: 'value', max: 100 },
+        series: [{ type: 'bar', barWidth: '45%', data: [profit, growth, safety, total], itemStyle: { color: '#16a085' },
+            label: { show: true, position: 'top', formatter: p => fmtNum(p.value, 0) } }]
+    }, true);
+
+    document.getElementById('analysisList').innerHTML = (s.analysis||[]).map(t=>'<li>'+t+'</li>').join('') || '<li>暂无分析</li>';
+    const risks = s.risk_factors || [];
+    document.getElementById('riskList').innerHTML = risks.map(t=>'<li>⚠ '+t+'</li>').join('');
+}
+
+async function fetchData() {
+    try {
+        const r = await (await fetch('/api/stock/'+stockCode+'/financial')).json();
+        document.getElementById('rawDataJson').textContent = JSON.stringify(r, null, 2);
+        if (r.success && r.data) updateUI(r.data);
+        else document.getElementById('loadingBanner').textContent = '加载失败';
+    } catch(e) { document.getElementById('loadingBanner').textContent = '加载失败: '+e.message; }
+}
+function toggleRawData() {
+    document.getElementById('rawDataContent').classList.toggle('collapsed');
+    document.querySelector('.raw-data-toggle').classList.toggle('collapsed');
+}
+window.addEventListener('resize', () => { ratioChart && ratioChart.resize(); barChart && barChart.resize(); });
+window.addEventListener('load', fetchData);
+</script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

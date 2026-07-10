@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资金动向 - {{ stock_code }}</title>
+    {% if embed %}
+    <style>
+        body { padding: 8px !important; background: #fff !important; }
+        .container { box-shadow: none !important; padding: 12px !important; margin: 0 !important; max-width: none !important; }
+        .page-header { display: none !important; }
+        .raw-data-container { display: none !important; }
+    </style>
+    {% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1500px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 3px solid #3498db; }
+        .page-header h1 { font-size: 28px; color: #2c3e50; }
+        .page-header .date { font-size: 14px; color: #7f8c8d; }
+        .loading-banner { text-align: center; padding: 40px; color: #7f8c8d; }
+        .loading-banner.hidden { display: none; }
+        .comment-header { display: flex; align-items: flex-start; padding: 15px 20px; background: #fff3e0; border-radius: 6px; margin-bottom: 24px; border-left: 4px solid #ff9800; }
+        .comment-header .icon { width: 28px; height: 28px; background: #ff9800; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; margin-right: 12px; }
+        .comment-header .text { color: #e65100; font-size: 15px; line-height: 1.7; }
+        .score-row { display: grid; grid-template-columns: 220px 1fr; gap: 20px; margin-bottom: 24px; }
+        @media (max-width: 900px) { .score-row { grid-template-columns: 1fr; } }
+        .score-card { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; border-radius: 10px; padding: 24px; text-align: center; }
+        .score-card .big { font-size: 48px; font-weight: bold; }
+        .score-card .rec { display: inline-block; margin-top: 10px; padding: 4px 14px; border-radius: 20px; background: rgba(255,255,255,0.25); font-size: 13px; }
+        .sub-scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .sub-score { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 14px; text-align: center; }
+        .sub-score .val { font-size: 22px; font-weight: bold; color: #e74c3c; }
+        .sub-score .lbl { font-size: 12px; color: #7f8c8d; margin-top: 6px; }
+        .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        @media (max-width: 1100px) { .top-grid { grid-template-columns: 1fr; } }
+        .chart-section { background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .section-header { background: linear-gradient(#e3f2fd,#bbdefb); padding: 12px; border-radius: 6px; text-align: center; font-size: 16px; color: #1565c0; font-weight: 500; margin-bottom: 16px; }
+        .description { font-size: 14px; line-height: 1.8; color: #2c3e50; margin-bottom: 12px; }
+        .highlight-number { color: #e74c3c; font-weight: bold; }
+        .highlight-green { color: #27ae60; font-weight: bold; }
+        .chart-box { width: 100%; height: 320px; }
+        .ranking-box { background: white; border-radius: 6px; padding: 12px; margin-top: 12px; }
+        .ranking-title { font-weight: bold; margin-bottom: 10px; font-size: 14px; }
+        .ranking-item { display: flex; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .ranking-item .rank { width: 28px; color: #7f8c8d; }
+        .ranking-item .name { flex: 1; }
+        .ranking-item .value { font-weight: bold; color: #e74c3c; }
+        .analysis-panel { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 24px; }
+        .analysis-list { list-style: none; }
+        .analysis-list li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 14px; color: #555; }
+        .raw-data-container { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; overflow: hidden; }
+        .raw-data-header { background: #343a40; color: white; padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+        .raw-data-toggle.collapsed { transform: rotate(-90deg); }
+        .raw-data-content.collapsed { display: none; }
+        .raw-data-content { padding: 16px; max-height: 400px; overflow-y: auto; background: white; }
+        .raw-data-json { font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+        #mainContent { display: none; }
+        #mainContent.visible { display: block; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-header"><h1>资金动向</h1><div class="date" id="pageDate">加载中...</div></div>
+    <div class="loading-banner" id="loadingBanner">正在加载资金动向数据...</div>
+    <div id="mainContent">
+        <div class="comment-header"><div class="icon">💡</div><div class="text" id="headerText"><strong>点评</strong> | --</div></div>
+        <div class="score-row">
+            <div class="score-card"><div class="big" id="overallScore">--</div><div>资金综合分</div><div class="rec" id="recommendation">--</div></div>
+            <div class="sub-scores" id="subScores"></div>
+        </div>
+        <div class="top-grid">
+            <div class="chart-section">
+                <div class="section-header">个股资金动向</div>
+                <div class="description" id="stockFlowDescription">--</div>
+                <div class="chart-box" id="stock-flow-chart"></div>
+            </div>
+            <div class="chart-section">
+                <div class="section-header">行业资金动向</div>
+                <div class="description" id="industryFlowDescription">--</div>
+                <div class="chart-box" id="industry-flow-chart"></div>
+                <div class="ranking-box">
+                    <div class="ranking-title">近期主力净流入</div>
+                    <div id="flowHistoryList"></div>
+                </div>
+            </div>
+        </div>
+        <div class="analysis-panel"><h3>资金分析</h3><ul class="analysis-list" id="analysisList"></ul></div>
+    </div>
+    <div class="raw-data-container">
+        <div class="raw-data-header" onclick="toggleRawData()"><span id="rawDataTitle">📊 Raw Data (Module 6)</span><span class="raw-data-toggle collapsed">▼</span></div>
+        <div class="raw-data-content collapsed" id="rawDataContent"><div class="raw-data-json" id="rawDataJson">Loading...</div></div>
+    </div>
+</div>
+<script>
+const stockCode = '{{ stock_code }}';
+let stockChart, industryChart;
+
+function extractRows(obj) { return (obj && obj.result && obj.result.data) ? obj.result.data : []; }
+function sortByDate(rows) { return rows.slice().sort((a,b) => new Date(a.TRADE_DATE)-new Date(b.TRADE_DATE)); }
+function fmtShortDate(raw) {
+    const d = new Date(String(raw).replace(' ','T'));
+    if (isNaN(d.getTime())) return String(raw).slice(5,10);
+    return (d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+}
+function fmtNum(v,d=2){return (v==null||isNaN(Number(v)))?'--':Number(v).toFixed(d);}
+function fmtMoney(v) {
+    const n = Number(v);
+    if (isNaN(n)) return '--';
+    const abs = Math.abs(n);
+    if (abs >= 1e8) return (n/1e8).toFixed(2)+'亿';
+    if (abs >= 1e4) return (n/1e4).toFixed(2)+'万';
+    return n.toFixed(0);
+}
+
+function parseModule(mw) {
+    const raw = mw.raw_data || {};
+    const stockRows = sortByDate(extractRows(raw.stock_capital_flow));
+    const industryRows = sortByDate(extractRows(raw.industry_capital_flow));
+    const historyRows = industryRows.length ? industryRows : sortByDate(extractRows(raw.industry_ranking));
+    return { summary: mw.summary || {}, stockRows, industryRows, historyRows };
+}
+
+function buildFlowChart(el, rows, flowKey, boardKey, unitLabel) {
+    if (!el.chart) el.chart = echarts.init(el);
+    const dates = rows.map(r => fmtShortDate(r.TRADE_DATE));
+    const flows = rows.map(r => Number(r[flowKey] || 0) / (boardKey ? 1e8 : 1e4));
+    const cumKey = boardKey ? 'BOARD_CAPITAL_5FLOWS' : 'CAPITAL_FLOWS_5DAYS';
+    const cum = rows.map(r => Number(r[cumKey] || 0) / (boardKey ? 1e8 : 1e4));
+    el.chart.setOption({
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['当日净流入','累计净流入'], top: 0, textStyle: { fontSize: 11 } },
+        grid: { left: '10%', right: '8%', bottom: '12%', top: '18%' },
+        xAxis: { type: 'category', data: dates },
+        yAxis: { type: 'value', name: unitLabel },
+        series: [
+            { name: '当日净流入', type: 'bar', data: flows.map(v => ({ value: v.toFixed(2), itemStyle: { color: v >= 0 ? '#e74c3c' : '#27ae60' } })) },
+            { name: '累计净流入', type: 'line', data: cum.map(v => v.toFixed(2)), lineStyle: { color: '#ff9800', width: 2 } }
+        ]
+    }, true);
+    return el.chart;
+}
+
+function updateUI(mw) {
+    const p = parseModule(mw);
+    const s = p.summary;
+    const sm = s.stock_flow_metrics || {};
+    const im = s.industry_flow_metrics || {};
+
+    document.getElementById('loadingBanner').classList.add('hidden');
+    document.getElementById('mainContent').classList.add('visible');
+    document.title = '资金动向 - '+stockCode;
+    document.getElementById('pageDate').textContent = sm.trade_date ? String(sm.trade_date).slice(0,10) : new Date().toLocaleDateString('zh-CN');
+
+    document.getElementById('headerText').innerHTML = '<strong>点评</strong> | '+((s.analysis||[])[0] || '暂无资金点评');
+    document.getElementById('overallScore').textContent = fmtNum(s.overall_capital_score, 1);
+    document.getElementById('recommendation').textContent = s.recommendation || '中性';
+
+    const subs = [['stock_flow_score','个股资金'],['industry_flow_score','行业资金'],['ranking_score','排名评分'],['flow_strength_score','资金强度']];
+    document.getElementById('subScores').innerHTML = subs.map(([k,l])=>'<div class="sub-score"><div class="val">'+fmtNum(s[k],0)+'</div><div class="lbl">'+l+'</div></div>').join('');
+
+    document.getElementById('stockFlowDescription').innerHTML =
+        '今日主力净流入 <span class="highlight-number">'+fmtMoney(sm.capital_flows)+'</span>，占流通市值比 <span class="highlight-green">'+fmtNum(sm.capital_flows_ratio)+'%</span><br>'+
+        '五日主力净流入 <span class="highlight-number">'+fmtMoney(sm.capital_flows_5days)+'</span>，占流通市值比 <span class="highlight-green">'+fmtNum(sm.capital_flows_5days_ratio)+'%</span>';
+
+    document.getElementById('industryFlowDescription').innerHTML =
+        '所属 <strong>'+(im.industry_name||'--')+'</strong><br>'+
+        '行业今日净流入 <span class="highlight-number">'+fmtMoney(im.industry_flows)+'</span>，五日净流入 <span class="highlight-number">'+fmtMoney(im.industry_5days_flows)+'</span>';
+
+    const stockEl = document.getElementById('stock-flow-chart');
+    const indEl = document.getElementById('industry-flow-chart');
+    const stockHistory = p.historyRows.length ? p.historyRows : p.stockRows;
+    stockChart = buildFlowChart(stockEl, stockHistory, 'CAPITAL_FLOWS', false, '万元');
+    industryChart = buildFlowChart(indEl, p.industryRows, 'BOARD_CAPITAL_FLOWS', true, '亿元');
+
+    const listEl = document.getElementById('flowHistoryList');
+    const recent = stockHistory.slice(-5).reverse();
+    listEl.innerHTML = recent.length ? recent.map((r,i) =>
+        '<div class="ranking-item"><span class="rank">'+(i+1)+'</span><span class="name">'+fmtShortDate(r.TRADE_DATE)+'</span><span class="value">'+fmtMoney(r.CAPITAL_FLOWS)+'</span></div>'
+    ).join('') : '<div style="color:#999;text-align:center;padding:12px;">暂无历史数据</div>';
+
+    const analysis = s.analysis || [];
+    document.getElementById('analysisList').innerHTML = analysis.length ? analysis.map(t=>'<li>'+t+'</li>').join('') : '<li>暂无分析</li>';
+}
+
+async function fetchData() {
+    try {
+        const r = await (await fetch('/api/stock/'+stockCode+'/capital-flow')).json();
+        document.getElementById('rawDataJson').textContent = JSON.stringify(r, null, 2);
+        if (r.success && r.data) updateUI(r.data);
+        else document.getElementById('loadingBanner').textContent = '加载失败';
+    } catch(e) { document.getElementById('loadingBanner').textContent = '加载失败: '+e.message; }
+}
+function toggleRawData() {
+    document.getElementById('rawDataContent').classList.toggle('collapsed');
+    document.querySelector('.raw-data-toggle').classList.toggle('collapsed');
+}
+window.addEventListener('resize', () => { stockChart && stockChart.resize(); industryChart && industryChart.resize(); });
+window.addEventListener('load', fetchData);
+</script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>

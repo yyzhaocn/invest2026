@@ -1,0 +1,34 @@
+# Stock Analysis Web App Dependencies
+
+# Web Framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# HTML Parsing
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Progress Bars
+tqdm>=4.65.0
+
+# Optional: Production Server
+gunicorn>=21.2.0
+
+# Optional: Caching
+# redis>=5.0.0
+# Flask-Caching>=2.0.2
+
+# Optional: Database
+# SQLAlchemy>=2.0.0
+# Flask-SQLAlchemy>=3.0.0
+
+# Optional: API Rate Limiting
+# Flask-Limiter>=3.0.0
+

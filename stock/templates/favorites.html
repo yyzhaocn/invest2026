@@ -1,0 +1,4477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态选股</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #eef1f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar (left) — 1.5× default width */
+        .sidebar:not(.sidebar-right) {
+            width: 450px;
+            min-width: 450px;
+        }
+
+        .sidebar {
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.28s ease, margin 0.28s ease;
+            z-index: 50;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+
+        .sidebar.collapsed:not(.sidebar-right) {
+            transform: translateX(-100%);
+            margin-right: -450px;
+        }
+
+        .sidebar-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .sidebar-head h2 {
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .sidebar-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+
+        .sidebar-foot {
+            padding: 12px 16px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .view-toggle-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-toggle-row .btn-multi-screen {
+            flex: 1;
+        }
+
+        .btn-tickers {
+            flex: 0 0 auto;
+            min-width: 88px;
+            padding: 12px 14px;
+            background: #fff;
+            color: #667eea;
+            border: 1px solid #c5cae9;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-tickers:hover:not(:disabled) {
+            background: #f0f3ff;
+        }
+
+        .btn-tickers.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .btn-tickers:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-multi-screen {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-multi-screen.active {
+            filter: brightness(1.05);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35);
+        }
+
+        .btn-multi-screen:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-multi-screen:not(:disabled):hover {
+            filter: brightness(1.05);
+        }
+
+        .sidebar-toggle:not(.sidebar-toggle-right) {
+            left: 450px;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 56px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+            transition: left 0.28s ease;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+        }
+
+        .sidebar-toggle.collapsed {
+            left: 0;
+        }
+
+        .sidebar-right {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            height: 100vh;
+            border-right: none;
+            border-left: 1px solid #e0e0e0;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.04);
+            z-index: 50;
+            flex: none;
+            order: unset;
+        }
+
+        .sidebar-right.collapsed {
+            transform: translateX(100%);
+            width: 300px;
+            min-width: 300px;
+            margin-left: 0;
+            border: none;
+            box-shadow: none;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .sidebar-toggle.sidebar-toggle-right {
+            left: auto;
+            right: 300px;
+            border-left: 1px solid #ddd;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.06);
+            transition: right 0.28s ease;
+            order: 4;
+            z-index: 70;
+            pointer-events: auto;
+        }
+
+        .sidebar-toggle.sidebar-toggle-right.collapsed {
+            left: auto;
+            right: 0;
+        }
+
+        .trend-analysis-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .trend-analysis-empty {
+            color: #999;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 8px 0;
+        }
+
+        .trend-analysis-item {
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            background: #fafbfc;
+            overflow: hidden;
+        }
+
+        .trend-analysis-item.loading {
+            opacity: 0.85;
+        }
+
+        .trend-analysis-head {
+            padding: 8px 10px;
+            background: #f0f4f8;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .trend-analysis-body {
+            padding: 10px 12px;
+            font-size: 13px;
+            line-height: 1.65;
+            color: #333;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .trend-analysis-body h4 {
+            font-size: 14px;
+            color: #2c3e50;
+            margin: 0 0 8px;
+        }
+
+        .trend-analysis-body .error {
+            color: #e74c3c;
+        }
+
+        .right-rail-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+
+        .right-rail-block-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .pi-chat-panel {
+            display: none;
+            flex-direction: column;
+            min-height: 200px;
+            max-height: 320px;
+            overflow: hidden;
+            padding: 0 18px 16px;
+            opacity: 1;
+        }
+
+        .pi-chat-panel.active {
+            display: flex;
+        }
+
+        .pi-chat-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .pi-chat-status {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-bottom: 6px;
+        }
+
+        .pi-chat-status.error {
+            color: #e74c3c;
+        }
+
+        .pi-chat-status.ok {
+            color: #27ae60;
+        }
+
+        .pi-chat-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .pi-chat-btn {
+            border: 1px solid #d0d7de;
+            background: #fff;
+            color: #57606a;
+            border-radius: 6px;
+            font-size: 11px;
+            padding: 3px 8px;
+            cursor: pointer;
+        }
+
+        .pi-chat-btn:hover {
+            background: #f6f8fa;
+        }
+
+        .pi-chat-messages {
+            flex: 1;
+            min-height: 160px;
+            max-height: 42vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 4px 2px;
+            background: #fafbfc;
+            border: 1px solid #eef1f4;
+            border-radius: 8px;
+        }
+
+        .pi-chat-empty {
+            color: #999;
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 12px 10px;
+        }
+
+        .pi-chat-msg {
+            max-width: 96%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .pi-chat-msg.user {
+            align-self: flex-end;
+            background: #e8f4fd;
+            color: #1a5276;
+        }
+
+        .pi-chat-msg.assistant {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #e6ebf0;
+            color: #2c3e50;
+        }
+
+        .pi-chat-msg.pending {
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .pi-chat-compose {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+
+        .pi-chat-input {
+            width: 100%;
+            min-height: 64px;
+            max-height: 120px;
+            resize: vertical;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.45;
+        }
+
+        .pi-chat-send-row {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .pi-chat-send {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .pi-chat-panel .pi-chat-messages {
+            flex: 1;
+            min-height: 80px;
+            max-height: none;
+        }
+
+        .chart-half img.chart-clickable {
+            cursor: pointer;
+        }
+
+        .chart-half img.chart-clickable:hover {
+            opacity: 0.92;
+        }
+
+        /* Main */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+            transition: margin-left 0.28s ease, margin-right 0.28s ease, padding-left 0.28s ease, padding-right 0.28s ease;
+        }
+
+        .main.left-rail-collapsed {
+            padding-left: 28px;
+        }
+
+        .main.right-rail-collapsed {
+            margin-right: 30px;
+            padding-right: 0;
+        }
+
+        .main.right-rail-open {
+            margin-right: 300px;
+            padding-right: 0;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 12px 20px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .back-btn, .btn {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #666;
+        }
+
+        .back-btn:hover, .btn:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            border-color: #2980b9;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            border-color: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            border-color: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+            border-color: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+            border-color: #e67e22;
+        }
+
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        .group-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .group-selector label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .group-selector select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            padding: 16px 20px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-view {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .table-view.hidden {
+            display: none;
+        }
+
+        .table-scroll-area {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .cards-view {
+            display: none;
+        }
+
+        .cards-view.active {
+            display: block;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .tickers-view {
+            display: none;
+        }
+
+        .tickers-view.active {
+            display: block;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .tickers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+            gap: 14px;
+        }
+
+        .ticker-card {
+            background: #fff;
+            border: 1px solid #e6eaf0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+
+        .ticker-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eef1f5;
+            background: #fafbfd;
+        }
+
+        .ticker-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .ticker-title:hover {
+            text-decoration: underline;
+        }
+
+        .ticker-body {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            align-items: stretch;
+        }
+
+        .ticker-price-block {
+            flex: 0 0 132px;
+            border-right: 1px solid #f0f0f0;
+            padding-right: 10px;
+        }
+
+        .ticker-price {
+            font-size: 34px;
+            line-height: 1.1;
+            font-weight: 700;
+        }
+
+        .ticker-change-line {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .ticker-limits {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .ticker-metrics {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px 10px;
+            font-size: 12px;
+        }
+
+        .ticker-metric {
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            padding: 2px 0;
+        }
+
+        .ticker-metric .label {
+            color: #999;
+            white-space: nowrap;
+        }
+
+        .ticker-metric .value {
+            color: #333;
+            font-weight: 500;
+            text-align: right;
+        }
+
+        .ticker-chart {
+            border-top: 1px solid #f0f0f0;
+            padding: 6px 8px 8px;
+            background: #fff;
+        }
+
+        .ticker-chart img {
+            width: 100%;
+            height: 120px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+            gap: 16px;
+        }
+
+        .stock-card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .card-head .card-title {
+            flex: 1;
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .card-title-link {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .card-title-link:hover {
+            color: #667eea;
+            text-decoration: underline;
+        }
+
+        .card-head .card-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .card-close {
+            border: none;
+            background: #f5f5f5;
+            color: #888;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .card-close:hover {
+            background: #fdecea;
+            color: #e74c3c;
+        }
+
+        .card-charts {
+            padding: 8px 10px 4px;
+        }
+
+        .card-chart-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0;
+        }
+
+        .card-chart-tab {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 6px 6px 0 0;
+            padding: 5px 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .card-chart-tab.active {
+            background: #fff;
+            border-bottom-color: #fff;
+            color: #ea580c;
+            font-weight: 600;
+        }
+
+        .chart-half.chart-iwencai {
+            height: 365px;
+            background: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chart-half.chart-iwencai img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            object-position: center top;
+        }
+
+        .chart-half.chart-intraday-card {
+            height: 200px;
+            background: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chart-half.chart-intraday-card img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            object-position: top center;
+        }
+
+        .chart-half {
+            height: 130px;
+            overflow: hidden;
+            border-radius: 4px;
+            background: #fafafa;
+            margin-bottom: 6px;
+        }
+
+        .chart-half.chart-intraday {
+            height: 200px;
+            background: #fff;
+            margin-bottom: 4px;
+        }
+
+        .chart-half.chart-intraday img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+            object-position: top center;
+        }
+
+        .chart-half.chart-kline {
+            height: 175px;
+            background: #fff;
+        }
+
+        .chart-half.chart-kline img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            margin-top: 0;
+            object-fit: contain;
+            object-position: center top;
+        }
+
+        .chart-half.chart-lower {
+            height: 118px;
+            margin-bottom: 0;
+        }
+
+        .chart-half.chart-lower img {
+            width: 100%;
+            display: block;
+            margin-top: -50%;
+        }
+
+        .card-charts .chart-label {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .cards-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .info-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            color: #2c3e50;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #34495e;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stock-code-link {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .stock-code-link:hover {
+            text-decoration: underline;
+        }
+
+        .positive {
+            color: #e74c3c;
+        }
+
+        .negative {
+            color: #27ae60;
+        }
+
+        .neutral {
+            color: #7f8c8d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            align-items: center;
+        }
+
+        .action-toggle {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: #8b949e;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+
+        .action-toggle svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .action-toggle:hover {
+            border-color: #b0b8c1;
+            color: #57606a;
+        }
+
+        .action-toggle.top-pinned.active {
+            background: #f39c12;
+            border-color: #e67e22;
+            color: #fff;
+        }
+
+        .action-toggle.pinned.active {
+            background: #27ae60;
+            border-color: #229954;
+            color: #fff;
+        }
+
+        .action-toggle.delete:hover {
+            background: #fee;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .industry-cell {
+            color: #57606a;
+            font-size: 13px;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #stockTable table th:last-child,
+        #stockTable table td:last-child {
+            padding-right: 16px;
+        }
+
+        .main.right-rail-collapsed #stockTable table th:last-child,
+        .main.right-rail-collapsed #stockTable table td:last-child {
+            padding-right: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .refresh-time {
+            color: #7f8c8d;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .import-panel {
+            background: transparent;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 0;
+        }
+
+        .import-header {
+            display: none;
+        }
+
+        .import-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        .import-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+
+        .import-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
+            margin-top: 12px;
+        }
+
+        .import-options label {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .import-options select,
+        .import-options input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            width: 100%;
+        }
+
+        .import-options input[type="text"] {
+            min-width: 0;
+        }
+
+        .import-options-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .import-options-row .btn {
+            flex: 1;
+        }
+
+        .import-divider {
+            display: none;
+        }
+
+        .import-hint {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .pick-hot-panel {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #e5e7eb;
+        }
+
+        .pick-hot-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pick-hot-source-tabs {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .pick-hot-source-tab {
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #64748b;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .pick-hot-source-tab:hover {
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        .pick-hot-source-tab.active {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #1e293b;
+        }
+
+        .pick-hot-refresh {
+            border: none;
+            background: transparent;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+
+        .pick-hot-refresh:hover {
+            color: #3498db;
+        }
+
+        .pick-hot-type-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+            max-height: 72px;
+            overflow-y: auto;
+        }
+
+        .pick-hot-type-tab {
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            color: #b45309;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .pick-hot-type-tab:hover {
+            background: #fef3c7;
+        }
+
+        .pick-hot-type-tab.active {
+            background: #fde68a;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .pick-hot-group {
+            margin-bottom: 8px;
+        }
+
+        .pick-hot-group-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .pick-hot-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .pick-hot-item {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            cursor: pointer;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pick-hot-item.xuangu {
+            border: 1px solid #dbeafe;
+            background: #f8fbff;
+            color: #1d4ed8;
+        }
+
+        .pick-hot-item.xuangu:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+        .pick-hot-item.xuangu.active {
+            background: #dbeafe;
+            border-color: #60a5fa;
+        }
+
+        .pick-hot-item.iwencai {
+            border: 1px solid #fed7aa;
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .pick-hot-item.iwencai:hover {
+            background: #ffedd5;
+            border-color: #fdba74;
+        }
+
+        .pick-hot-item.iwencai.active {
+            background: #fed7aa;
+            border-color: #fb923c;
+        }
+
+        .pick-hot-meta {
+            color: #94a3b8;
+            font-size: 11px;
+            margin-left: 4px;
+        }
+
+        .pick-hot-empty,
+        .pick-hot-loading,
+        .pick-hot-error {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .pick-hot-error {
+            color: #c0392b;
+        }
+
+        .import-result {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .import-result.success {
+            display: block;
+            background: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #a9dfbf;
+        }
+
+        .import-result.error {
+            display: block;
+            background: #fee;
+            color: #c0392b;
+            border: 1px solid #f5b7b1;
+        }
+
+        .modal-content.iwencai-preview-modal {
+            max-width: min(960px, 92vw);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .iwencai-preview-modal .modal-header {
+            margin: 0;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .iwencai-preview-modal .modal-body {
+            margin: 0;
+            padding: 16px 20px;
+            overflow: auto;
+            flex: 1;
+        }
+
+        .iwencai-preview-modal .modal-footer {
+            padding: 12px 20px;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .iwencai-preview-modal .pick-note-table-wrap {
+            overflow-x: auto;
+        }
+
+        .import-preview {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .import-preview-codes {
+            color: #3498db;
+            word-break: break-all;
+        }
+
+        .single-import {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+
+        .single-import-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .single-import-wrap {
+            position: relative;
+        }
+
+        .single-import-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .single-import-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.15);
+        }
+
+        .single-import-hint {
+            color: #7f8c8d;
+            font-size: 11px;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+
+        .single-suggestions {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 4px);
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 80;
+        }
+
+        .single-suggestions.show {
+            display: block;
+        }
+
+        .single-suggestion-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .single-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .single-suggestion-item:hover,
+        .single-suggestion-item.active {
+            background: #f0f7ff;
+        }
+
+        .single-suggestion-main {
+            display: flex;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .single-suggestion-code {
+            color: #3498db;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .single-suggestion-name {
+            color: #2c3e50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .single-suggestion-pinyin {
+            color: #aaa;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .single-import-result {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .single-import-result.success {
+            display: block;
+            background: #eafaf1;
+            color: #1e8449;
+            border: 1px solid #a9dfbf;
+        }
+
+        .single-import-result.error {
+            display: block;
+            background: #fee;
+            color: #c0392b;
+            border: 1px solid #f5b7b1;
+        }
+
+        .stock-name-tip {
+            position: relative;
+            display: inline-block;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .stock-name-tip .prop-count {
+            cursor: help;
+        }
+
+        .stock-name-tip .prop-tooltip {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: calc(100% + 6px);
+            z-index: 200;
+            min-width: 220px;
+            max-width: 420px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 400;
+            line-height: 1.55;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+            white-space: normal;
+        }
+
+        .stock-name-tip:hover .prop-tooltip {
+            display: block;
+        }
+
+        .prop-item + .prop-item {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .prop-count {
+            display: inline-block;
+            margin-left: 4px;
+            padding: 1px 5px;
+            border-radius: 8px;
+            background: #eaf4fc;
+            color: #3498db;
+            font-size: 10px;
+            vertical-align: middle;
+        }
+
+        .prop-count.top-pinned {
+            background: #fef5e7;
+            color: #f39c12;
+        }
+
+        .prop-count.pinned {
+            background: #eafaf1;
+            color: #27ae60;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th.sortable:hover {
+            background: #eef2f7;
+        }
+
+        th.sortable .sort-indicator {
+            margin-left: 4px;
+            color: #3498db;
+            font-size: 11px;
+        }
+
+        .mini-quote {
+            width: 120px;
+            height: 40px;
+            object-fit: contain;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            display: block;
+        }
+
+        .mini-quote.chart-clickable {
+            cursor: pointer;
+        }
+
+        .mini-quote.chart-clickable:hover {
+            opacity: 0.82;
+        }
+
+        td.quote-cell {
+            padding: 8px 10px;
+            width: 130px;
+        }
+
+        .sort-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            background: #fafbfc;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .sort-bar select {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .stock-code-link.kline-hover-chart {
+            cursor: pointer;
+            border-bottom: 1px dashed #3498db;
+        }
+
+        .pick-note-drawer {
+            flex-shrink: 0;
+            border-top: 2px solid #bfdbfe;
+            background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+            box-shadow: 0 -4px 16px rgba(37, 99, 235, 0.08);
+            transition: max-height 0.28s ease;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .pick-note-drawer.collapsed .pick-note-panels {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .pick-note-tab-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 16px 10px;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .pick-note-tab {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: #5b7ea8;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .pick-note-tab:hover {
+            color: #2c5282;
+            background: rgba(238, 246, 255, 0.8);
+        }
+
+        .pick-note-tab.active {
+            color: #2c5282;
+            background: #eef6ff;
+        }
+
+        .pick-note-collapse-btn {
+            margin-left: 8px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 12px;
+            color: #5b7ea8;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: transform 0.28s ease, background 0.2s;
+        }
+
+        .pick-note-collapse-btn:hover {
+            background: #eef6ff;
+        }
+
+        .pick-note-drawer.expanded .pick-note-collapse-btn {
+            transform: rotate(180deg);
+        }
+
+        .pick-note-panel {
+            display: none;
+        }
+
+        .pick-note-panel.active:not(.pi-chat-panel) {
+            display: block;
+        }
+
+        .pick-note-panel.pi-chat-panel.active {
+            display: flex;
+        }
+
+        .pick-note-empty {
+            color: #94a3b8;
+            font-size: 13px;
+            padding: 8px 0;
+        }
+
+        .pick-note-handle-bar {
+            width: 42px;
+            height: 4px;
+            border-radius: 999px;
+            background: #c5d6ea;
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .pick-note-handle-wrap {
+            position: relative;
+            width: 100%;
+            padding-top: 8px;
+        }
+
+        .pick-note-panels {
+            transition: max-height 0.28s ease, opacity 0.2s ease;
+        }
+
+        .pick-note-body {
+            max-height: 320px;
+            overflow: auto;
+            padding: 0 18px 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        .pick-note-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0 10px;
+            position: sticky;
+            top: 0;
+            background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+            z-index: 1;
+        }
+
+        .pick-note-toolbar .btn {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+
+        .pick-note-edit-hint {
+            margin-left: auto;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .pick-note-view {
+            min-height: 48px;
+        }
+
+        .pick-note-editor {
+            width: 100%;
+            min-height: 220px;
+            max-height: 420px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.55;
+            resize: vertical;
+            box-sizing: border-box;
+            background: #fff;
+            color: #1e293b;
+        }
+
+        .pick-note-editor:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        .pick-note-body.editing {
+            max-height: 480px;
+        }
+
+        .pick-note-save-status {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .pick-note-save-status.error {
+            color: #dc2626;
+        }
+
+        .pick-note-save-status.success {
+            color: #16a34a;
+        }
+
+        .pick-note-body h3,
+        .pick-note-body h4 {
+            margin: 8px 0 6px;
+            color: #1e293b;
+        }
+
+        .pick-note-body p {
+            margin: 6px 0;
+        }
+
+        .pick-note-body ul {
+            margin: 6px 0 10px 18px;
+            padding: 0;
+        }
+
+        .pick-note-body code {
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .pick-note-table-wrap {
+            overflow: auto;
+            margin-top: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .pick-note-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .pick-note-table th,
+        .pick-note-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2f7;
+            white-space: normal;
+            word-break: break-word;
+            max-width: 320px;
+            vertical-align: top;
+        }
+
+        .pick-note-table th {
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+        }
+
+        .pick-note-body pre,
+        .pick-note-pre {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 12px;
+            line-height: 1.55;
+            margin: 8px 0 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <h2>📥 导入</h2>
+        </div>
+        <div class="sidebar-body">
+            <div class="single-import">
+                <div class="single-import-title">➕ 个股导入</div>
+                <div class="single-import-wrap">
+                    <input
+                        type="text"
+                        id="singleStockInput"
+                        class="single-import-input"
+                        placeholder="代码 / 名称 / 简拼"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+                    <div id="singleStockSuggestions" class="single-suggestions"></div>
+                </div>
+                <div class="single-import-hint">回车加入当前分组「<span id="singleImportGroupLabel">默认</span>」</div>
+                <div id="singleImportResult" class="single-import-result"></div>
+            </div>
+
+            <div class="import-panel">
+                <div class="single-import-title" style="margin-top: 16px;">📋 批量导入</div>
+                <textarea
+                    id="importText"
+                    class="import-textarea"
+                    placeholder="粘贴股票评论、股票列表或代码列表，例如：&#10;600000,000001,002916&#10;或：浦发银行 平安银行&#10;或：SH600519 贵州茅台 白酒龙头&#10;或：? 股价低于5元的沪深300成分股（爱问财选股）&#10;或：# 今日涨幅2%的股票（东方财富选股）"
+                ></textarea>
+                <div class="import-options">
+                    <label for="importGroupSelect">导入到分组：</label>
+                    <select id="importGroupSelect">
+                        <option value="导入" selected>导入</option>
+                    </select>
+                    <input type="text" id="importNewGroup" placeholder="新建分组（自动加 _YYYYMMDD）">
+                    <div class="import-options-row">
+                        <button class="btn btn-primary" onclick="importStocks()">导入</button>
+                        <button class="btn" onclick="previewImport()">预览识别</button>
+                    </div>
+                </div>
+                <div class="import-hint">
+                    支持代码列表、带 SH/SZ 前缀代码、股票名称，以及「1、旭光电子----属性描述」等清单格式；以 <code>? 问句</code> / <code>？ 问句</code> 开头时自动查询同花顺爱问财，以 <code># 问句</code> 开头时自动查询<a href="https://xuangu.eastmoney.com/" target="_blank" rel="noopener">东方财富条件选股</a>，并将选股结果填入上方文本框后识别导入。
+                </div>
+                <div class="pick-hot-panel" id="pickHotPanel">
+                    <div class="pick-hot-head">
+                        <div class="pick-hot-source-tabs" id="pickHotSourceTabs">
+                            <button type="button" class="pick-hot-source-tab active" data-source="xuangu">东财热搜</button>
+                            <button type="button" class="pick-hot-source-tab" data-source="iwencai">同花顺热搜</button>
+                        </div>
+                        <button type="button" class="pick-hot-refresh" id="pickHotRefresh" title="刷新热搜">↻</button>
+                    </div>
+                    <div class="pick-hot-body" id="pickHotBodyXuangu">
+                        <div class="pick-hot-list" id="xuanguHotList">
+                            <span class="pick-hot-loading">加载中…</span>
+                        </div>
+                    </div>
+                    <div class="pick-hot-body" id="pickHotBodyIwencai" style="display: none;">
+                        <div class="pick-hot-type-tabs" id="iwencaiHotTypeTabs"></div>
+                        <div id="iwencaiHotGroups">
+                            <span class="pick-hot-loading">加载中…</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="importPreview" class="import-preview" style="display: none;"></div>
+                <div id="importResult" class="import-result"></div>
+            </div>
+        </div>
+        <div class="sidebar-foot">
+            <div class="view-toggle-row">
+                <button class="btn-multi-screen" id="btnViewToggle" disabled>多股同列</button>
+                <button class="btn-tickers" id="btnTickers" disabled title="行情 Ticker">Tickers</button>
+            </div>
+        </div>
+    </aside>
+
+    <button class="sidebar-toggle" id="sidebarToggle" title="收起/展开侧边栏">◀</button>
+
+    <div class="main right-rail-collapsed">
+        <div class="header">
+            <div class="header-top">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <a href="/" class="back-btn">← 返回首页</a>
+                    <h1 class="title">📈 动态选股</h1>
+                </div>
+
+                <div class="toolbar">
+                    <div class="group-selector">
+                        <label>分组：</label>
+                        <select id="groupSelect">
+                            <option value="默认">默认</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="showAddGroupModal()">+ 新建分组</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentGroup()">删除当前分组</button>
+                    <button class="btn btn-primary" onclick="loadFavorites(true)">🔄 刷新报价</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="errorMessage" class="error" style="display: none;"></div>
+
+            <div class="table-view" id="tableView">
+                <div class="info-bar">
+                    <div class="info-item">
+                        <span class="info-label">当前分组</span>
+                        <span class="info-value" id="currentGroup">默认</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">股票数量</span>
+                        <span class="info-value" id="stockCount">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">数据更新时间</span>
+                        <span class="info-value refresh-time" id="updateTime">--</span>
+                    </div>
+                </div>
+
+                <div class="table-scroll-area">
+                <div id="tableContainer" class="table-container">
+                    <div class="sort-bar">
+                        <span>排序：</span>
+                        <select id="sortField" onchange="applySortAndRender()">
+                            <option value="">默认（置顶优先）</option>
+                            <option value="涨跌幅">涨跌幅</option>
+                            <option value="当前价格">当前价格</option>
+                            <option value="换手率">换手率</option>
+                            <option value="成交额(亿)">成交额</option>
+                            <option value="流通市值(亿)">流通市值</option>
+                            <option value="量比">量比</option>
+                            <option value="股票名称">股票名称</option>
+                            <option value="_sector">板块</option>
+                            <option value="_code">股票代码</option>
+                        </select>
+                        <select id="sortDir" onchange="applySortAndRender()">
+                            <option value="desc" selected>降序</option>
+                            <option value="asc">升序</option>
+                        </select>
+                    </div>
+                    <div class="loading" id="loading">加载中...</div>
+                    <div id="stockTable"></div>
+                </div>
+                </div>
+                <div id="pickNoteDrawer" class="pick-note-drawer collapsed" style="display: none;">
+                    <div class="pick-note-handle-wrap" id="pickNoteHandleWrap">
+                        <div class="pick-note-handle-bar"></div>
+                        <div class="pick-note-tab-bar">
+                            <button type="button" class="pick-note-tab active" data-drawer-tab="pick-note">📋 选股说明</button>
+                            <button type="button" class="pick-note-tab" data-drawer-tab="pi-chat">Pi 对话</button>
+                            <button type="button" class="pick-note-collapse-btn" id="pickNoteCollapseBtn" title="收起/展开">▼</button>
+                        </div>
+                    </div>
+                    <div class="pick-note-panels">
+                        <div class="pick-note-body pick-note-panel active" id="pickNoteBody" data-drawer-tab="pick-note">
+                            <div class="pick-note-toolbar">
+                                <button type="button" class="btn" id="pickNoteEditBtn">编辑 Markdown</button>
+                                <button type="button" class="btn btn-primary" id="pickNoteSaveBtn" style="display: none;">保存</button>
+                                <button type="button" class="btn" id="pickNoteCancelBtn" style="display: none;">取消</button>
+                                <span class="pick-note-edit-hint" id="pickNoteEditHint">支持标题、列表、表格等 Markdown 语法</span>
+                                <span class="pick-note-save-status" id="pickNoteSaveStatus"></span>
+                            </div>
+                            <div class="pick-note-view" id="pickNoteView"></div>
+                            <textarea class="pick-note-editor" id="pickNoteEditor" style="display: none;" spellcheck="false"></textarea>
+                        </div>
+                        <div class="pi-chat-panel pick-note-panel" id="piChatPanel" data-drawer-tab="pi-chat">
+                            <div class="pi-chat-toolbar">
+                                <div class="pi-chat-actions" style="margin-left:auto;">
+                                    <button type="button" class="pi-chat-btn" id="piChatResetBtn" title="清空会话">新对话</button>
+                                </div>
+                            </div>
+                            <div class="pi-chat-status" id="piChatStatus">连接本机 Pi…</div>
+                            <div class="pi-chat-messages" id="piChatMessages">
+                                <div class="pi-chat-empty" id="piChatEmpty">与本机 Pi 助手对话，可询问自选股、板块与行情；支持 shell 命令分析本地数据。</div>
+                            </div>
+                            <div class="pi-chat-compose">
+                                <textarea class="pi-chat-input" id="piChatInput" placeholder="输入问题，Enter 发送，Shift+Enter 换行" rows="3"></textarea>
+                                <div class="pi-chat-send-row">
+                                    <button type="button" class="pi-chat-send" id="piChatSendBtn">发送</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cards-view" id="cardsView">
+                <div class="cards-grid" id="cardsGrid"></div>
+            </div>
+
+            <div class="tickers-view" id="tickersView">
+                <div class="tickers-grid" id="tickersGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <button class="sidebar-toggle sidebar-toggle-right collapsed" id="rightSidebarToggle" title="收起/展开右侧栏">◀</button>
+
+    <aside class="sidebar sidebar-right collapsed" id="rightSidebar">
+        <div class="sidebar-head">
+            <h2>📊 分析助手</h2>
+        </div>
+        <div class="sidebar-body right-rail-body">
+            <section class="right-rail-block">
+                <div class="right-rail-block-title">📈 走势分析</div>
+                <div class="trend-analysis-panel" id="trendAnalysisPanel">
+                    <div class="trend-analysis-empty" id="trendAnalysisEmpty">
+                        点击多股同列中的图表，或数据表「分时」列，将在此追加日 K 走势分析。
+                    </div>
+                </div>
+            </section>
+        </div>
+    </aside>
+</div>
+
+    <!-- Add Group Modal -->
+    <div id="addGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">新建股票分组</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>分组名称：</label>
+                    <input type="text" id="newGroupName" placeholder="请输入分组名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeAddGroupModal()">取消</button>
+                <button class="btn btn-primary" onclick="createGroup()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 问财 / 东财选股预览原始结果 -->
+    <div id="iwencaiPreviewModal" class="modal">
+        <div class="modal-content iwencai-preview-modal">
+            <div class="modal-header" id="iwencaiPreviewTitle">选股原始结果</div>
+            <div class="modal-body pick-note-body" id="iwencaiPreviewBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeIwencaiPreviewModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/chart_hover.js"></script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+    <script>
+        let currentGroup = '默认';
+        let allStocksData = [];
+        let sortState = { field: '', dir: 'desc' };
+        let viewMode = 'table';
+        let lastNonTickerView = 'table';
+        let sidebarOpen = true;
+        let rightSidebarOpen = false;
+        const closedCards = new Set();
+        let singleStockSuggestions = [];
+        let singleStockSuggestionIndex = -1;
+        let singleStockSuggestTimer = null;
+        const DEFAULT_IMPORT_GROUP = '导入';
+        const GROUP_STORAGE_KEY = 'favoritesCurrentGroup';
+        const VIEW_STORAGE_KEY = 'favoritesViewMode';
+        const LAST_VIEW_STORAGE_KEY = 'favoritesLastNonTickerView';
+        let currentPickNoteHtml = '';
+        let currentPickNoteMarkdown = '';
+        let pickNoteExpanded = false;
+        let pickNoteEditing = false;
+        let pickNoteDraft = '';
+        let pickNoteSaving = false;
+        let drawerActiveTab = 'pick-note';
+        let pickNoteDragStartY = null;
+        const PI_CHAT_SESSION_KEY = 'favoritesPiChatSessionId';
+        let piChatSessionId = '';
+        let piChatBusy = false;
+        let piChatMessages = [];
+
+        const COLUMN_SORT_KEYS = {
+            '股票代码': '_code',
+            '股票名称': '股票名称',
+            '当前价格': '当前价格',
+            '涨跌幅': '涨跌幅',
+            '换手率': '换手率',
+            '成交额(亿)': '成交额(亿)',
+            '流通市值(亿)': '流通市值(亿)',
+            '量比': '量比',
+            '板块': '_sector',
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentGroup = getInitialGroup();
+            viewMode = getInitialViewMode();
+            lastNonTickerView = getInitialLastNonTickerView();
+            initSidebar();
+            initRightSidebar();
+            initPiChat();
+            initPickNoteEditor();
+            initSingleStockImport();
+            initPickNoteDrawer();
+            initPickHotQueries();
+            syncViewDom();
+            await loadGroups();
+            await loadFavorites(false);
+            if (viewMode !== 'table' && allStocksData.length) {
+                applySortAndRender();
+                updateViewToggleButton();
+            } else if (viewMode !== 'table' && !allStocksData.length) {
+                setViewMode('table');
+            }
+        });
+
+        function getInitialViewMode() {
+            const params = new URLSearchParams(window.location.search);
+            const fromUrl = params.get('view');
+            if (fromUrl === 'cards' || fromUrl === 'tickers' || fromUrl === 'table') {
+                return fromUrl;
+            }
+            try {
+                const saved = localStorage.getItem(VIEW_STORAGE_KEY);
+                if (saved === 'cards' || saved === 'tickers' || saved === 'table') {
+                    return saved;
+                }
+            } catch (_) {}
+            return 'table';
+        }
+
+        function getInitialLastNonTickerView() {
+            try {
+                const saved = localStorage.getItem(LAST_VIEW_STORAGE_KEY);
+                if (saved === 'cards' || saved === 'table') {
+                    return saved;
+                }
+            } catch (_) {}
+            return 'table';
+        }
+
+        function persistViewMode() {
+            try {
+                localStorage.setItem(VIEW_STORAGE_KEY, viewMode);
+                localStorage.setItem(LAST_VIEW_STORAGE_KEY, lastNonTickerView);
+            } catch (_) {}
+            const url = new URL(window.location.href);
+            if (viewMode === 'table') {
+                url.searchParams.delete('view');
+            } else {
+                url.searchParams.set('view', viewMode);
+            }
+            history.replaceState(null, '', url);
+        }
+
+        function syncViewDom() {
+            const tableView = document.getElementById('tableView');
+            const cardsView = document.getElementById('cardsView');
+            const tickersView = document.getElementById('tickersView');
+            tableView.classList.toggle('hidden', viewMode !== 'table');
+            cardsView.classList.toggle('active', viewMode === 'cards');
+            tickersView.classList.toggle('active', viewMode === 'tickers');
+            updateViewToggleButton();
+        }
+
+        function getInitialGroup() {
+            const params = new URLSearchParams(window.location.search);
+            const fromUrl = params.get('group');
+            if (fromUrl) {
+                return fromUrl;
+            }
+            try {
+                return localStorage.getItem(GROUP_STORAGE_KEY) || '默认';
+            } catch (_) {
+                return '默认';
+            }
+        }
+
+        function persistCurrentGroup() {
+            try {
+                localStorage.setItem(GROUP_STORAGE_KEY, currentGroup);
+            } catch (_) {}
+            const url = new URL(window.location.href);
+            if (currentGroup) {
+                url.searchParams.set('group', currentGroup);
+            } else {
+                url.searchParams.delete('group');
+            }
+            history.replaceState(null, '', url);
+        }
+
+        function updateViewToggleButton() {
+            const btn = document.getElementById('btnViewToggle');
+            const tickersBtn = document.getElementById('btnTickers');
+            if (viewMode === 'tickers') {
+                btn.textContent = lastNonTickerView === 'cards' ? '多股同列' : '数据表';
+            } else {
+                btn.textContent = viewMode === 'cards' ? '数据表' : '多股同列';
+            }
+            const visibleCount = allStocksData.length - closedCards.size;
+            const noData = allStocksData.length === 0;
+            btn.disabled = noData || (viewMode === 'cards' && visibleCount === 0);
+            tickersBtn.disabled = noData || (viewMode === 'tickers' && visibleCount === 0);
+            tickersBtn.classList.toggle('active', viewMode === 'tickers');
+            btn.classList.toggle('active', viewMode === 'table' || viewMode === 'cards');
+        }
+
+        function syncMainLayout() {
+            const main = document.querySelector('.main');
+            if (!main) return;
+            main.classList.toggle('left-rail-collapsed', !sidebarOpen);
+            main.classList.toggle('right-rail-collapsed', !rightSidebarOpen);
+            main.classList.toggle('right-rail-open', rightSidebarOpen);
+        }
+
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            sidebar.classList.toggle('collapsed', !sidebarOpen);
+            toggle.classList.toggle('collapsed', !sidebarOpen);
+            toggle.textContent = sidebarOpen ? '◀' : '▶';
+            syncMainLayout();
+        }
+
+        function toggleRightSidebar() {
+            rightSidebarOpen = !rightSidebarOpen;
+            syncRightSidebarUi();
+        }
+
+        function syncRightSidebarUi() {
+            const sidebar = document.getElementById('rightSidebar');
+            const toggle = document.getElementById('rightSidebarToggle');
+            sidebar.classList.toggle('collapsed', !rightSidebarOpen);
+            toggle.classList.toggle('collapsed', !rightSidebarOpen);
+            toggle.textContent = rightSidebarOpen ? '▶' : '◀';
+            syncMainLayout();
+        }
+
+        function initRightSidebar() {
+            syncRightSidebarUi();
+            document.getElementById('rightSidebarToggle').addEventListener('click', toggleRightSidebar);
+        }
+
+        function ensurePiChatSessionId() {
+            if (piChatSessionId) return piChatSessionId;
+            try {
+                piChatSessionId = sessionStorage.getItem(PI_CHAT_SESSION_KEY) || '';
+            } catch (_) {
+                piChatSessionId = '';
+            }
+            if (!piChatSessionId) {
+                piChatSessionId = 'fav-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+                try {
+                    sessionStorage.setItem(PI_CHAT_SESSION_KEY, piChatSessionId);
+                } catch (_) {}
+            }
+            return piChatSessionId;
+        }
+
+        function setPiChatStatus(text, kind = '') {
+            const el = document.getElementById('piChatStatus');
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'pi-chat-status' + (kind ? ` ${kind}` : '');
+        }
+
+        function renderPiChatMessages() {
+            const box = document.getElementById('piChatMessages');
+            const empty = document.getElementById('piChatEmpty');
+            if (!box) return;
+            if (!piChatMessages.length) {
+                box.innerHTML = '';
+                if (empty) {
+                    empty.style.display = 'block';
+                    box.appendChild(empty);
+                } else {
+                    box.innerHTML = '<div class="pi-chat-empty">与本机 Pi 助手对话，可询问自选股、板块与行情；支持 shell 命令分析本地数据。</div>';
+                }
+                return;
+            }
+            box.innerHTML = piChatMessages.map(msg =>
+                `<div class="pi-chat-msg ${msg.role}${msg.pending ? ' pending' : ''}">${escapeHtml(msg.text)}</div>`
+            ).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function buildPiChatContext() {
+            const stocks = sortStocks(allStocksData).slice(0, 30).map(stock => {
+                const code = getStockCode(stock);
+                const name = getPlainStockName(stock);
+                const sector = formatSectorLabel(stock);
+                const change = String(stock['涨跌幅'] || '').replace(/<[^>]+>/g, '').trim();
+                const parts = [code, name];
+                if (sector) parts.push(sector);
+                if (change && change !== '--') parts.push(change);
+                return parts.join(' ');
+            });
+            return {
+                group_name: currentGroup,
+                stocks,
+            };
+        }
+
+        async function refreshPiChatStatus() {
+            try {
+                const resp = await fetch('/api/pi/chat/status');
+                const data = await resp.json();
+                if (data.success && data.available) {
+                    setPiChatStatus('本机 Pi 已就绪', 'ok');
+                } else {
+                    setPiChatStatus('未找到本机 pi 命令', 'error');
+                }
+            } catch (error) {
+                setPiChatStatus('Pi 状态检查失败', 'error');
+            }
+        }
+
+        async function sendPiChatMessage() {
+            if (piChatBusy) return;
+            const input = document.getElementById('piChatInput');
+            const sendBtn = document.getElementById('piChatSendBtn');
+            const message = (input?.value || '').trim();
+            if (!message) return;
+
+            ensurePiChatSessionId();
+            piChatBusy = true;
+            if (sendBtn) sendBtn.disabled = true;
+            piChatMessages.push({ role: 'user', text: message });
+            piChatMessages.push({ role: 'assistant', text: '思考中…', pending: true });
+            renderPiChatMessages();
+            if (input) input.value = '';
+            setPiChatStatus('Pi 正在回复…');
+
+            try {
+                const resp = await fetch('/api/pi/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: piChatSessionId,
+                        message,
+                        context: buildPiChatContext(),
+                    }),
+                });
+                const data = await resp.json();
+                piChatMessages = piChatMessages.filter(msg => !msg.pending);
+                if (data.success) {
+                    piChatMessages.push({ role: 'assistant', text: data.reply || '（无回复）' });
+                    setPiChatStatus('本机 Pi 已就绪', 'ok');
+                } else {
+                    piChatMessages.push({ role: 'assistant', text: data.error || '请求失败' });
+                    setPiChatStatus(data.error || 'Pi 对话失败', 'error');
+                }
+            } catch (error) {
+                piChatMessages = piChatMessages.filter(msg => !msg.pending);
+                piChatMessages.push({ role: 'assistant', text: '网络错误: ' + error.message });
+                setPiChatStatus('Pi 对话失败', 'error');
+            } finally {
+                piChatBusy = false;
+                if (sendBtn) sendBtn.disabled = false;
+                renderPiChatMessages();
+            }
+        }
+
+        async function resetPiChatSession() {
+            if (piChatBusy) return;
+            ensurePiChatSessionId();
+            piChatMessages = [];
+            renderPiChatMessages();
+            setPiChatStatus('正在重置会话…');
+            try {
+                const resp = await fetch('/api/pi/chat/reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: piChatSessionId }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    setPiChatStatus('已开始新对话', 'ok');
+                } else {
+                    setPiChatStatus(data.error || '重置失败', 'error');
+                }
+            } catch (error) {
+                setPiChatStatus('重置失败', 'error');
+            }
+        }
+
+        function initPiChat() {
+            ensurePiChatSessionId();
+            renderPiChatMessages();
+            refreshPiChatStatus();
+
+            const sendBtn = document.getElementById('piChatSendBtn');
+            const input = document.getElementById('piChatInput');
+            const resetBtn = document.getElementById('piChatResetBtn');
+
+            sendBtn?.addEventListener('click', sendPiChatMessage);
+            resetBtn?.addEventListener('click', resetPiChatSession);
+            input?.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    sendPiChatMessage();
+                }
+            });
+        }
+
+        function formatTrendAnalysisMarkdown(md) {
+            return escapeHtml(String(md || ''))
+                .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
+        function ensureTrendAnalysisVisible() {
+            const empty = document.getElementById('trendAnalysisEmpty');
+            if (empty) empty.style.display = 'none';
+            if (!rightSidebarOpen) toggleRightSidebar();
+        }
+
+        function findTrendAnalysisItem(code) {
+            const panel = document.getElementById('trendAnalysisPanel');
+            if (!panel) return null;
+            return panel.querySelector(`.trend-analysis-item[data-code="${CSS.escape(code)}"]`);
+        }
+
+        function upsertTrendAnalysisBlock(code, name, bodyHtml, options = {}) {
+            ensureTrendAnalysisVisible();
+            const panel = document.getElementById('trendAnalysisPanel');
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            let item = findTrendAnalysisItem(code);
+            const headHtml = `${escapeHtml(name)} (${code}) · ${time}`;
+            if (item) {
+                item.className = 'trend-analysis-item' + (options.loading ? ' loading' : '');
+                item.querySelector('.trend-analysis-head').innerHTML = headHtml;
+                item.querySelector('.trend-analysis-body').innerHTML = bodyHtml;
+            } else {
+                item = document.createElement('div');
+                item.className = 'trend-analysis-item' + (options.loading ? ' loading' : '');
+                item.dataset.code = code;
+                item.innerHTML = `
+                    <div class="trend-analysis-head">${headHtml}</div>
+                    <div class="trend-analysis-body">${bodyHtml}</div>
+                `;
+                panel.appendChild(item);
+            }
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return item;
+        }
+
+        function getStockQuoteSnapshot(code) {
+            const stock = allStocksData.find(s => getStockCode(s) === code);
+            if (!stock) return null;
+            const pick = (key) => {
+                const val = stock[key];
+                if (val == null || val === '') return undefined;
+                return typeof val === 'string' ? val.replace(/<[^>]+>/g, '').trim() : val;
+            };
+            const quote = {};
+            ['当前价格', '涨跌幅', '涨跌额', '换手率', '量比', '成交额(亿)', '流通市值(亿)'].forEach(key => {
+                const val = pick(key);
+                if (val !== undefined) quote[key] = val;
+            });
+            return Object.keys(quote).length ? quote : null;
+        }
+
+        async function requestDailyKlineAnalysis(code, name) {
+            if (!code) return;
+            const loadingItem = upsertTrendAnalysisBlock(
+                code,
+                name || code,
+                '正在分析日 K 走势…',
+                { loading: true }
+            );
+            try {
+                const response = await fetch(
+                    `/api/favorites/stocks/${encodeURIComponent(code)}/kline-analysis`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: name || '',
+                            quote: getStockQuoteSnapshot(code),
+                        }),
+                    }
+                );
+                const data = await response.json();
+                const bodyEl = loadingItem.querySelector('.trend-analysis-body');
+                if (data.success) {
+                    loadingItem.classList.remove('loading');
+                    bodyEl.innerHTML = formatTrendAnalysisMarkdown(data.markdown || data.summary || '');
+                } else {
+                    loadingItem.classList.remove('loading');
+                    bodyEl.innerHTML = `<span class="error">${escapeHtml(data.error || '分析失败')}</span>`;
+                }
+            } catch (error) {
+                loadingItem.classList.remove('loading');
+                const bodyEl = loadingItem.querySelector('.trend-analysis-body');
+                bodyEl.innerHTML = `<span class="error">分析失败: ${escapeHtml(error.message)}</span>`;
+            }
+        }
+
+        function bindTrendAnalysisTriggers() {
+            document.querySelectorAll('#cardsGrid .chart-half img.chart-clickable').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const card = img.closest('.stock-card');
+                    if (!card) return;
+                    const code = card.dataset.code || '';
+                    const titleEl = card.querySelector('.card-title-link');
+                    const name = titleEl ? titleEl.textContent.trim() : code;
+                    requestDailyKlineAnalysis(code, name);
+                });
+            });
+
+            document.querySelectorAll('#stockTable .mini-quote.chart-clickable').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    requestDailyKlineAnalysis(img.dataset.code || '', img.dataset.name || '');
+                });
+            });
+        }
+
+        function bindCardChartClicks() {
+            bindTrendAnalysisTriggers();
+        }
+
+        function initSidebar() {
+            syncMainLayout();
+            document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+            document.getElementById('btnViewToggle').addEventListener('click', () => {
+                if (viewMode === 'tickers') {
+                    setViewMode(lastNonTickerView);
+                    return;
+                }
+                if (viewMode === 'table') {
+                    if (!allStocksData.length) return;
+                    closedCards.clear();
+                    setViewMode('cards');
+                } else {
+                    setViewMode('table');
+                }
+            });
+
+            document.getElementById('btnTickers').addEventListener('click', () => {
+                if (!allStocksData.length) return;
+                if (viewMode === 'tickers') {
+                    setViewMode(lastNonTickerView);
+                    return;
+                }
+                lastNonTickerView = viewMode === 'cards' ? 'cards' : 'table';
+                closedCards.clear();
+                setViewMode('tickers');
+            });
+
+            let touchStartX = null;
+            let touchStartY = null;
+
+            const sidebar = document.getElementById('sidebar');
+            sidebar.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            sidebar.addEventListener('touchend', (e) => {
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50 && dx < 0 && sidebarOpen) {
+                    toggleSidebar();
+                }
+            }, { passive: true });
+
+            const main = document.querySelector('.main');
+            main.addEventListener('touchstart', (e) => {
+                if (e.touches[0].clientX < 24) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                } else {
+                    touchStartX = null;
+                }
+            }, { passive: true });
+
+            main.addEventListener('touchend', (e) => {
+                if (touchStartX == null) return;
+                const dx = e.changedTouches[0].clientX - touchStartX;
+                const dy = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(dx) > Math.abs(dy) && dx > 50 && !sidebarOpen) {
+                    toggleSidebar();
+                }
+                touchStartX = null;
+            }, { passive: true });
+        }
+
+        function updateSingleImportGroupLabel() {
+            const label = document.getElementById('singleImportGroupLabel');
+            if (label) {
+                label.textContent = currentGroup;
+            }
+        }
+
+        function showSingleImportResult(message, isError) {
+            const el = document.getElementById('singleImportResult');
+            el.className = 'single-import-result ' + (isError ? 'error' : 'success');
+            el.textContent = message;
+        }
+
+        function hideSingleImportResult() {
+            const el = document.getElementById('singleImportResult');
+            el.className = 'single-import-result';
+            el.textContent = '';
+        }
+
+        function hideSingleStockSuggestions() {
+            const box = document.getElementById('singleStockSuggestions');
+            box.classList.remove('show');
+            box.innerHTML = '';
+            singleStockSuggestions = [];
+            singleStockSuggestionIndex = -1;
+        }
+
+        async function searchSingleStock(query) {
+            const resp = await fetch('/api/stock/search?q=' + encodeURIComponent(query) + '&limit=8');
+            const data = await resp.json();
+            if (!data.success) {
+                throw new Error(data.error || '搜索失败');
+            }
+            return data.data || [];
+        }
+
+        function renderSingleStockSuggestions(items) {
+            const box = document.getElementById('singleStockSuggestions');
+            singleStockSuggestions = items;
+            singleStockSuggestionIndex = -1;
+            box.innerHTML = '';
+
+            if (!items.length) {
+                hideSingleStockSuggestions();
+                return;
+            }
+
+            items.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'single-suggestion-item';
+                row.innerHTML = `
+                    <div class="single-suggestion-main">
+                        <span class="single-suggestion-code">${escapeHtml(item.code)}</span>
+                        <span class="single-suggestion-name">${escapeHtml(item.name)}</span>
+                    </div>
+                    <span class="single-suggestion-pinyin">${escapeHtml(item.pinyin || '')}</span>
+                `;
+                row.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    addSingleStockToGroup(item.code, item.name);
+                });
+                row.addEventListener('mouseenter', () => {
+                    singleStockSuggestionIndex = index;
+                    box.querySelectorAll('.single-suggestion-item').forEach((el, i) => {
+                        el.classList.toggle('active', i === index);
+                    });
+                });
+                box.appendChild(row);
+            });
+            box.classList.add('show');
+        }
+
+        async function resolveSingleStockQuery(query) {
+            const trimmed = query.trim();
+            if (!trimmed) return null;
+            if (/^\d{6}$/.test(trimmed)) {
+                return { code: trimmed, name: trimmed };
+            }
+
+            const upper = trimmed.toUpperCase();
+            const localHit = singleStockSuggestions.find(item =>
+                item.code === trimmed
+                || item.name === trimmed
+                || (item.pinyin || '').toUpperCase() === upper
+                || (item.pinyin || '').toUpperCase().startsWith(upper)
+            );
+            if (localHit) {
+                return localHit;
+            }
+
+            const results = await searchSingleStock(trimmed);
+            if (!results.length) return null;
+            if (results.length === 1) return results[0];
+
+            const exact = results.find(item =>
+                item.name === trimmed
+                || item.code === trimmed
+                || (item.pinyin || '').toUpperCase() === upper
+            );
+            return exact || results[0];
+        }
+
+        async function addSingleStockToGroup(code, displayName) {
+            hideSingleStockSuggestions();
+            hideSingleImportResult();
+
+            try {
+                const response = await fetch('/api/favorites/stocks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_code: code,
+                        group_name: currentGroup,
+                    }),
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const name = displayName && displayName !== code ? displayName : code;
+                    showSingleImportResult(`已加入 ${currentGroup}：${name} (${code})`, false);
+                    document.getElementById('singleStockInput').value = '';
+                    await loadFavorites();
+                } else {
+                    showSingleImportResult(data.error || '加入失败', true);
+                }
+            } catch (error) {
+                showSingleImportResult('加入失败: ' + error.message, true);
+            }
+        }
+
+        function initSingleStockImport() {
+            const input = document.getElementById('singleStockInput');
+            updateSingleImportGroupLabel();
+
+            input.addEventListener('input', () => {
+                hideSingleImportResult();
+                clearTimeout(singleStockSuggestTimer);
+                const query = input.value.trim();
+                if (!query || /^\d{6}$/.test(query)) {
+                    hideSingleStockSuggestions();
+                    return;
+                }
+                singleStockSuggestTimer = setTimeout(async () => {
+                    try {
+                        const results = await searchSingleStock(query);
+                        renderSingleStockSuggestions(results);
+                    } catch (_) {
+                        hideSingleStockSuggestions();
+                    }
+                }, 220);
+            });
+
+            input.addEventListener('keydown', async (e) => {
+                const box = document.getElementById('singleStockSuggestions');
+                const visible = box.classList.contains('show') && singleStockSuggestions.length;
+
+                if (e.key === 'ArrowDown' && visible) {
+                    e.preventDefault();
+                    singleStockSuggestionIndex = Math.min(
+                        singleStockSuggestionIndex + 1,
+                        singleStockSuggestions.length - 1
+                    );
+                    box.querySelectorAll('.single-suggestion-item').forEach((el, i) => {
+                        el.classList.toggle('active', i === singleStockSuggestionIndex);
+                    });
+                    return;
+                }
+
+                if (e.key === 'ArrowUp' && visible) {
+                    e.preventDefault();
+                    singleStockSuggestionIndex = Math.max(singleStockSuggestionIndex - 1, 0);
+                    box.querySelectorAll('.single-suggestion-item').forEach((el, i) => {
+                        el.classList.toggle('active', i === singleStockSuggestionIndex);
+                    });
+                    return;
+                }
+
+                if (e.key === 'Escape') {
+                    hideSingleStockSuggestions();
+                    return;
+                }
+
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+
+                const query = input.value.trim();
+                if (!query) return;
+
+                if (visible && singleStockSuggestionIndex >= 0) {
+                    const picked = singleStockSuggestions[singleStockSuggestionIndex];
+                    await addSingleStockToGroup(picked.code, picked.name);
+                    return;
+                }
+
+                try {
+                    const resolved = await resolveSingleStockQuery(query);
+                    if (!resolved) {
+                        showSingleImportResult('未找到匹配股票：' + query, true);
+                        return;
+                    }
+                    await addSingleStockToGroup(resolved.code, resolved.name);
+                } catch (error) {
+                    showSingleImportResult('搜索失败: ' + error.message, true);
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(hideSingleStockSuggestions, 150);
+            });
+        }
+
+        function buildIntradayUrl(code) {
+            const nid = (code.startsWith('6') || code.startsWith('9') ? '1.' : '0.') + code;
+            return 'https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=' + nid + '&timespan=' + Date.now();
+        }
+
+        function buildMacdUrl(code, period) {
+            const nid = (code.startsWith('6') || code.startsWith('9') ? '1.' : '0.') + code;
+            const typeMap = { day: '', week: 'W', month: 'M' };
+            const kType = typeMap[period || 'day'] ?? '';
+            return 'https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=' + nid
+                + '&type=' + kType + '&unitWidth=-6&ef=&formula=MACD&AT=1&imageType=KXL&timespan=' + Date.now();
+        }
+
+        function buildCardChartUrl(code, tab, stock) {
+            if (tab === 'intraday') {
+                return stock?.intraday_url || buildIntradayUrl(code);
+            }
+            if (tab === 'day' && stock?.macd_url) return stock.macd_url;
+            return buildMacdUrl(code, tab);
+        }
+
+        function bindCardChartTabs() {
+            document.querySelectorAll('#cardsGrid .card-chart-tabs').forEach(tabBar => {
+                tabBar.querySelectorAll('.card-chart-tab').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const card = tabBar.closest('.stock-card');
+                        const code = card?.dataset.code || '';
+                        const tab = btn.dataset.tab || 'day';
+                        const stock = allStocksData.find(s => getStockCode(s) === code);
+                        tabBar.querySelectorAll('.card-chart-tab').forEach(b => {
+                            b.classList.toggle('active', b === btn);
+                        });
+                        const box = card.querySelector('.chart-half');
+                        const img = card.querySelector('.card-chart-img');
+                        if (!box || !img) return;
+                        box.classList.toggle('chart-intraday-card', tab === 'intraday');
+                        box.classList.toggle('chart-iwencai', tab !== 'intraday');
+                        const url = buildCardChartUrl(code, tab, stock);
+                        img.src = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    });
+                });
+            });
+        }
+
+        function fmtCardPrice(raw) {
+            if (raw == null || raw === '--') return '—';
+            const num = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(/<[^>]+>/g, ''));
+            return Number.isNaN(num) ? String(raw) : num.toFixed(2);
+        }
+
+        function fmtCardChange(raw) {
+            if (raw == null || raw === '--') return '—';
+            const text = String(raw).replace(/<[^>]+>/g, '').replace('+', '').trim();
+            const num = parseFloat(text);
+            if (Number.isNaN(num)) return String(raw);
+            const cls = num > 0 ? 'positive' : num < 0 ? 'negative' : 'neutral';
+            const sign = num > 0 ? '+' : '';
+            return `<span class="${cls}">${sign}${num.toFixed(2)}%</span>`;
+        }
+
+        function renderCards() {
+            const stocks = sortStocks(allStocksData).filter(s => !closedCards.has(getStockCode(s)));
+            const grid = document.getElementById('cardsGrid');
+            if (!stocks.length) {
+                grid.innerHTML = '<div class="cards-empty">没有可展示的股票</div>';
+                updateViewToggleButton();
+                return;
+            }
+            grid.innerHTML = stocks.map(stock => {
+                const code = getStockCode(stock);
+                const name = getPlainStockName(stock);
+                const price = fmtCardPrice(stock['当前价格']);
+                const change = fmtCardChange(stock['涨跌幅']);
+                const chartUrl = buildCardChartUrl(code, 'day', stock);
+                return `
+                    <div class="stock-card" data-code="${code}">
+                        <div class="card-head">
+                            <div>
+                                <div class="card-title"><a href="/analysis/${code}" class="card-title-link">${escapeHtml(name)}</a> <span style="color:#999;font-weight:400;font-size:12px;">${code}</span></div>
+                                <div class="card-meta">${price} · ${change.replace(/<[^>]+>/g, '')}</div>
+                            </div>
+                            <button class="card-close" data-code="${code}" title="关闭">×</button>
+                        </div>
+                        <div class="card-charts">
+                            <div class="card-chart-tabs">
+                                <button type="button" class="card-chart-tab" data-tab="intraday">分时</button>
+                                <button type="button" class="card-chart-tab active" data-tab="day">日K</button>
+                                <button type="button" class="card-chart-tab" data-tab="week">周K</button>
+                                <button type="button" class="card-chart-tab" data-tab="month">月K</button>
+                            </div>
+                            <div class="chart-half chart-iwencai">
+                                <img class="card-chart-img chart-clickable" data-chart="kline" src="${chartUrl}&t=${Date.now()}" alt="日K线" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.innerHTML='<div style=\\'padding:40px;text-align:center;color:#ccc;\\'>暂无数据</div>'">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('.card-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closedCards.add(btn.dataset.code);
+                    renderCards();
+                });
+            });
+            bindCardChartTabs();
+            bindCardChartClicks();
+            updateViewToggleButton();
+        }
+
+        function emQuoteUrl(code) {
+            const m = (code.startsWith('6') || code.startsWith('9')) ? 'sh' : 'sz';
+            return `https://quote.eastmoney.com/${m}${code}.html`;
+        }
+
+        function emCodeLabel(code) {
+            const suffix = (code.startsWith('6') || code.startsWith('9')) ? 'SH' : 'SZ';
+            return `${code}.${suffix}`;
+        }
+
+        function getTickerField(stock, ...keys) {
+            for (const key of keys) {
+                const val = stock[key];
+                if (val !== null && val !== undefined && val !== '' && val !== '--') {
+                    return val;
+                }
+            }
+            return null;
+        }
+
+        function parseTickerNumber(raw) {
+            if (raw === null || raw === undefined || raw === '--') return null;
+            if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
+            const text = String(raw).replace(/<[^>]+>/g, '').replace(/,/g, '').replace('%', '').trim();
+            const num = parseFloat(text);
+            return Number.isNaN(num) ? null : num;
+        }
+
+        function fmtTickerNum(raw, digits = 2) {
+            const num = parseTickerNumber(raw);
+            if (num === null) return '—';
+            return num.toFixed(digits);
+        }
+
+        function fmtTickerPct(raw) {
+            const num = parseTickerNumber(raw);
+            if (num === null) return '—';
+            const sign = num > 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}%`;
+        }
+
+        function fmtTickerLarge(raw) {
+            const num = parseTickerNumber(raw);
+            if (num === null) return '—';
+            if (Math.abs(num) >= 1e8) return (num / 1e8).toFixed(2) + '亿';
+            if (Math.abs(num) >= 1e4) return (num / 1e4).toFixed(2) + '万';
+            return num.toFixed(2);
+        }
+
+        function priceToneClass(value, base) {
+            const v = parseTickerNumber(value);
+            const b = parseTickerNumber(base);
+            if (v === null || b === null) return 'neutral';
+            if (v > b) return 'positive';
+            if (v < b) return 'negative';
+            return 'neutral';
+        }
+
+        function renderTickerMetric(label, value, cls = '') {
+            return `<div class="ticker-metric"><span class="label">${label}</span><span class="value ${cls}">${value}</span></div>`;
+        }
+
+        function renderTickers() {
+            const stocks = sortStocks(allStocksData).filter(s => !closedCards.has(getStockCode(s)));
+            const grid = document.getElementById('tickersGrid');
+            if (!stocks.length) {
+                grid.innerHTML = '<div class="cards-empty">没有可展示的股票</div>';
+                updateViewToggleButton();
+                return;
+            }
+
+            grid.innerHTML = stocks.map(stock => {
+                const code = getStockCode(stock);
+                const name = getPlainStockName(stock);
+                const price = getTickerField(stock, '当前价格');
+                const changePct = getTickerField(stock, '涨跌幅');
+                const changeAmt = getTickerField(stock, '涨跌额');
+                const prevClose = getTickerField(stock, '昨收');
+                const open = getTickerField(stock, '今开');
+                const high = getTickerField(stock, '最高');
+                const low = getTickerField(stock, '最低');
+                const limitUp = getTickerField(stock, '涨停价');
+                const limitDown = getTickerField(stock, '跌停价');
+                const volume = getTickerField(stock, '成交量');
+                const turnover = getTickerField(stock, '成交额', '成交额(亿)');
+                const totalCap = getTickerField(stock, '总市值');
+                const floatCap = getTickerField(stock, '流通市值(亿)');
+                const totalShares = getTickerField(stock, '总股本');
+                const floatShares = getTickerField(stock, '流通股');
+                const amplitude = getTickerField(stock, '振幅');
+                const turnoverRate = getTickerField(stock, '换手率');
+                const pb = getTickerField(stock, '市净率');
+                const pe = getTickerField(stock, '市盈率TTM', '市盈率(动)', '市盈率');
+                const intradayUrl = stock.intraday_url || buildIntradayUrl(code);
+                const tone = priceToneClass(price, prevClose);
+                const changeTone = priceToneClass(changePct, 0);
+                const fmtCap = (val) => {
+                    if (val === null) return '—';
+                    const text = String(val);
+                    return text.includes('亿') ? text : `${fmtTickerNum(val)}亿`;
+                };
+
+                return `
+                    <div class="ticker-card" data-code="${code}">
+                        <div class="ticker-head">
+                            <a class="ticker-title" href="${emQuoteUrl(code)}" target="_blank" rel="noopener">${escapeHtml(name)} (${emCodeLabel(code)})</a>
+                            <button class="card-close" data-code="${code}" title="关闭">×</button>
+                        </div>
+                        <div class="ticker-body">
+                            <div class="ticker-price-block">
+                                <div class="ticker-price ${tone}">${fmtTickerNum(price)}</div>
+                                <div class="ticker-change-line ${changeTone}">
+                                    ${fmtTickerNum(changeAmt)}　${fmtTickerPct(changePct)}
+                                </div>
+                                <div class="ticker-limits">
+                                    涨停: ${fmtTickerNum(limitUp)}<br>
+                                    跌停: ${fmtTickerNum(limitDown)}
+                                </div>
+                            </div>
+                            <div class="ticker-metrics">
+                                ${renderTickerMetric('今开', fmtTickerNum(open), priceToneClass(open, prevClose))}
+                                ${renderTickerMetric('最高', fmtTickerNum(high), priceToneClass(high, prevClose))}
+                                ${renderTickerMetric('最低', fmtTickerNum(low), priceToneClass(low, prevClose))}
+                                ${renderTickerMetric('昨收', fmtTickerNum(prevClose))}
+                                ${renderTickerMetric('总股本', totalShares ? fmtTickerLarge(totalShares) : '—')}
+                                ${renderTickerMetric('成交量', volume ? fmtTickerLarge(volume) : '—')}
+                                ${renderTickerMetric('成交额', turnover ? (String(turnover).includes('亿') ? turnover : fmtTickerLarge(turnover)) : '—')}
+                                ${renderTickerMetric('总市值', fmtCap(totalCap))}
+                                ${renderTickerMetric('流通值', fmtCap(floatCap))}
+                                ${renderTickerMetric('流通股', floatShares ? fmtTickerLarge(floatShares) : '—')}
+                                ${renderTickerMetric('振幅', amplitude ? fmtTickerPct(amplitude) : '—')}
+                                ${renderTickerMetric('换手率', turnoverRate ? fmtTickerPct(turnoverRate) : '—')}
+                                ${renderTickerMetric('市净率', fmtTickerNum(pb))}
+                                ${renderTickerMetric('市盈率TTM', fmtTickerNum(pe))}
+                            </div>
+                        </div>
+                        <div class="ticker-chart">
+                            <img src="${intradayUrl}&t=${Date.now()}" alt="${code} 分时" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('.card-close').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    closedCards.add(btn.dataset.code);
+                    renderTickers();
+                });
+            });
+            updateViewToggleButton();
+        }
+
+        function setViewMode(mode) {
+            if (mode === 'table' || mode === 'cards') {
+                lastNonTickerView = mode;
+            }
+            viewMode = mode;
+            syncViewDom();
+            if (mode === 'cards') {
+                renderCards();
+            } else if (mode === 'tickers') {
+                renderTickers();
+            } else {
+                closedCards.clear();
+                renderPickNoteDrawer();
+            }
+            persistViewMode();
+        }
+
+        function populateGroupSelect(selectEl, groups, selectedValue) {
+            selectEl.innerHTML = '';
+            const merged = [...new Set([DEFAULT_IMPORT_GROUP, ...groups])];
+            merged.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                if (group === selectedValue) {
+                    option.selected = true;
+                }
+                selectEl.appendChild(option);
+            });
+        }
+
+        // Load all groups
+        async function loadGroups() {
+            try {
+                const response = await fetch('/api/favorites/groups');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const select = document.getElementById('groupSelect');
+                    select.innerHTML = '';
+
+                    const groups = [...data.groups];
+                    if (currentGroup && !groups.includes(currentGroup)) {
+                        groups.unshift(currentGroup);
+                    }
+
+                    groups.forEach(group => {
+                        const option = document.createElement('option');
+                        option.value = group;
+                        option.textContent = group;
+                        select.appendChild(option);
+                    });
+
+                    if (!groups.includes(currentGroup)) {
+                        currentGroup = groups.includes('默认') ? '默认' : (groups[0] || '默认');
+                    }
+                    select.value = currentGroup;
+                    persistCurrentGroup();
+                    updateSingleImportGroupLabel();
+
+                    populateGroupSelect(
+                        document.getElementById('importGroupSelect'),
+                        data.groups,
+                        DEFAULT_IMPORT_GROUP
+                    );
+                    
+                    select.onchange = (e) => {
+                        currentGroup = e.target.value;
+                        persistCurrentGroup();
+                        updateSingleImportGroupLabel();
+                        closedCards.clear();
+                        loadFavorites(false);
+                    };
+                }
+            } catch (error) {
+                showError('加载分组失败: ' + error.message);
+            }
+        }
+
+        // Load favorites for current group
+        async function loadFavorites(live = false) {
+            showLoading();
+            hideError();
+            const pickNotePromise = fetchPickNote(currentGroup);
+            
+            try {
+                const liveParam = live ? '&live=1' : '';
+                const response = await fetch(`/api/favorites/quotes?group_name=${encodeURIComponent(currentGroup)}${liveParam}`);
+                const data = await response.json();
+                const pickNoteData = await pickNotePromise;
+                
+                if (data.success) {
+                    allStocksData = data.stocks || [];
+                    await enrichBkIndustries(allStocksData);
+                    currentPickNoteMarkdown = data.pick_note || pickNoteData.pick_note || '';
+                    currentPickNoteHtml = data.pick_note_html || pickNoteData.pick_note_html || '';
+                    pickNoteEditing = false;
+                    pickNoteDraft = '';
+                    pickNoteExpanded = false;
+                    document.getElementById('currentGroup').textContent = data.group_name;
+                    updateSingleImportGroupLabel();
+                    document.getElementById('stockCount').textContent = allStocksData.length;
+                    const fileInfo = data.file_info || {};
+                    let source = '';
+                    if (fileInfo.cached) {
+                        source = ' · 行情缓存';
+                    } else if (fileInfo.live) {
+                        source = ' · 实时报价';
+                    } else if (fileInfo.filename === '问财选股快照') {
+                        source = ' · 问财选股快照';
+                    } else if (fileInfo.filename) {
+                        source = ` · ${fileInfo.filename}`;
+                    }
+                    if (fileInfo.cache_policy) {
+                        source += ` · ${fileInfo.cache_policy}`;
+                    }
+                    if (fileInfo.stale) {
+                        source += ' · 行情待更新';
+                    }
+                    document.getElementById('updateTime').textContent = (fileInfo.update_time || '--') + source;
+                    
+                    applySortAndRender();
+                    renderPickNoteDrawer();
+                    updateViewToggleButton();
+                } else {
+                    if (pickNoteData.success && (pickNoteData.pick_note_html || pickNoteData.pick_note)) {
+                        currentPickNoteMarkdown = pickNoteData.pick_note || '';
+                        currentPickNoteHtml = pickNoteData.pick_note_html || '';
+                        pickNoteEditing = false;
+                        renderPickNoteDrawer();
+                    }
+                    showError(data.error || '加载数据失败');
+                    renderEmpty();
+                }
+            } catch (error) {
+                try {
+                    const pickNoteData = await pickNotePromise;
+                    if (pickNoteData.success && (pickNoteData.pick_note_html || pickNoteData.pick_note)) {
+                        currentPickNoteMarkdown = pickNoteData.pick_note || '';
+                        currentPickNoteHtml = pickNoteData.pick_note_html || '';
+                        pickNoteEditing = false;
+                        renderPickNoteDrawer();
+                    }
+                } catch (_) {}
+                showError('加载数据失败: ' + error.message);
+                renderEmpty();
+            }
+        }
+
+        async function fetchPickNote(groupName) {
+            try {
+                const response = await fetch(`/api/favorites/groups/${encodeURIComponent(groupName)}/pick-note`);
+                const data = await response.json();
+                return data.success ? data : { success: false, pick_note_html: '' };
+            } catch (error) {
+                return { success: false, pick_note_html: '' };
+            }
+        }
+
+        function getSortValue(stock, field) {
+            if (field === '_code') {
+                return getStockCode(stock);
+            }
+            if (field === '_sector') {
+                return formatSectorLabel(stock) || '\uffff';
+            }
+            const raw = stock[field];
+            if (raw === null || raw === undefined || raw === '--') {
+                return Number.NEGATIVE_INFINITY;
+            }
+            if (typeof raw === 'number') {
+                return raw;
+            }
+            const text = String(raw).replace(/<[^>]+>/g, '').replace('+', '').trim();
+            const num = parseFloat(text);
+            return Number.isNaN(num) ? text : num;
+        }
+
+        function sortStocks(stocks) {
+            const field = sortState.field;
+            if (!field) {
+                return [...stocks].sort((a, b) => {
+                    const pinA = (a._top_pinned || 0) * 10 + (a._pinned || 0);
+                    const pinB = (b._top_pinned || 0) * 10 + (b._pinned || 0);
+                    return pinB - pinA;
+                });
+            }
+            const dir = sortState.dir === 'asc' ? 1 : -1;
+            return [...stocks].sort((a, b) => {
+                const pinA = (a._top_pinned || 0) * 1000 + (a._pinned || 0);
+                const pinB = (b._top_pinned || 0) * 1000 + (b._pinned || 0);
+                if (pinA !== pinB) {
+                    return pinB - pinA;
+                }
+                const va = getSortValue(a, field);
+                const vb = getSortValue(b, field);
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return (va - vb) * dir;
+                }
+                return String(va).localeCompare(String(vb), 'zh-CN') * dir;
+            });
+        }
+
+        function applySortAndRender() {
+            sortState.field = document.getElementById('sortField').value;
+            sortState.dir = document.getElementById('sortDir').value;
+            if (viewMode === 'cards') {
+                renderCards();
+            } else if (viewMode === 'tickers') {
+                renderTickers();
+            } else {
+                renderTable(sortStocks(allStocksData));
+            }
+        }
+
+        function toggleColumnSort(columnLabel) {
+            const field = COLUMN_SORT_KEYS[columnLabel];
+            if (!field) {
+                return;
+            }
+            if (sortState.field === field) {
+                sortState.dir = sortState.dir === 'desc' ? 'asc' : 'desc';
+            } else {
+                sortState.field = field;
+                sortState.dir = (field === '股票名称' || field === '_code' || field === '_sector') ? 'asc' : 'desc';
+            }
+            document.getElementById('sortField').value = sortState.field;
+            document.getElementById('sortDir').value = sortState.dir;
+            applySortAndRender();
+        }
+
+        function sortHeader(label) {
+            const field = COLUMN_SORT_KEYS[label];
+            if (!field) {
+                return `<th>${label}</th>`;
+            }
+            const active = sortState.field === field;
+            const arrow = active ? (sortState.dir === 'desc' ? '↓' : '↑') : '';
+            return `<th class="sortable" onclick="toggleColumnSort('${label}')">${label}<span class="sort-indicator">${arrow}</span></th>`;
+        }
+
+        function getPlainStockName(stock) {
+            const raw = stock['股票名称'] || stock['名称'] || '';
+            return String(raw).replace(/<[^>]+>/g, '').trim() || getStockCode(stock);
+        }
+
+        function buildKlineUrl(code) {
+            const nid = (code.startsWith('6') || code.startsWith('9') ? '1.' : '0.') + code;
+            return 'https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=' + nid
+                + '&type=&unitWidth=-6&ef=&AT=1&imageType=KL&timespan=' + Date.now();
+        }
+
+        function renderStockCodeCell(stock) {
+            const code = stock._code || getStockCode(stock);
+            const name = getPlainStockName(stock);
+            const klineUrl = stock.kline_url || buildKlineUrl(code);
+            const price = stock['当前价格'] ?? '';
+            const change = stock['涨跌幅'] ?? '';
+            return `<td><a href="/analysis/${code}" class="stock-code-link kline-hover-chart" `
+                + `data-code="${code}" data-name="${escapeHtml(name)}" data-price="${escapeHtml(String(price))}" data-change="${escapeHtml(String(change))}" data-kline="${escapeHtml(klineUrl)}" data-intraday="${escapeHtml(stock.intraday_url || '')}">${code}</a></td>`;
+        }
+
+        function stockChartHoverAttrs(stock) {
+            const code = getStockCode(stock);
+            const name = getPlainStockName(stock);
+            const price = stock['当前价格'] ?? '';
+            const change = stock['涨跌幅'] ?? '';
+            return `class="stock-chart-hover" data-code="${code}" data-name="${escapeHtml(name)}" `
+                + `data-price="${escapeHtml(String(price))}" data-change="${escapeHtml(String(change))}" `
+                + `data-intraday="${escapeHtml(stock.intraday_url || '')}" data-kline="${escapeHtml(stock.kline_url || buildKlineUrl(code))}"`;
+        }
+
+        function bindChartNameHover() {
+            if (window.ChartHover) {
+                ChartHover.bindFavorites(document.getElementById('stockTable'));
+            }
+        }
+
+        function renderMiniQuoteCell(stock) {
+            const code = stock._code || getStockCode(stock);
+            const name = getPlainStockName(stock);
+            const url = stock.mini_quote_url || (
+                'https://webquotepic.eastmoney.com/GetPic.aspx?nid='
+                + (code.startsWith('6') || code.startsWith('9') ? '1.' : '0.') + code
+                + '&imageType=RJY&token=44c9d251add88e27b65ed86506f6e5da'
+                + '&rnd=' + Date.now()
+            );
+            return `<td class="quote-cell"><img class="mini-quote chart-clickable" data-code="${code}" data-name="${escapeHtml(name)}" src="${url}" alt="${code}分时" title="点击进行走势分析" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'"></td>`;
+        }
+
+        // Render table
+        function orderColumns(columns) {
+            const skip = new Set(['mini_quote_url', 'intraday_url', 'kline_url', 'macd_url', '东财二级行业', '东财三级行业']);
+            const filtered = columns.filter(col => !col.startsWith('_') && !skip.has(col));
+            const priority = ['股票代码', '股票名称', '当前价格', '涨跌幅', '涨跌额', '换手率', '成交额(亿)'];
+            const ordered = [];
+            priority.forEach(col => {
+                if (filtered.includes(col)) ordered.push(col);
+            });
+            filtered.forEach(col => {
+                if (!ordered.includes(col)) ordered.push(col);
+            });
+            return ordered;
+        }
+
+        const ICON_PIN = '<svg viewBox="0 0 16 16"><path d="M9.828 1.414 8.414 0 7 1.414l1.414 1.414L7 4.243V6H5.757L4.343 7.414 5.757 8.828 7 7.586V12a1 1 0 1 0 2 0V7.586l1.243 1.242 1.414-1.414L10.243 6H9V4.243l1.414-1.414z"/></svg>';
+        const ICON_TOP = '<svg viewBox="0 0 16 16"><path d="M8 2 3 7h3v7h4V7h3L8 2z"/></svg>';
+        const ICON_DELETE = '<svg viewBox="0 0 16 16"><path d="M5 2V1h6v1h4v2H1V2h4zm1 4h1v7H6V6zm4 0h1v7h-1V6zM3 6h1v9a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V6H3z"/></svg>';
+
+        function renderActionButtons(stock) {
+            const stockCode = getStockCode(stock);
+            const isTopPinned = stock._top_pinned === 1;
+            const isPinned = stock._pinned === 1;
+            let html = '<td><div class="action-buttons">';
+
+            html += `<button type="button" class="action-toggle top-pinned${isTopPinned ? ' active' : ''}" title="${isTopPinned ? '取消固顶' : '固顶'}" onclick="togglePinStock('${stockCode}', 'top_pinned', ${isTopPinned ? 1 : 0})">${ICON_PIN}</button>`;
+            html += `<button type="button" class="action-toggle pinned${isPinned ? ' active' : ''}" title="${isPinned ? '取消置顶' : '置顶'}" onclick="togglePinStock('${stockCode}', 'pinned', ${isPinned ? 1 : 0})">${ICON_TOP}</button>`;
+            html += `<button type="button" class="action-toggle delete" title="删除" onclick="removeStock('${stockCode}')">${ICON_DELETE}</button>`;
+            html += '</div></td>';
+            return html;
+        }
+
+        function formatSectorLabel(stock) {
+            const bk2 = stock['东财二级行业'] || '';
+            const bk3 = stock['东财三级行业'] || '';
+            if (bk2 && bk3) {
+                return bk2 === bk3 ? bk2 : `${bk2}/${bk3}`;
+            }
+            return bk2 || bk3;
+        }
+
+        function renderSectorCell(stock) {
+            const label = formatSectorLabel(stock);
+            return `<td class="industry-cell" title="${escapeHtml(label)}">${escapeHtml(label)}</td>`;
+        }
+
+        async function enrichBkIndustries(stocks) {
+            if (!stocks.length) return;
+            const codes = stocks.map(getStockCode).filter(Boolean).join(',');
+            if (!codes) return;
+            try {
+                const resp = await fetch(`/api/stocks/bk-industries?codes=${encodeURIComponent(codes)}`);
+                const data = await resp.json();
+                if (!data.success) return;
+                const bk2 = data.bk2 || {};
+                const bk3 = data.bk3 || {};
+                stocks.forEach(stock => {
+                    const code = getStockCode(stock);
+                    if (bk2[code]) stock['东财二级行业'] = bk2[code];
+                    if (bk3[code]) stock['东财三级行业'] = bk3[code];
+                });
+            } catch (error) {
+                console.warn('enrichBkIndustries failed', error);
+            }
+        }
+
+        function renderTable(stocks) {
+            const container = document.getElementById('stockTable');
+            document.getElementById('loading').style.display = 'none';
+            
+            if (!stocks || stocks.length === 0) {
+                renderEmpty();
+                return;
+            }
+            
+            const firstStock = stocks[0];
+            const columns = orderColumns(
+                Object.keys(firstStock).filter(col => !col.startsWith('_'))
+            );
+            
+            let html = '<table><thead><tr>';
+            columns.forEach(col => {
+                html += sortHeader(col);
+                if (col === '股票名称') {
+                    html += '<th>分时</th>';
+                }
+            });
+            html += sortHeader('板块');
+            html += '<th>操作</th>';
+            html += '</tr></thead><tbody>';
+            
+            stocks.forEach(stock => {
+                html += '<tr>';
+                
+                const isTopPinned = stock._top_pinned === 1;
+                const isPinned = stock._pinned === 1;
+
+                columns.forEach(col => {
+                    let value = stock[col];
+                    let cellClass = '';
+                    
+                    if (typeof value === 'number') {
+                        if (col.includes('涨跌') || col.includes('幅')) {
+                            cellClass = value > 0 ? 'positive' : (value < 0 ? 'negative' : 'neutral');
+                            value = value > 0 ? '+' + value.toFixed(2) : value.toFixed(2);
+                        } else {
+                            value = value.toFixed(2);
+                        }
+                    }
+                    
+                    if (col === '名称' || col === 'name' || col === '股票名称') {
+                        html += `<td class="${cellClass}">${formatStockNameCell(value, stock, isTopPinned, isPinned)}</td>`;
+                        html += renderMiniQuoteCell(stock);
+                        return;
+                    }
+
+                    if (col === '股票代码') {
+                        html += renderStockCodeCell(stock);
+                        return;
+                    }
+                    
+                    html += `<td class="${cellClass}">${value ?? ''}</td>`;
+                });
+
+                html += renderSectorCell(stock);
+                html += renderActionButtons(stock);
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            bindChartNameHover();
+            bindTrendAnalysisTriggers();
+            renderPickNoteDrawer();
+        }
+
+        function setDrawerTab(tab) {
+            drawerActiveTab = tab;
+            document.querySelectorAll('.pick-note-tab').forEach((btn) => {
+                btn.classList.toggle('active', btn.dataset.drawerTab === tab);
+            });
+            document.querySelectorAll('.pick-note-panel').forEach((panel) => {
+                panel.classList.toggle('active', panel.dataset.drawerTab === tab);
+            });
+        }
+
+        function initPickNoteDrawer() {
+            const handleWrap = document.getElementById('pickNoteHandleWrap');
+            const collapseBtn = document.getElementById('pickNoteCollapseBtn');
+            if (!handleWrap) {
+                return;
+            }
+            document.querySelectorAll('.pick-note-tab').forEach((tabBtn) => {
+                tabBtn.addEventListener('click', () => {
+                    setDrawerTab(tabBtn.dataset.drawerTab);
+                    if (!pickNoteExpanded) {
+                        setPickNoteExpanded(true);
+                    }
+                });
+            });
+            collapseBtn?.addEventListener('click', () => togglePickNoteDrawer());
+            handleWrap.addEventListener('touchstart', (e) => {
+                pickNoteDragStartY = e.touches[0].clientY;
+            }, { passive: true });
+            handleWrap.addEventListener('touchmove', (e) => {
+                if (pickNoteDragStartY === null) {
+                    return;
+                }
+                const delta = e.touches[0].clientY - pickNoteDragStartY;
+                if (delta > 24 && !pickNoteExpanded) {
+                    setPickNoteExpanded(true);
+                    pickNoteDragStartY = null;
+                } else if (delta < -24 && pickNoteExpanded) {
+                    setPickNoteExpanded(false);
+                    pickNoteDragStartY = null;
+                }
+            }, { passive: true });
+            handleWrap.addEventListener('touchend', () => {
+                pickNoteDragStartY = null;
+            });
+        }
+
+        function togglePickNoteDrawer() {
+            setPickNoteExpanded(!pickNoteExpanded);
+        }
+
+        function setPickNoteExpanded(expanded) {
+            pickNoteExpanded = expanded;
+            const drawer = document.getElementById('pickNoteDrawer');
+            if (!drawer) {
+                return;
+            }
+            drawer.classList.toggle('expanded', expanded);
+            drawer.classList.toggle('collapsed', !expanded);
+        }
+
+        function setPickNoteContent(markdown, html) {
+            currentPickNoteMarkdown = markdown || '';
+            currentPickNoteHtml = html || '';
+        }
+
+        function setPickNoteSaveStatus(message, kind) {
+            const el = document.getElementById('pickNoteSaveStatus');
+            if (!el) return;
+            el.textContent = message || '';
+            el.className = 'pick-note-save-status' + (kind ? ` ${kind}` : '');
+        }
+
+        function enterPickNoteEdit() {
+            pickNoteEditing = true;
+            pickNoteDraft = currentPickNoteMarkdown || '';
+            setPickNoteExpanded(true);
+            renderPickNoteDrawer();
+            const editor = document.getElementById('pickNoteEditor');
+            if (editor) {
+                editor.focus();
+            }
+        }
+
+        function cancelPickNoteEdit() {
+            pickNoteEditing = false;
+            pickNoteDraft = '';
+            setPickNoteSaveStatus('');
+            renderPickNoteDrawer();
+        }
+
+        async function savePickNote() {
+            if (pickNoteSaving) return;
+            const editor = document.getElementById('pickNoteEditor');
+            const content = (editor ? editor.value : pickNoteDraft).trim();
+            if (!content) {
+                setPickNoteSaveStatus('内容不能为空', 'error');
+                return;
+            }
+            pickNoteSaving = true;
+            setPickNoteSaveStatus('保存中…');
+            try {
+                const response = await fetch(`/api/favorites/groups/${encodeURIComponent(currentGroup)}/pick-note`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pick_note: content }),
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    setPickNoteSaveStatus(data.error || '保存失败', 'error');
+                    return;
+                }
+                setPickNoteContent(data.pick_note || content, data.pick_note_html || '');
+                pickNoteEditing = false;
+                pickNoteDraft = '';
+                setPickNoteSaveStatus('已保存', 'success');
+                renderPickNoteDrawer();
+                window.setTimeout(() => setPickNoteSaveStatus(''), 2000);
+            } catch (error) {
+                setPickNoteSaveStatus('保存失败: ' + error.message, 'error');
+            } finally {
+                pickNoteSaving = false;
+            }
+        }
+
+        function initPickNoteEditor() {
+            const editBtn = document.getElementById('pickNoteEditBtn');
+            const saveBtn = document.getElementById('pickNoteSaveBtn');
+            const cancelBtn = document.getElementById('pickNoteCancelBtn');
+            const editor = document.getElementById('pickNoteEditor');
+            if (editBtn) editBtn.addEventListener('click', enterPickNoteEdit);
+            if (saveBtn) saveBtn.addEventListener('click', savePickNote);
+            if (cancelBtn) cancelBtn.addEventListener('click', cancelPickNoteEdit);
+            if (editor) {
+                editor.addEventListener('input', () => {
+                    pickNoteDraft = editor.value;
+                });
+                editor.addEventListener('keydown', (event) => {
+                    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                        event.preventDefault();
+                        savePickNote();
+                    }
+                });
+            }
+        }
+
+        function renderPickNoteDrawer() {
+            const drawer = document.getElementById('pickNoteDrawer');
+            const body = document.getElementById('pickNoteBody');
+            const view = document.getElementById('pickNoteView');
+            const editor = document.getElementById('pickNoteEditor');
+            const editBtn = document.getElementById('pickNoteEditBtn');
+            const saveBtn = document.getElementById('pickNoteSaveBtn');
+            const cancelBtn = document.getElementById('pickNoteCancelBtn');
+            const hint = document.getElementById('pickNoteEditHint');
+            if (!drawer || !body || !view || !editor) {
+                return;
+            }
+            if (viewMode !== 'table') {
+                drawer.style.display = 'none';
+                view.innerHTML = '';
+                editor.style.display = 'none';
+                return;
+            }
+            drawer.style.display = 'block';
+            body.classList.toggle('editing', pickNoteEditing);
+
+            if (pickNoteEditing) {
+                editBtn.style.display = 'none';
+                saveBtn.style.display = '';
+                cancelBtn.style.display = '';
+                hint.textContent = 'Ctrl/Cmd + Enter 保存';
+                view.style.display = 'none';
+                editor.style.display = 'block';
+                if (editor.value !== pickNoteDraft) {
+                    editor.value = pickNoteDraft;
+                }
+            } else {
+                editBtn.style.display = '';
+                saveBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+                hint.textContent = '支持标题、列表、表格等 Markdown 语法';
+                editor.style.display = 'none';
+                view.style.display = 'block';
+                view.innerHTML = currentPickNoteHtml || '<div class="pick-note-empty">暂无选股说明，点击「编辑 Markdown」添加</div>';
+            }
+
+            setDrawerTab(drawerActiveTab);
+            setPickNoteExpanded(pickNoteExpanded || pickNoteEditing || Boolean(currentPickNoteHtml || currentPickNoteMarkdown));
+        }
+
+        // Get stock code from stock object (extract pure code from HTML if needed)
+        function getStockCode(stock) {
+            let code = stock._code || stock['代码'] || stock['code'] || stock['股票代码'] || '';
+            // If code contains HTML, extract the pure code
+            if (code.includes('<')) {
+                const match = code.match(/>(\d{6})</);
+                if (match) {
+                    code = match[1];
+                }
+            }
+            return code;
+        }
+
+        // Render empty state
+        function renderEmpty() {
+            const container = document.getElementById('stockTable');
+            document.getElementById('loading').style.display = 'none';
+            container.innerHTML = `
+                <div class="empty">
+                    <div class="empty-icon">📭</div>
+                    <div>当前分组暂无股票</div>
+                    <div style="margin-top: 10px; font-size: 14px;">
+                        使用左侧栏批量导入，或从其他页面加入分组
+                    </div>
+                </div>
+            `;
+            renderPickNoteDrawer();
+            updateViewToggleButton();
+        }
+
+        // Show loading
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('stockTable').innerHTML = '';
+        }
+
+        // Show error
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Hide error
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        async function togglePinStock(stockCode, pinType, currentlyPinned) {
+            try {
+                const response = await fetch(`/api/favorites/stocks/${stockCode}/pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        group_name: currentGroup,
+                        pin_type: pinType,
+                        value: currentlyPinned ? 0 : 1
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadFavorites(false);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+
+        // Pin stock
+        async function pinStock(stockCode, pinType) {
+            try {
+                const response = await fetch(`/api/favorites/stocks/${stockCode}/pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        group_name: currentGroup,
+                        pin_type: pinType,
+                        value: 1
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadFavorites(false);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+
+        // Unpin stock
+        async function unpinStock(stockCode, pinType) {
+            try {
+                const response = await fetch(`/api/favorites/stocks/${stockCode}/pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        group_name: currentGroup,
+                        pin_type: pinType,
+                        value: 0
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    loadFavorites(false);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('操作失败: ' + error.message);
+            }
+        }
+
+        // Remove stock
+        async function removeStock(stockCode) {
+            const group = currentGroup;
+            try {
+                const response = await fetch(`/api/favorites/stocks/${stockCode}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_name: group })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closedCards.delete(stockCode);
+                    allStocksData = allStocksData.filter(stock => getStockCode(stock) !== stockCode);
+                    document.getElementById('currentGroup').textContent = group;
+                    document.getElementById('groupSelect').value = group;
+                    document.getElementById('stockCount').textContent = allStocksData.length;
+                    persistCurrentGroup();
+                    applySortAndRender();
+                    updateViewToggleButton();
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        // Show add group modal
+        function showAddGroupModal() {
+            document.getElementById('addGroupModal').classList.add('active');
+            document.getElementById('newGroupName').value = '';
+        }
+
+        // Close add group modal
+        function closeAddGroupModal() {
+            document.getElementById('addGroupModal').classList.remove('active');
+        }
+
+        // Create new group
+        async function createGroup() {
+            const groupName = document.getElementById('newGroupName').value.trim();
+            
+            if (!groupName) {
+                alert('请输入分组名称');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/favorites/groups/${encodeURIComponent(groupName)}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    closeAddGroupModal();
+                    currentGroup = groupName;
+                    persistCurrentGroup();
+                    await loadGroups();
+                    loadFavorites(false);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('创建分组失败: ' + error.message);
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function formatStockNameCell(rawValue, stock, isTopPinned, isPinned) {
+            const props = stock._properties || [];
+            let value = rawValue ?? '';
+            let countClass = 'prop-count';
+            if (isTopPinned) {
+                countClass = 'prop-count top-pinned';
+            } else if (isPinned) {
+                countClass = 'prop-count pinned';
+            }
+
+            const plainName = String(value).replace(/<[^>]+>/g, '').trim() || value;
+            const nameHtml = `<span ${stockChartHoverAttrs(stock)}>${escapeHtml(plainName)}</span>`;
+            if (!props.length) {
+                return nameHtml;
+            }
+
+            const tooltipHtml = props.map((p, i) =>
+                `<div class="prop-item">${i + 1}. ${escapeHtml(p)}</div>`
+            ).join('');
+
+            return `${nameHtml}<span class="stock-name-tip"><span class="${countClass}">${props.length}</span><span class="prop-tooltip">${tooltipHtml}</span></span>`;
+        }
+
+        function formatStockPreview(stocks) {
+            if (!stocks || !stocks.length) return '';
+            return stocks.map(s => {
+                const name = s.name && s.name !== s.code ? s.name : '';
+                const base = name ? `${name}(${s.code})` : s.code;
+                const props = s.properties || [];
+                if (!props.length) return base;
+                return `${base} [${props.join('；')}]`;
+            }).join(', ');
+        }
+
+        function showIwencaiPreviewModal(html, query, sourceLabel) {
+            const titleEl = document.getElementById('iwencaiPreviewTitle');
+            const bodyEl = document.getElementById('iwencaiPreviewBody');
+            const label = sourceLabel || '选股';
+            titleEl.textContent = query ? `${label}原始结果 · ${query}` : `${label}原始结果`;
+            bodyEl.innerHTML = html || '<div class="pick-note-empty">暂无 HTML 结果</div>';
+            document.getElementById('iwencaiPreviewModal').classList.add('active');
+        }
+
+        function getPickQueryLoadingText(text) {
+            if (/^#\s*/.test(text)) return '正在查询东方财富选股…';
+            if (/^(?:\?|？)\s*/.test(text)) return '正在查询爱问财…';
+            return '';
+        }
+
+        function getPickQueryHint(data) {
+            if (data.xuangu) {
+                const url = data.xuangu.result_url
+                    ? ` <a href="${data.xuangu.result_url}" target="_blank" rel="noopener">东财结果页</a>`
+                    : '';
+                return `（东财：${data.xuangu.query}）${url}`;
+            }
+            if (data.iwencai) {
+                return `（问财：${data.iwencai.query}）`;
+            }
+            return '';
+        }
+
+        let xuanguHotQueries = [];
+        let iwencaiHotQueries = [];
+        let pickHotSource = 'xuangu';
+        let iwencaiHotQueryType = 'stock';
+        let iwencaiHotTypes = [];
+
+        function applyPickHotQuery(question, prefix) {
+            const textarea = document.getElementById('importText');
+            if (!textarea || !question) return;
+            textarea.value = prefix + question;
+            textarea.focus();
+            const previewEl = document.getElementById('importPreview');
+            if (previewEl) previewEl.style.display = 'none';
+            document.querySelectorAll('.pick-hot-item.active').forEach(el => el.classList.remove('active'));
+        }
+
+        function applyXuanguHotQuery(question) {
+            applyPickHotQuery(question, '# ');
+        }
+
+        function applyIwencaiHotQuery(question) {
+            applyPickHotQuery(question, '? ');
+        }
+
+        function renderPickHotItems(listEl, queries, source, onApply) {
+            if (!listEl) return;
+            const items = Array.isArray(queries) ? queries : [];
+            if (!items.length) {
+                listEl.innerHTML = '<span class="pick-hot-empty">暂无热搜</span>';
+                return;
+            }
+            listEl.innerHTML = items.map((item, index) => {
+                const label = escapeHtml(item.label || item.question || '');
+                const title = escapeHtml(item.question || item.label || '');
+                const heat = item.heat_value ? `<span class="pick-hot-meta">${item.heat_value}</span>` : '';
+                return `<button type="button" class="pick-hot-item ${source}" data-hot-index="${index}" title="${title}">${label}${heat}</button>`;
+            }).join('');
+            listEl.querySelectorAll('.pick-hot-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = Number(btn.getAttribute('data-hot-index'));
+                    const item = items[index];
+                    if (!item) return;
+                    onApply(item.question);
+                    listEl.closest('.pick-hot-panel')?.querySelectorAll('.pick-hot-item.active').forEach(el => el.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        }
+
+        function renderXuanguHotQueries(queries) {
+            const listEl = document.getElementById('xuanguHotList');
+            xuanguHotQueries = Array.isArray(queries) ? queries : [];
+            renderPickHotItems(listEl, xuanguHotQueries, 'xuangu', applyXuanguHotQuery);
+        }
+
+        function renderIwencaiHotGroups(data) {
+            const groupsEl = document.getElementById('iwencaiHotGroups');
+            if (!groupsEl) return;
+            iwencaiHotQueries = Array.isArray(data?.queries) ? data.queries : [];
+            const groups = Array.isArray(data?.groups) ? data.groups : [];
+            if (!groups.length) {
+                groupsEl.innerHTML = '<span class="pick-hot-empty">暂无热搜</span>';
+                return;
+            }
+            groupsEl.innerHTML = groups.map((group, groupIndex) => {
+                const items = (group.queries || []).map((item, index) => {
+                    const label = escapeHtml(item.label || item.question || '');
+                    const title = escapeHtml(item.question || item.label || '');
+                    return `<button type="button" class="pick-hot-item iwencai" data-group-index="${groupIndex}" data-hot-index="${index}" title="${title}">${label}</button>`;
+                }).join('');
+                if (!items) return '';
+                const groupLabel = escapeHtml(group.label || '热搜');
+                return `<div class="pick-hot-group"><div class="pick-hot-group-label">${groupLabel}</div><div class="pick-hot-list">${items}</div></div>`;
+            }).join('');
+            groupsEl.querySelectorAll('.pick-hot-item.iwencai').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const groupIndex = Number(btn.getAttribute('data-group-index'));
+                    const index = Number(btn.getAttribute('data-hot-index'));
+                    const group = groups[groupIndex];
+                    const item = group?.queries?.[index];
+                    if (!item) return;
+                    applyIwencaiHotQuery(item.question);
+                    document.querySelectorAll('.pick-hot-item.active').forEach(el => el.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        }
+
+        function renderIwencaiHotTypeTabs(types, activeType) {
+            const tabsEl = document.getElementById('iwencaiHotTypeTabs');
+            if (!tabsEl) return;
+            const list = Array.isArray(types) && types.length ? types : [{ value: 'stock', label: 'A股' }];
+            iwencaiHotTypes = list;
+            tabsEl.innerHTML = list.map(item => {
+                const value = escapeHtml(item.value || '');
+                const label = escapeHtml(item.label || item.value || '');
+                const active = item.value === activeType ? ' active' : '';
+                return `<button type="button" class="pick-hot-type-tab${active}" data-querytype="${value}">${label}</button>`;
+            }).join('');
+            tabsEl.querySelectorAll('.pick-hot-type-tab').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const querytype = btn.getAttribute('data-querytype') || 'stock';
+                    if (querytype === iwencaiHotQueryType) return;
+                    iwencaiHotQueryType = querytype;
+                    tabsEl.querySelectorAll('.pick-hot-type-tab.active').forEach(el => el.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadIwencaiHotQueries(querytype);
+                });
+            });
+        }
+
+        async function loadXuanguHotQueries() {
+            const listEl = document.getElementById('xuanguHotList');
+            if (!listEl) return;
+            listEl.innerHTML = '<span class="pick-hot-loading">加载中…</span>';
+            try {
+                const response = await fetch('/api/favorites/xuangu/hot?limit=10');
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    listEl.innerHTML = `<span class="pick-hot-error">${escapeHtml(data.error || '加载失败')}</span>`;
+                    return;
+                }
+                renderXuanguHotQueries(data.queries || []);
+            } catch (error) {
+                listEl.innerHTML = `<span class="pick-hot-error">${escapeHtml(error.message || '加载失败')}</span>`;
+            }
+        }
+
+        async function loadIwencaiHotQueries(querytype) {
+            const groupsEl = document.getElementById('iwencaiHotGroups');
+            if (!groupsEl) return;
+            groupsEl.innerHTML = '<span class="pick-hot-loading">加载中…</span>';
+            try {
+                const response = await fetch(`/api/favorites/iwencai/hot?querytype=${encodeURIComponent(querytype || 'stock')}&limit=40`);
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    groupsEl.innerHTML = `<span class="pick-hot-error">${escapeHtml(data.error || '加载失败')}</span>`;
+                    return;
+                }
+                if (Array.isArray(data.types) && data.types.length) {
+                    renderIwencaiHotTypeTabs(data.types, data.querytype || querytype || 'stock');
+                }
+                renderIwencaiHotGroups(data);
+            } catch (error) {
+                groupsEl.innerHTML = `<span class="pick-hot-error">${escapeHtml(error.message || '加载失败')}</span>`;
+            }
+        }
+
+        function switchPickHotSource(source) {
+            pickHotSource = source === 'iwencai' ? 'iwencai' : 'xuangu';
+            const xuanguBody = document.getElementById('pickHotBodyXuangu');
+            const iwencaiBody = document.getElementById('pickHotBodyIwencai');
+            const tabs = document.querySelectorAll('.pick-hot-source-tab');
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.getAttribute('data-source') === pickHotSource);
+            });
+            if (xuanguBody) xuanguBody.style.display = pickHotSource === 'xuangu' ? '' : 'none';
+            if (iwencaiBody) iwencaiBody.style.display = pickHotSource === 'iwencai' ? '' : 'none';
+            if (pickHotSource === 'iwencai' && !iwencaiHotQueries.length) {
+                loadIwencaiHotQueries(iwencaiHotQueryType);
+            }
+        }
+
+        function initPickHotQueries() {
+            loadXuanguHotQueries();
+            const refreshBtn = document.getElementById('pickHotRefresh');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', () => {
+                    if (pickHotSource === 'iwencai') {
+                        loadIwencaiHotQueries(iwencaiHotQueryType);
+                    } else {
+                        loadXuanguHotQueries();
+                    }
+                });
+            }
+            const sourceTabs = document.querySelectorAll('.pick-hot-source-tab');
+            sourceTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchPickHotSource(tab.getAttribute('data-source') || 'xuangu');
+                });
+            });
+        }
+
+        function closeIwencaiPreviewModal() {
+            document.getElementById('iwencaiPreviewModal').classList.remove('active');
+        }
+
+        // Preview import
+        async function previewImport() {
+            const text = document.getElementById('importText').value.trim();
+            const previewEl = document.getElementById('importPreview');
+            if (!text) {
+                previewEl.style.display = 'none';
+                return;
+            }
+
+            try {
+                previewEl.style.display = 'block';
+                const loadingText = getPickQueryLoadingText(text);
+                if (loadingText) {
+                    previewEl.textContent = loadingText;
+                }
+                const response = await fetch('/api/favorites/import/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const raw = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch (parseError) {
+                    previewEl.style.display = 'block';
+                    previewEl.textContent = response.ok
+                        ? '预览失败: 服务器返回格式异常'
+                        : `预览失败: 接口不可用 (${response.status})，请重启应用后重试`;
+                    return;
+                }
+                if (data.success) {
+                    if (data.resolved_text) {
+                        document.getElementById('importText').value = data.resolved_text;
+                    }
+                    previewEl.style.display = 'block';
+                    const pickHint = getPickQueryHint(data);
+                    if (data.count === 0) {
+                        previewEl.innerHTML = '未识别到有效股票' + pickHint;
+                    } else {
+                        previewEl.innerHTML = `识别到 <strong>${data.count}</strong> 只（已去重）${pickHint}：<span class="import-preview-codes">${formatStockPreview(data.stocks)}</span>`;
+                    }
+                    if ((data.iwencai || data.xuangu) && data.pick_note_html) {
+                        setPickNoteContent(data.pick_note || '', data.pick_note_html);
+                        pickNoteEditing = false;
+                        pickNoteExpanded = true;
+                        renderPickNoteDrawer();
+                        const sourceLabel = data.xuangu ? '东财选股' : '问财';
+                        const query = (data.xuangu || data.iwencai || {}).query;
+                        showIwencaiPreviewModal(data.pick_note_html, query, sourceLabel);
+                    }
+                } else {
+                    previewEl.style.display = 'block';
+                    previewEl.textContent = data.error || '预览失败';
+                }
+            } catch (error) {
+                previewEl.style.display = 'block';
+                previewEl.textContent = '预览失败: ' + error.message;
+            }
+        }
+
+        // Import stocks from textarea
+        async function importStocks() {
+            const text = document.getElementById('importText').value.trim();
+            const newGroup = document.getElementById('importNewGroup').value.trim();
+            const selectedGroup = document.getElementById('importGroupSelect').value;
+            const resultEl = document.getElementById('importResult');
+
+            resultEl.className = 'import-result';
+            resultEl.style.display = 'none';
+
+            if (!text) {
+                resultEl.className = 'import-result error';
+                resultEl.textContent = '请先粘贴要导入的内容';
+                return;
+            }
+
+            const groupName = newGroup || selectedGroup || DEFAULT_IMPORT_GROUP;
+            const createGroup = Boolean(newGroup);
+
+            try {
+                const loadingText = getPickQueryLoadingText(text);
+                if (loadingText) {
+                    resultEl.style.display = 'block';
+                    resultEl.className = 'import-result';
+                    resultEl.textContent = loadingText.replace('…', '并导入…');
+                }
+                const response = await fetch('/api/favorites/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text,
+                        group_name: groupName,
+                        create_group: createGroup
+                    })
+                });
+
+                const raw = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch (parseError) {
+                    resultEl.className = 'import-result error';
+                    resultEl.textContent = response.ok
+                        ? '导入失败: 服务器返回格式异常'
+                        : `导入失败: 接口不可用 (${response.status})，请重启应用后重试`;
+                    return;
+                }
+                if (data.success) {
+                    if (data.resolved_text) {
+                        document.getElementById('importText').value = data.resolved_text;
+                    }
+                    resultEl.className = 'import-result success';
+                    const addedText = data.stocks?.length
+                        ? `识别：${formatStockPreview(data.stocks.filter(s => data.added_codes?.includes(s.code)))}`
+                        : (data.added_codes?.length ? `新增：${data.added_codes.join(', ')}` : '');
+                    const skippedText = data.skipped_codes?.length
+                        ? `跳过：${data.skipped_codes.join(', ')}`
+                        : '';
+                    resultEl.textContent = [
+                        data.message,
+                        data.pick_note_path ? '已保存选股说明' : '',
+                        addedText,
+                        skippedText
+                    ].filter(Boolean).join('；');
+
+                    currentGroup = data.group_name;
+                    persistCurrentGroup();
+                    if (data.pick_note_html || data.pick_note) {
+                        setPickNoteContent(data.pick_note || '', data.pick_note_html || '');
+                        pickNoteEditing = false;
+                        pickNoteExpanded = true;
+                        renderPickNoteDrawer();
+                    }
+                    document.getElementById('importNewGroup').value = '';
+                    document.getElementById('importPreview').style.display = 'none';
+                    await loadGroups();
+                    document.getElementById('groupSelect').value = currentGroup;
+                    loadFavorites(false);
+                } else {
+                    resultEl.className = 'import-result error';
+                    resultEl.textContent = data.error || '导入失败';
+                }
+            } catch (error) {
+                resultEl.className = 'import-result error';
+                resultEl.textContent = '导入失败: ' + error.message;
+            }
+        }
+
+        // Delete current group
+        async function deleteCurrentGroup() {
+            if (currentGroup === '默认') {
+                alert('不能删除默认分组');
+                return;
+            }
+            
+            if (!confirm(`确定要删除分组"${currentGroup}"吗？删除后该分组内的所有股票将被移除。`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/favorites/groups/${encodeURIComponent(currentGroup)}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentGroup = '默认';
+                    persistCurrentGroup();
+                    await loadGroups();
+                    loadFavorites(false);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                alert('删除分组失败: ' + error.message);
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addGroupModal');
+            if (event.target === modal) {
+                closeAddGroupModal();
+            }
+            const iwencaiModal = document.getElementById('iwencaiPreviewModal');
+            if (event.target === iwencaiModal) {
+                closeIwencaiPreviewModal();
+            }
+        }
+    </script>
+</body>
+</html>

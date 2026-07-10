@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舆情监控 - {{ stock_code }}</title>
+    {% if embed %}
+    <style>
+        body { padding: 8px !important; background: #fff !important; }
+        .container { box-shadow: none !important; padding: 12px !important; margin: 0 !important; max-width: none !important; }
+        .page-header { display: none !important; }
+        .raw-data-container { display: none !important; }
+    </style>
+    {% endif %}
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .page-header h1 { font-size: 28px; color: #2c3e50; }
+        .page-header .date { font-size: 14px; color: #7f8c8d; }
+
+        .loading-banner { text-align: center; padding: 40px; color: #7f8c8d; }
+        .loading-banner.hidden { display: none; }
+
+        .comment-header {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            border-left: 4px solid #ff9800;
+        }
+
+        .comment-header .icon {
+            width: 28px; height: 28px;
+            background: #ff9800;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 14px;
+            margin-right: 12px; flex-shrink: 0;
+        }
+
+        .comment-header .text { color: #e65100; font-size: 15px; line-height: 1.7; }
+
+        .score-row {
+            display: grid;
+            grid-template-columns: 240px 1fr 320px;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .score-row { grid-template-columns: 1fr; }
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .score-card .big-score { font-size: 52px; font-weight: bold; }
+        .score-card .label { font-size: 15px; margin-top: 8px; opacity: 0.9; }
+        .score-card .rec {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.25);
+            font-size: 13px;
+        }
+
+        .sub-scores {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 700px) {
+            .sub-scores { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .sub-score {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .sub-score .val { font-size: 22px; font-weight: bold; color: #3498db; }
+        .sub-score .lbl { font-size: 12px; color: #7f8c8d; margin-top: 6px; }
+        .sub-score .tag { font-size: 11px; margin-top: 4px; color: #e65100; }
+
+        #sentiment-chart { width: 100%; height: 220px; }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) {
+            .content-grid { grid-template-columns: 1fr; }
+        }
+
+        .column {
+            background: #fafafa;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+
+        .column-header {
+            background: linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%);
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 500;
+            color: #1565c0;
+            border-bottom: 2px solid #90caf9;
+        }
+
+        .column-header .count {
+            font-size: 12px;
+            color: #546e7a;
+            font-weight: normal;
+            margin-left: 8px;
+        }
+
+        .column-content {
+            padding: 16px;
+            max-height: 580px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-date {
+            min-width: 52px;
+            font-size: 13px;
+            color: #2c3e50;
+            font-weight: 500;
+            padding-top: 2px;
+        }
+
+        .timeline-marker {
+            width: 10px; height: 10px;
+            background: #ff6f00;
+            border-radius: 50%;
+            margin: 5px 10px 0 6px;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(255, 111, 0, 0.2);
+        }
+
+        .timeline-content {
+            flex: 1;
+            line-height: 1.65;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .timeline-content a {
+            color: #1565c0;
+            text-decoration: none;
+        }
+
+        .timeline-content a:hover { text-decoration: underline; }
+
+        .rating-badge {
+            display: inline-block;
+            background: #fff3e0;
+            color: #e65100;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-right: 6px;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #95a5a6;
+            padding: 30px 10px;
+            font-size: 14px;
+        }
+
+        .analysis-panel {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .analysis-panel h3 { font-size: 16px; color: #2c3e50; margin-bottom: 12px; }
+
+        .analysis-list { list-style: none; }
+        .analysis-list li {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .analysis-list li:last-child { border-bottom: none; }
+
+        .raw-data-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .raw-data-header {
+            background: #343a40;
+            color: white;
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .raw-data-toggle { transition: transform 0.3s; }
+        .raw-data-toggle.collapsed { transform: rotate(-90deg); }
+
+        .raw-data-content {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .raw-data-content.collapsed { display: none; }
+
+        .raw-data-json {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #495057;
+        }
+
+        #mainContent { display: none; }
+        #mainContent.visible { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1>舆情监控</h1>
+            <div class="date" id="pageDate">加载中...</div>
+        </div>
+
+        <div class="loading-banner" id="loadingBanner">正在加载舆情数据...</div>
+
+        <div id="mainContent">
+            <div class="comment-header">
+                <div class="icon">💡</div>
+                <div class="text" id="headerText"><strong>点评</strong> | --</div>
+            </div>
+
+            <div class="score-row">
+                <div class="score-card">
+                    <div class="big-score" id="overallScore">--</div>
+                    <div class="label">舆情综合评分</div>
+                    <div class="rec" id="recommendation">--</div>
+                </div>
+                <div class="sub-scores" id="subScores"></div>
+                <div class="chart-section">
+                    <div id="sentiment-chart"></div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <div class="column">
+                    <div class="column-header">资讯<span class="count" id="newsCount"></span></div>
+                    <div class="column-content" id="news-content"></div>
+                </div>
+                <div class="column">
+                    <div class="column-header">公告<span class="count" id="annCount"></span></div>
+                    <div class="column-content" id="announcement-content"></div>
+                </div>
+                <div class="column">
+                    <div class="column-header">研报<span class="count" id="repCount"></span></div>
+                    <div class="column-content" id="research-content"></div>
+                </div>
+            </div>
+
+            <div class="analysis-panel">
+                <h3>舆情分析</h3>
+                <ul class="analysis-list" id="analysisList"></ul>
+            </div>
+        </div>
+
+        <div class="raw-data-container">
+            <div class="raw-data-header" onclick="toggleRawData()">
+                <span id="rawDataTitle">📊 Raw Data (Module 3 - Sentiment)</span>
+                <span class="raw-data-toggle collapsed">▼</span>
+            </div>
+            <div class="raw-data-content collapsed" id="rawDataContent">
+                <div class="raw-data-json" id="rawDataJson">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const stockCode = '{{ stock_code }}';
+        let sentimentChart = null;
+
+        function extractList(wrap) {
+            if (!wrap || wrap.error) return [];
+            const data = wrap.data;
+            if (Array.isArray(data)) return data;
+            if (data && Array.isArray(data.list)) return data.list;
+            if (data && Array.isArray(data.items)) return data.items;
+            return [];
+        }
+
+        function fmtNum(v, d = 1) {
+            if (v === null || v === undefined || isNaN(Number(v))) return '--';
+            return Number(v).toFixed(d);
+        }
+
+        function fmtDate(raw) {
+            if (!raw) return '--';
+            const d = parseDateAny(raw);
+            if (!d) return String(raw).slice(0, 10);
+            return d.toLocaleDateString('zh-CN');
+        }
+
+        function fmtShortDate(raw) {
+            const d = parseDateAny(raw);
+            if (!d) return '';
+            return (d.getMonth() + 1).toString().padStart(2, '0') + '-' + d.getDate().toString().padStart(2, '0');
+        }
+
+        function parseDateAny(val) {
+            if (!val) return null;
+            try {
+                if (typeof val === 'number') {
+                    return new Date(val.toString().length === 10 ? val * 1000 : val);
+                }
+                if (/^\d{13}$/.test(String(val))) return new Date(parseInt(val, 10));
+                if (/^\d{10}$/.test(String(val))) return new Date(parseInt(val, 10) * 1000);
+                let s = String(val);
+                s = s.replace(/:(\d{3})$/, '.$1');
+                const d = new Date(s.replace(' ', 'T'));
+                return isNaN(d.getTime()) ? null : d;
+            } catch {
+                return null;
+            }
+        }
+
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function recLabel(rec) {
+            const map = { positive: '偏积极', neutral: '中性', negative: '偏谨慎' };
+            return map[rec] || rec || '中性';
+        }
+
+        function isWithinDays(raw, days) {
+            const d = parseDateAny(raw);
+            if (!d) return true;
+            return (Date.now() - d.getTime()) <= days * 86400000;
+        }
+
+        function parseSentiment(moduleWrapper) {
+            const inner = (moduleWrapper && moduleWrapper.data) ? moduleWrapper.data : (moduleWrapper || {});
+            const summary = inner.opinion_summary || {};
+            const voices = extractList(inner.voice_analysis);
+            const announcements = extractList(inner.announcements_analysis);
+            const reports = extractList(inner.reports_analysis);
+            const breakdown = summary.sentiment_breakdown || {};
+
+            return {
+                timestamp: moduleWrapper.timestamp,
+                summary,
+                breakdown,
+                voices,
+                announcements,
+                reports,
+            };
+        }
+
+        function buildHeaderComment(parsed) {
+            const weekVoices = parsed.voices.filter(v => isWithinDays(v.Art_ShowTime || v.publishTime, 7)).length;
+            const weekAnns = parsed.announcements.filter(a => isWithinDays(a.display_time || a.notice_date, 7)).length;
+            const weekReps = parsed.reports.filter(r => isWithinDays(r.publishDate || r.publish_date, 7)).length;
+            const total = weekVoices + weekAnns + weekReps;
+            return '近一周该股上榜相关消息共' + total + '条，其中涉及公告' + weekAnns + '条、新闻' + weekVoices + '篇、研报' + weekReps + '篇。';
+        }
+
+        function renderSubScores(summary, breakdown) {
+            const items = [
+                ['voice_sentiment_score', '资讯舆情', breakdown.voice_sentiment],
+                ['announcements_sentiment_score', '公告舆情', breakdown.announcements_sentiment],
+                ['reports_sentiment_score', '研报舆情', breakdown.reports_sentiment],
+                ['media_coverage_score', '媒体覆盖', null],
+            ];
+            document.getElementById('subScores').innerHTML = items.map(([k, lbl, tag]) =>
+                '<div class="sub-score"><div class="val">' + fmtNum(summary[k], 0) + '</div>' +
+                '<div class="lbl">' + lbl + '</div>' +
+                (tag ? '<div class="tag">' + tag + '</div>' : '') +
+                '</div>'
+            ).join('');
+        }
+
+        function renderSentimentChart(summary) {
+            if (!sentimentChart) sentimentChart = echarts.init(document.getElementById('sentiment-chart'));
+            sentimentChart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '8%', right: '5%', bottom: '15%', top: '10%' },
+                xAxis: {
+                    type: 'category',
+                    data: ['资讯', '公告', '研报', '覆盖度'],
+                    axisLabel: { fontSize: 11 },
+                },
+                yAxis: { type: 'value', max: 100, name: '分' },
+                series: [{
+                    type: 'bar',
+                    barWidth: '50%',
+                    data: [
+                        summary.voice_sentiment_score || 0,
+                        summary.announcements_sentiment_score || 0,
+                        summary.reports_sentiment_score || 0,
+                        summary.media_coverage_score || 0,
+                    ],
+                    itemStyle: {
+                        color: (p) => ['#3498db', '#9b59b6', '#e67e22', '#1abc9c'][p.dataIndex],
+                    },
+                    label: { show: true, position: 'top', formatter: (p) => p.value.toFixed(0) },
+                }],
+            }, true);
+        }
+
+        function createTimelineItem(dateStr, html) {
+            const el = document.createElement('div');
+            el.className = 'timeline-item';
+            el.innerHTML =
+                '<div class="timeline-date">' + (dateStr || '--') + '</div>' +
+                '<div class="timeline-marker"></div>' +
+                '<div class="timeline-content">' + html + '</div>';
+            return el;
+        }
+
+        function renderNews(voices) {
+            const container = document.getElementById('news-content');
+            document.getElementById('newsCount').textContent = '(' + voices.length + ')';
+            container.innerHTML = '';
+            if (!voices.length) {
+                container.innerHTML = '<div class="empty-msg">暂无资讯</div>';
+                return;
+            }
+            voices.slice(0, 25).forEach(item => {
+                const title = item.Art_Title || item.title || item.content || '资讯';
+                const url = item.Art_Url || item.Art_OriginUrl || item.url || '';
+                const dateStr = fmtShortDate(item.Art_ShowTime || item.publishTime || item.createTime);
+                const html = url
+                    ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' + escapeHtml(title) + '</a>'
+                    : escapeHtml(title);
+                container.appendChild(createTimelineItem(dateStr, html));
+            });
+        }
+
+        function renderAnnouncements(items) {
+            const container = document.getElementById('announcement-content');
+            document.getElementById('annCount').textContent = '(' + items.length + ')';
+            container.innerHTML = '';
+            if (!items.length) {
+                container.innerHTML = '<div class="empty-msg">暂无公告</div>';
+                return;
+            }
+            items.slice(0, 25).forEach(item => {
+                const title = item.title || buildAnnTitleFallback(item);
+                const dateStr = fmtShortDate(item.display_time || item.notice_date || item.noticeDate);
+                container.appendChild(createTimelineItem(dateStr, escapeHtml(title)));
+            });
+        }
+
+        function renderReports(items) {
+            const container = document.getElementById('research-content');
+            document.getElementById('repCount').textContent = '(' + items.length + ')';
+            container.innerHTML = '';
+            if (!items.length) {
+                container.innerHTML = '<div class="empty-msg">暂无研报</div>';
+                return;
+            }
+            items.slice(0, 25).forEach(item => {
+                const title = item.title || item.reportTitle || '研报';
+                const rating = item.emRatingName || item.sRatingName || item.rating || '';
+                const org = item.orgSName || item.orgName || '';
+                const dateStr = fmtShortDate(item.publishDate || item.publish_date);
+                let html = rating ? '<span class="rating-badge">' + escapeHtml(rating) + '</span>' : '';
+                html += escapeHtml(title);
+                if (org) html += '<div style="font-size:12px;color:#7f8c8d;margin-top:4px;">' + escapeHtml(org) + '</div>';
+                container.appendChild(createTimelineItem(dateStr, html));
+            });
+        }
+
+        function buildAnnTitleFallback(item) {
+            const code = (item.codes && item.codes[0]) || {};
+            const shortName = code.short_name || '';
+            const cols = item.columns || [];
+            const colName = (Array.isArray(cols) && cols[0] && (cols[0].column_name || cols[0].name)) || '';
+            return [shortName, colName, item.art_code ? '(' + item.art_code + ')' : ''].filter(Boolean).join(' ') || '公告';
+        }
+
+        function updateUI(moduleWrapper) {
+            const parsed = parseSentiment(moduleWrapper);
+            const summary = parsed.summary;
+
+            document.title = '舆情监控 - ' + stockCode;
+            document.getElementById('loadingBanner').classList.add('hidden');
+            document.getElementById('mainContent').classList.add('visible');
+
+            document.getElementById('pageDate').textContent = fmtDate(parsed.timestamp);
+            document.getElementById('headerText').innerHTML =
+                '<strong>点评</strong> | ' + buildHeaderComment(parsed);
+
+            document.getElementById('overallScore').textContent = fmtNum(summary.overall_sentiment_score, 1);
+            document.getElementById('recommendation').textContent = recLabel(summary.recommendation);
+
+            renderSubScores(summary, parsed.breakdown);
+            renderSentimentChart(summary);
+            renderNews(parsed.voices);
+            renderAnnouncements(parsed.announcements);
+            renderReports(parsed.reports);
+
+            const analysis = (summary.analysis || []).filter(Boolean);
+            document.getElementById('analysisList').innerHTML = analysis.length
+                ? analysis.map(t => '<li>' + escapeHtml(t) + '</li>').join('')
+                : '<li>暂无分析数据</li>';
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/stock/' + stockCode + '/sentiment');
+                const result = await response.json();
+                updateRawData(result);
+                if (result.cache_file_path) updateCacheFilePath(result.cache_file_path);
+                if (result.success && result.data) {
+                    updateUI(result.data);
+                } else {
+                    document.getElementById('loadingBanner').textContent =
+                        '加载失败: ' + (result.error || '未知错误');
+                }
+            } catch (error) {
+                updateRawData({ error: error.message });
+                document.getElementById('loadingBanner').textContent = '加载失败: ' + error.message;
+            }
+        }
+
+        function updateRawData(data) {
+            document.getElementById('rawDataJson').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function updateCacheFilePath(path) {
+            const title = document.getElementById('rawDataTitle');
+            if (title && path) {
+                title.innerHTML = '📊 Raw Data (Module 3) <span style="color:#aaa;font-size:12px;margin-left:8px;">📁 ' + path.split('/').pop() + '</span>';
+            }
+        }
+
+        function toggleRawData() {
+            document.getElementById('rawDataContent').classList.toggle('collapsed');
+            document.querySelector('.raw-data-toggle').classList.toggle('collapsed');
+        }
+
+        window.addEventListener('resize', () => { if (sentimentChart) sentimentChart.resize(); });
+        window.addEventListener('load', fetchData);
+    </script>
+    <script src="/static/app_nav_shortcuts.js?v=3"></script>
+</body>
+</html>
