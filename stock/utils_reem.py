@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Dict, List, Any, Optional
 import os
 import stock_dotenv_load  # noqa: F401 — load stock/.env before KLINE_CACHE_ROOT
+from repo_paths import GENERATED_EM, SHARED_DIR, em_path, shared_path, em_glob
 from tqdm import tqdm
 from tqdm import trange
 import time
@@ -455,8 +456,8 @@ def get_zjlx(max_pages=5, sort_by_zlp=True, get_all=False, start_page=1, progres
     # 生成文件名，包含排序信息
     sort_suffix = "zlp" if sort_by_zlp else "zlb"
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    filename = f'../generated/em/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    filename = f'{GENERATED_EM}/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
     df2.to_csv(filename, index=False, encoding='utf-8-sig')
     
     print(f"主力资金流向数据已保存到: {filename}")
@@ -508,8 +509,8 @@ def get_zjlx(max_pages=5, sort_by_zlp=True, get_all=False, start_page=1, progres
     tstr = datetime.now().strftime('%y%m%d%H%M')
     sort_suffix = "zlp" if sort_by_zlp else "zlb"
     dte_short = datetime.now().strftime('%y%m%d')
-    input_filename = f'../generated/em/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
-    report_filename = f'../generated/em/{dte_short}/flow_{tstr}.csv'
+    input_filename = f'{GENERATED_EM}/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
+    report_filename = f'{GENERATED_EM}/{dte_short}/flow_{tstr}.csv'
     
     try:
         gen_z_report(input_filename, report_filename)
@@ -579,9 +580,7 @@ def find_latest_zjlx_zlb_file(prefer_today: bool = True) -> Optional[str]:
     """Return path to the newest zjlx_zlb CSV, preferring today's trading folder."""
     import glob
 
-    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    pattern = os.path.join(parent_dir, 'generated/em/*/zjlx_zlb_*.csv')
-    files = glob.glob(pattern)
+    files = em_glob('*/zjlx_zlb_*.csv')
     if not files:
         return None
 
@@ -1257,8 +1256,8 @@ def get_zjlx_complete(max_pages=10, sort_by_tov=True, extensive=False):
         tstr = datetime.now().strftime('%y%m%d%H%M')
         sort_suffix = "tov" if sort_by_tov else "zlb"
         dte_short = datetime.now().strftime('%y%m%d')
-        os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-        filename = f'../generated/em/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
+        os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+        filename = f'{GENERATED_EM}/{dte_short}/zjlx_{sort_suffix}_{tstr}.csv'
         
         # 保存到CSV文件
         df2.to_csv(filename, index=False, encoding='utf-8-sig')
@@ -1353,8 +1352,8 @@ def get_zjlx_complete(max_pages=10, sort_by_tov=True, extensive=False):
         print(f"⚠️ 统计信息显示过程中出现错误: {stats_e}")
         print("数据仍会返回，但统计信息可能不完整")
     dte_short = datetime.now().strftime('%y%m%d')
-    input_filename = f'../generated/em/{dte_short}/zjlx_tov_{tstr}.csv'
-    report_filename = f'../generated/em/{dte_short}/flow_tov_{tstr}.csv'
+    input_filename = f'{GENERATED_EM}/{dte_short}/zjlx_tov_{tstr}.csv'
+    report_filename = f'{GENERATED_EM}/{dte_short}/flow_tov_{tstr}.csv'
 
     try:
         gen_z_report(input_filename, report_filename)
@@ -1410,8 +1409,8 @@ def get_zjlx_by_tov(min_tov=1.5):
     # 生成时间戳文件名
     tstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    filename = f'../generated/em/{dte_short}/zjlx_by_tov_{min_tov}_{tstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    filename = f'{GENERATED_EM}/{dte_short}/zjlx_by_tov_{min_tov}_{tstr}.csv'
     
     # 保存到CSV文件
     df_filtered.to_csv(filename, index=False, encoding='utf-8-sig')
@@ -1499,7 +1498,7 @@ def load_stock_name_code_map():
     返回: {股票名称: 股票代码}
     """
     from pathlib import Path
-    em_root = Path('../generated/em')
+    em_root = Path(GENERATED_EM)
     if not em_root.exists():
         return {}
     
@@ -1750,8 +1749,8 @@ def get_capreal_ext(sector_type='industry', md_dir=None):
             # Save to CSV with timestamp
             timestamp_str = datetime.now().strftime('%y%m%d%H%M')
             dte_short = datetime.now().strftime('%y%m%d')
-            os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-            csv_path = f'../generated/em/{dte_short}/{sector_type}_ext_{timestamp_str}.csv'
+            os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+            csv_path = f'{GENERATED_EM}/{dte_short}/{sector_type}_ext_{timestamp_str}.csv'
             df.to_csv(csv_path, index=False, encoding='utf-8-sig')
             print(f"数据已保存到: {csv_path}")
             # Also save raw CSV to md_dir/{dte}/raw/, file name {sector_type}.csv
@@ -1769,7 +1768,7 @@ def get_capreal_ext(sector_type='industry', md_dir=None):
                  md_dir_base = os.path.join(md_dir, dte)
 
             # raw_csv_dir = os.path.join(md_dir_base, 'raw')
-            # raw_csv_dir = f'../generated/em/{dte_short}'
+            # raw_csv_dir = f'{GENERATED_EM}/{dte_short}'
             # os.makedirs(raw_csv_dir, exist_ok=True)
             # raw_csv_path = os.path.join(raw_csv_dir, f'{sector_type}_{timestamp_str}.csv')
             # df.to_csv(raw_csv_path, index=False, encoding='utf-8-sig')
@@ -2307,8 +2306,8 @@ def get_capreal_bk():
     # Save to CSV with date string
     dtestr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    csv_path = f'../generated/em/{dte_short}/bk_flow_{dtestr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    csv_path = f'{GENERATED_EM}/{dte_short}/bk_flow_{dtestr}.csv'
     df.to_csv(csv_path, index=False, encoding='utf-8')
     print(f"Data saved to: {csv_path}")
     
@@ -2398,8 +2397,8 @@ def find_latest_stockcomment_files():
     import glob
     
     # 查找stockcomment_文件（在所有日期子目录中）
-    stockcomment_files = glob.glob('../generated/em/*/stockcomment_*.csv')
-    stockcommentC_files = glob.glob('../generated/em/*/stockcommentC_*.csv')
+    stockcomment_files = em_glob('*/stockcomment_*.csv')
+    stockcommentC_files = em_glob('*/stockcommentC_*.csv')
     
     latest_stockcomment = None
     latest_stockcommentC = None
@@ -2542,8 +2541,8 @@ def get_stockcomment(force_refetch=False):
     fn=os.path.join(temp_dir, 'stockcomment.txt')
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/stockcomment_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/stockcomment_{nowstr}.csv'
     
     page_size = 500
     pgn=1
@@ -2599,7 +2598,7 @@ def get_stockcomment(force_refetch=False):
             open(fn_csv, 'a', encoding='utf8').write(df.to_csv(header=False, index=False))
     
     # 生成紧凑格式报告
-    fn_csv_compact = f'../generated/em/{dte_short}/stockcommentC_{nowstr}.csv'
+    fn_csv_compact = f'{GENERATED_EM}/{dte_short}/stockcommentC_{nowstr}.csv'
     gen_report(fn_csv, fn_csv_compact)
     
     print(f"✅ 股票评论数据获取完成:")
@@ -2619,10 +2618,10 @@ def gen_report(input_file, output_file):
     使用中文表头，保持除"相关"以外的所有字段
     从同目录下最近的quote_文件中获取成交额字段
     '''
-    fn_market_level = 'shared/market_level.csv'
+    fn_market_level = shared_path('market_level.csv')
     
     # Try to find a flow file dynamically instead of hardcoding
-    flow_files = glob.glob('../generated/em/*/flow_*.csv')
+    flow_files = em_glob('*/flow_*.csv')
     fn_flow = None
     if flow_files:
         # Get the most recent flow file
@@ -2771,7 +2770,7 @@ def gen_report(input_file, output_file):
         
         # 读取 shared/market_level.csv 并与 df_compact 按股票代码合并，添加“市值分位”列
         try:
-            df_market = pd.read_csv('shared/market_level.csv', dtype={'股票代码': str})
+            df_market = pd.read_csv(shared_path('market_level.csv'), dtype={'股票代码': str})
             # 兼容不同股票代码字段名
             code_col = None
             for col in ['SECURITY_CODE', '股票代码']:
@@ -2925,8 +2924,8 @@ def get_fund():
     fn=os.path.join(temp_dir, 'fundrank.txt')
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/fund_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/fund_{nowstr}.csv'
     page_size = 100
     pgn=1
 
@@ -3192,8 +3191,8 @@ def get_report():
     fn=os.path.join(temp_dir, 'report.txt')
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/report_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/report_{nowstr}.csv'
     page_size = 100
     page_no = 1
 
@@ -3323,8 +3322,8 @@ def get_profit():
     fn=os.path.join(temp_dir, 'profit.txt')
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/profit_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/profit_{nowstr}.csv'
     page_size = 200
     page_no = 1
 
@@ -3451,8 +3450,8 @@ def get_respredict():
     fn = os.path.join(temp_dir, 'respredict.txt')
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/respredict_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/respredict_{nowstr}.csv'
     page_size = 50
     pgn = 1
 
@@ -3887,8 +3886,8 @@ def get_quotes(pages=None):
     # 准备CSV文件
     nowstr = datetime.now().strftime('%y%m%d%H%M')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    fn_csv = f'../generated/em/{dte_short}/q_{nowstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    fn_csv = f'{GENERATED_EM}/{dte_short}/q_{nowstr}.csv'
     
     # 循环所有页面
     # for pgn in trange(1, pageTotal + 1, desc='抓取行情数据进度'):
@@ -3934,7 +3933,7 @@ def get_quotes(pages=None):
     print(f'行情数据已保存到: {fn_csv}')
     
     # 生成报告
-    fn_report = f'../generated/em/{dte_short}/q_report_{nowstr}.csv'
+    fn_report = f'{GENERATED_EM}/{dte_short}/q_report_{nowstr}.csv'
     gen_q_report(fn_csv, fn_report)
     
     return fn_csv
@@ -4220,8 +4219,8 @@ def get_quote(stock_code, force_refetch=False):
     # 缓存策略实现
     tstr = datetime.now().strftime('%Y%m%d')
     dte_short = datetime.now().strftime('%y%m%d')
-    os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
-    quote_file = f'../generated/em/{dte_short}/quote_{tstr}.csv'
+    os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
+    quote_file = f'{GENERATED_EM}/{dte_short}/quote_{tstr}.csv'
     
     # 检查是否需要使用缓存
     if not force_refetch:
@@ -4893,7 +4892,7 @@ def getRealtimeQuote(fn=None, force=False):
     dte_short = datetime.now().strftime('%y%m%d')
     # 无论fn是否传入，都保存quote_*和bk_*为csv
     try:
-        os.makedirs(f'../generated/em/{dte_short}', exist_ok=True)
+        os.makedirs(f'{GENERATED_EM}/{dte_short}', exist_ok=True)
 
         if stock_data:
             df_quote = pd.DataFrame(stock_data)
@@ -4904,9 +4903,9 @@ def getRealtimeQuote(fn=None, force=False):
                     if quote_csv.endswith('_close.csv'):
                         write_post_close_marker()
                 except Exception:
-                    quote_csv = f"../generated/em/{dte_short}/quote_{timestamp_str}.csv"
+                    quote_csv = f"{GENERATED_EM}/{dte_short}/quote_{timestamp_str}.csv"
             else:
-                quote_csv = f"../generated/em/{dte_short}/quote_{timestamp_str}.csv"
+                quote_csv = f"{GENERATED_EM}/{dte_short}/quote_{timestamp_str}.csv"
             df_quote.to_csv(quote_csv, index=False, encoding='utf-8-sig')
             print(f"股票数据已保存到: {quote_csv}")
             result['quote_file'] = quote_csv
@@ -4915,7 +4914,7 @@ def getRealtimeQuote(fn=None, force=False):
         print(f"保存CSV文件时出错: {e}")
     try:
         if sector_data:
-            bk_csv = f"../generated/em/{dte_short}/bk_{dtestr}.csv"
+            bk_csv = f"{GENERATED_EM}/{dte_short}/bk_{dtestr}.csv"
             if not os.path.exists(bk_csv):
                 df_sector = pd.DataFrame(sector_data)
                 df_sector.to_csv(bk_csv, index=False, encoding='utf-8-sig')
@@ -4962,7 +4961,7 @@ def get_latest_files():
     except Exception:
         latest_quote_file = None
 
-    em_dir = "../generated/em"
+    em_dir = GENERATED_EM
     if not latest_quote_file and os.path.exists(em_dir):
         date_dirs = [d for d in os.listdir(em_dir) if os.path.isdir(os.path.join(em_dir, d)) and d.isdigit() and len(d) == 6]
         if date_dirs:

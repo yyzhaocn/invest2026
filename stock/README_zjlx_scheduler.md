@@ -24,13 +24,23 @@ pip3 install -r requirements.txt
 ### 方法1：使用启动脚本（推荐）
 
 ```bash
+cd stock
 ./start_zjlx_scheduler.sh
 ```
 
 ### 方法2：直接运行Python脚本
 
 ```bash
+cd stock
 python3 scheduler_zjlx.py
+```
+
+### 策略选股（可手动或等调度器 17:35 自动跑）
+
+```bash
+cd stock
+venv/bin/python3 rise_prob_picks.py
+venv/bin/python3 strategy_picks.py
 ```
 
 ## 停止程序

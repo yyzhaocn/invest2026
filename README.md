@@ -63,7 +63,11 @@ Copy `.example` files in `shared/` to bootstrap an empty install.
 
 ## Data
 
-Market CSV files under `generated/` are **not** committed. Fetch fresh data using the scripts in `stock/` or your existing scheduler after clone.
+Market CSV files under `generated/` are **not** committed. Fetch fresh data using the scripts in `stock/` or the zjlx scheduler after clone:
+
+```bash
+cd stock && ./start_zjlx_scheduler.sh
+```
 
 ## License
 
