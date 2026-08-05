@@ -8,7 +8,7 @@ Personal investment research workspace: Flask web app for A-share analysis, favo
 invest2026/
 ├── stock/          # Stock web app (Flask, port 5050)
 ├── fund/           # Fund analysis scripts & web app (port 5001)
-├── market/         # Market skills: fund-list (基金代码查询), fund-pl (持仓预计盈亏)
+├── market/         # Market skills: fund-list/fund-pl/fund-trend (基金), stock-list/stock-trend (股票)
 ├── shared/         # Favorites config & pick notes (local, not in git)
 ├── templates/      # Fund web templates
 └── generated/      # Runtime market data (local cache, not in git)
