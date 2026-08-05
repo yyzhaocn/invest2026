@@ -55,7 +55,14 @@ def fetch_market(refresh: bool = False):
     cache = CACHE_DIR / f"scan_{date}.csv"
     if not refresh and cache.exists() and time.time() - cache.stat().st_mtime < CACHE_TTL:
         with open(cache, encoding="utf-8") as f:
-            return date, [dict(r) for r in csv.DictReader(f)]
+            rows = [dict(r) for r in csv.DictReader(f)]
+        for r in rows:
+            for k in ("pct", "amount", "turnover", "mcap", "fcap"):
+                try:
+                    r[k] = float(r[k]) if r.get(k) not in (None, "") else None
+                except (TypeError, ValueError):
+                    r[k] = None
+        return date, rows
 
     fs = "m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:7"
     rows, total, pn = [], None, 1
@@ -129,10 +136,10 @@ def load_zjlx_flow():
 def main():
     ap = argparse.ArgumentParser(description="全市场策略选股扫描")
     ap.add_argument("--block", default="", help="限定板块（代码或名称）")
-    ap.add_argument("--min-pct", type=float, help="最小涨跌幅 %")
-    ap.add_argument("--max-pct", type=float, help="最大涨跌幅 %")
+    ap.add_argument("--min-pct", type=float, help="最小涨跌幅 %%")
+    ap.add_argument("--max-pct", type=float, help="最大涨跌幅 %%")
     ap.add_argument("--min-amount", type=float, help="最小成交额（亿）")
-    ap.add_argument("--min-turnover", type=float, help="最小换手率 %")
+    ap.add_argument("--min-turnover", type=float, help="最小换手率 %%")
     ap.add_argument("--min-mcap", type=float, help="最小总市值（亿）")
     ap.add_argument("--sort", default="pct", choices=list(SORTS.keys()), help="排序字段，默认 pct")
     ap.add_argument("--top", type=int, default=30, help="输出条数，默认 30，0=全部")
@@ -169,11 +176,11 @@ def main():
     if args.max_pct is not None:
         rows = [r for r in rows if (r["pct"] or 999) <= args.max_pct]; conds.append(f"涨跌幅≤{args.max_pct}%")
     if args.min_amount is not None:
-        rows = [r for r in rows if (r["amount"] or 0) >= args.min_amount]; conds.append(f"成交额≥{args.min_amount}亿")
+        rows = [r for r in rows if (r["amount"] or 0) >= args.min_amount * 1e8]; conds.append(f"成交额≥{args.min_amount}亿")
     if args.min_turnover is not None:
         rows = [r for r in rows if (r["turnover"] or 0) >= args.min_turnover]; conds.append(f"换手≥{args.min_turnover}%")
     if args.min_mcap is not None:
-        rows = [r for r in rows if (r["mcap"] or 0) >= args.min_mcap]; conds.append(f"市值≥{args.min_mcap}亿")
+        rows = [r for r in rows if (r["mcap"] or 0) >= args.min_mcap * 1e8]; conds.append(f"市值≥{args.min_mcap}亿")
 
     # 去重（分页拉取时实时数据可能跨页重复）
     seen, dedup = set(), []
