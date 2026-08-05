@@ -80,9 +80,37 @@ def load_local_snapshot():
         return None
 
 
+def fetch_full_list(top: int = 20):
+    """从 push2delay clist 拉全市场 A 股列表（代码/名称/现价/涨跌幅）。
+    返回 (total, rows)。"""
+    import requests
+    fs = "m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:7"
+    params = {
+        "fid": "f12", "po": "0", "pz": str(max(top, 50)), "pn": "1", "np": "1",
+        "fltt": "2", "invt": "2", "ut": "8dec03ba335b81bf4ebdf7b29ec27d15",
+        "fs": fs, "fields": "f12,f14,f3,f2",
+    }
+    r = requests.get("https://push2delay.eastmoney.com/api/qt/clist/get",
+                     params=params, timeout=20,
+                     headers={"User-Agent": UA, "Referer": "https://quote.eastmoney.com/"})
+    r.raise_for_status()
+    data = r.json().get("data") or {}
+    rows = []
+    for item in data.get("diff") or []:
+        try:
+            pct = float(item.get("f3")) if item.get("f3") not in (None, "-") else None
+        except (TypeError, ValueError):
+            pct = None
+        rows.append({"code": str(item.get("f12", "")).zfill(6),
+                     "name": str(item.get("f14", "")),
+                     "pct": pct,
+                     "price": item.get("f2")})
+    return data.get("total", len(rows)), rows
+
+
 def main():
     ap = argparse.ArgumentParser(description="查询 A 股股票代码")
-    ap.add_argument("query", help="股票代码前缀或名称子串，如 688256 / 寒武纪")
+    ap.add_argument("query", nargs="?", default="", help="股票代码前缀或名称子串，如 688256 / 寒武纪（可省略，缺省列出全市场前 N 只）")
     ap.add_argument("--top", type=int, default=15, help="显示条数，默认 15")
     ap.add_argument("--market", default="", help="市场过滤（模糊包含），如 沪/深/科创/创业/北")
     ap.add_argument("--json", action="store_true", help="输出 JSON")
@@ -90,11 +118,31 @@ def main():
     args = ap.parse_args()
 
     query = args.query.strip()
+
     if not query:
-        print("❌ 请输入查询词", file=sys.stderr)
-        sys.exit(1)
+        # 无查询词：全市场列表（按代码序）
+        total, rows = fetch_full_list(args.top)
+        if args.json:
+            print(json.dumps({"query": None, "total": total, "results": rows[:args.top]},
+                             ensure_ascii=False, indent=2))
+            return
+        print(f"A 股全市场 {total} 只（按代码序前 {min(args.top, len(rows))} 只）:")
+        header = pad("代码", 10) + pad("名称", 16) + pad("现价", 10, "right") + "涨跌幅"
+        print(header)
+        print("-" * display_width(header))
+        for r in rows[:args.top]:
+            pct_str = f"{r['pct']:+.2f}%" if r["pct"] is not None else "--"
+            price_str = f"{r['price']}" if r["price"] not in (None, "-") else "--"
+            print(pad(r["code"], 10) + pad(r["name"], 16) + pad(price_str, 10, "right") + pct_str)
+        return
 
     results = suggest(query, count=max(args.top * 2, 20))
+
+    # 数字查询：严格按代码前缀匹配（过滤掉 suggest 的模糊命中）
+    if query.isdigit():
+        strict = [r for r in results if r["code"].startswith(query)]
+        if strict:
+            results = strict
 
     # 默认仅 A 股（沪A/深A/京A/科创板/创业板），排除港股/美股/日股/三板/债券/基金/B股/退市
     A_SHARE_MARKETS = ("沪A", "深A", "京A", "科创板", "创业板")
