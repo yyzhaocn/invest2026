@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-fund_trend: 按基金代码列出近期净值走势。
+fund-trend: 按基金代码列出近期净值走势。
 
 数据源: https://fund.eastmoney.com/pingzhongdata/{code}.js
   - Data_netWorthTrend: [{x: ms, y: 单位净值, equityReturn: 日涨跌%}]
   - syl_1y/syl_3y/syl_6y/syl_1n: 官方区间涨幅 (近1月/3月/6月/1年)
 
 用法:
-  python3 fund_trend.py <基金代码> [--days N] [--json]
+  python3 fund-trend.py <基金代码> [--days N] [--json]
 """
 import argparse
 import json

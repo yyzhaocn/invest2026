@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-fund_codes_html: 将东方财富基金代码列表生成为自包含的可搜索 HTML 页面。
+fund-codes-html: 将东方财富基金代码列表生成为自包含的可搜索 HTML 页面。
 
 用法:
-  python3 fund_codes_html.py [--output 路径] [--refresh] [--top N]
+  python3 fund-codes-html.py [--output 路径] [--refresh] [--top N]
 
 数据源: fund/fundcode_search.js (var r = [[代码, 简拼, 名称, 类型, 全拼], ...])
 """

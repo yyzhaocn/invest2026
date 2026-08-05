@@ -1,9 +1,9 @@
 ---
-name: fund_codes_html
-description: 将东方财富全部基金代码列表生成为自包含的可搜索 HTML 页面（代码/名称/拼音/类型实时过滤，点击跳转基金主页）。默认输出 /tmp/fund_codes.html，可用 --output 指定路径；--refresh 先从网络更新本地缓存。当用户要求「基金列表做成 HTML」「导出基金代码网页」「fund codes as html」时使用。反触发：只查代码/名称用 fund_list；算盈亏用 fund_pl；看走势用 fund_trend。
+name: fund-codes-html
+description: 将东方财富全部基金代码列表生成为自包含的可搜索 HTML 页面（代码/名称/拼音/类型实时过滤，点击跳转基金主页）。默认输出 /tmp/fund_codes.html，可用 --output 指定路径；--refresh 先从网络更新本地缓存。当用户要求「基金列表做成 HTML」「导出基金代码网页」「fund codes as html」时使用。反触发：只查代码/名称用 fund-list；算盈亏用 fund-pl；看走势用 fund-trend。
 ---
 
-# fund_codes_html — 基金代码列表 HTML
+# fund-codes-html — 基金代码列表 HTML
 
 把东方财富基金列表生成为一个**自包含**（无外部依赖）的可搜索 HTML 页面。
 
@@ -12,7 +12,7 @@ description: 将东方财富全部基金代码列表生成为自包含的可搜�
 ## 使用
 
 ```bash
-python3 market/skills/fund_codes_html/scripts/fund_codes_html.py [--output /path/to/fund_codes.html] [--refresh] [--include-bonds]
+python3 market/skills/fund-codes-html/scripts/fund-codes-html.py [--output /path/to/fund_codes.html] [--refresh] [--include-bonds]
 ```
 
 参数：

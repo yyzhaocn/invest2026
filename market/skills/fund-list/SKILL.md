@@ -1,16 +1,16 @@
 ---
-name: fund_list
+name: fund-list
 description: 获取东方财富基金代码列表并搜索基金。支持按基金代码前缀、名称子串、拼音简拼查询；数据源为本地缓存（fund/fundcode_search.js 含基金类型、fund/fundcode.csv 含持仓图链接）或网络刷新。当用户问「有哪些基金」「帮我找某基金代码」「基金代码是多少」「列出某类型的基金」时使用。
 ---
 
-# fund_list — 基金代码列表查询
+# fund-list — 基金代码列表查询
 
 查询东方财富全部基金（约 2.5 万只）的代码、名称、类型，并支持按代码 / 名称 / 拼音搜索。
 
 ## 使用
 
 ```bash
-python3 market/skills/fund_list/scripts/fund_list.py <查询词> [--top N] [--type 类型] [--refresh]
+python3 market/skills/fund-list/scripts/fund-list.py <查询词> [--top N] [--type 类型] [--refresh]
 ```
 
 参数：
@@ -41,10 +41,10 @@ python3 market/skills/fund_list/scripts/fund_list.py <查询词> [--top N] [--ty
 ...
 ```
 
-## 与 fund_pl 的关系
+## 与 fund-pl 的关系
 
-拿到基金代码后，如需计算该基金当日持仓预计盈亏，使用 `fund_pl` 技能：
+拿到基金代码后，如需计算该基金当日持仓预计盈亏，使用 `fund-pl` 技能：
 
 ```bash
-python3 market/skills/fund_pl/scripts/fund_pl.py <基金代码>
+python3 market/skills/fund-pl/scripts/fund-pl.py <基金代码>
 ```

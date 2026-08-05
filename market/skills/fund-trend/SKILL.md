@@ -1,21 +1,21 @@
 ---
-name: fund_trend
-description: 列出指定基金代码的近期净值走势（最近 N 日净值表、日涨跌、区间表现、走势缩略图、区间高/低点）。数据来自东方财富 pingzhongdata 接口。当用户问「某基金最近走势/净值表现如何」「近期涨跌」「看下 xxx 代码的基金趋势」「基金最近一个月涨了多少」时使用。反触发：查基金代码列表用 fund_list；估算当日持仓预计盈亏用 fund_pl。
+name: fund-trend
+description: 列出指定基金代码的近期净值走势（最近 N 日净值表、日涨跌、区间表现、走势缩略图、区间高/低点）。数据来自东方财富 pingzhongdata 接口。当用户问「某基金最近走势/净值表现如何」「近期涨跌」「看下 xxx 代码的基金趋势」「基金最近一个月涨了多少」时使用。反触发：查基金代码列表用 fund-list；估算当日持仓预计盈亏用 fund-pl。
 ---
 
-# fund_trend — 基金近期净值走势
+# fund-trend — 基金近期净值走势
 
 按基金代码拉取东方财富 pingzhongdata 接口，输出该基金近期净值走势：最近 N 日逐日净值与涨跌、区间表现（1日/1月/3月/6月/1年）、走势缩略图、区间高/低点。
 
 ## 使用
 
 ```bash
-python3 market/skills/fund_trend/scripts/fund_trend.py <基金代码> [--days N] [--json]
+python3 market/skills/fund-trend/scripts/fund-trend.py <基金代码> [--days N] [--json]
 ```
 
 参数：
 
-- `基金代码`（必填）：如 `161631`、`018124`。可用 `fund_list` 技能查到。
+- `基金代码`（必填）：如 `161631`、`018124`。可用 `fund-list` 技能查到。
 - `--days N`：最近走势表显示的天数（默认 15，最大 60）。
 - `--json`：输出 JSON（含基本资料、区间表现、完整最近 N 日序列），便于程序化处理。
 

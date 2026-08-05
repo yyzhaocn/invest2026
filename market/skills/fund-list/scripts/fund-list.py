@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-fund_list: 查询东方财富基金代码列表。
+fund-list: 查询东方财富基金代码列表。
 
 数据源（本地优先）:
   - fund/fundcode_search.js  -> [代码, 拼音简拼, 名称, 类型, 全拼]
   - fund/fundcode.csv        -> fundcode,fundname,holders
 
 用法:
-  python3 fund_list.py [查询词] [--top N] [--type 类型] [--refresh]
+  python3 fund-list.py [查询词] [--top N] [--type 类型] [--refresh]
 """
 import argparse
 import json
@@ -113,7 +113,7 @@ def main():
 
     funds = load_js_list()
     if not funds:
-        print("❌ 本地无基金列表缓存。请先运行: python3 fund_list.py --refresh")
+        print("❌ 本地无基金列表缓存。请先运行: python3 fund-list.py --refresh")
         sys.exit(1)
 
     csv_map = load_csv_map()

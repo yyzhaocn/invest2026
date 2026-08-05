@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-fund_pl: 按基金代码计算基金当日持仓预计盈亏(estimated P&L)及贡献表。
+fund-pl: 按基金代码计算基金当日持仓预计盈亏(estimated P&L)及贡献表。
 
 数据流:
   1. FundAnalyzer.stockHolding()  -> 东方财富最新季度报告持仓 (写入 generated/em/fundHoldings.csv 缓存)
@@ -9,7 +9,7 @@ fund_pl: 按基金代码计算基金当日持仓预计盈亏(estimated P&L)及�
   3. 贡献% = 净值占比 x 当日涨跌幅 / 100
 
 用法:
-  python3 fund_pl.py <基金代码> [--date YYYY-MM-DD] [--top N] [--json]
+  python3 fund-pl.py <基金代码> [--date YYYY-MM-DD] [--top N] [--json]
 """
 import argparse
 import json
