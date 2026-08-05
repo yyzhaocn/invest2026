@@ -5,18 +5,21 @@ description: 将东方财富全部基金代码列表生成为自包含的可搜�
 
 # fund_codes_html — 基金代码列表 HTML
 
-把东方财富基金列表（约 2.7 万只）生成为一个**自包含**（无外部依赖）的可搜索 HTML 页面。
+把东方财富基金列表生成为一个**自包含**（无外部依赖）的可搜索 HTML 页面。
+
+**默认排除债券类基金**（类型含「债」或「固收」：债券型-*、QDII-纯债/混合债、混合型-偏债、指数型-固收等；货币型保留），如需包含用 `--include-bonds`。
 
 ## 使用
 
 ```bash
-python3 market/skills/fund_codes_html/scripts/fund_codes_html.py [--output /path/to/fund_codes.html] [--refresh]
+python3 market/skills/fund_codes_html/scripts/fund_codes_html.py [--output /path/to/fund_codes.html] [--refresh] [--include-bonds]
 ```
 
 参数：
 
 - `--output, -o`：输出路径，默认 `/tmp/fund_codes.html`。
 - `--refresh`：先从网络 `http://fund.eastmoney.com/js/fundcode_search.js` 刷新本地缓存（`fund/fundcode_search.js`）再生成。
+- `--include-bonds`：包含债券型基金（默认排除）。
 - `--top N`：仅嵌入前 N 只（调试用，默认全部）。
 
 ## 产物

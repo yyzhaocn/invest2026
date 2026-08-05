@@ -97,8 +97,13 @@ def refresh_from_network():
     print(f"✅ 已刷新缓存: {JS_FILE} ({len(r.text) // 1024} KB)")
 
 
-def load_funds(limit=None):
-    """解析本地 fundcode_search.js 为 fund dict 列表。"""
+def load_funds(limit=None, exclude_bonds=True):
+    """解析本地 fundcode_search.js 为 fund dict 列表。
+
+    exclude_bonds=True 时过滤掉债券类基金（默认）：类型含「债」或「固收」的
+    全部排除（债券型-*、QDII-纯债/混合债、混合型-偏债、指数型-固收等），
+    货币型保留。
+    """
     if not JS_FILE.exists():
         raise FileNotFoundError(f"本地缓存不存在: {JS_FILE}，请先运行 --refresh")
     content = JS_FILE.read_text(encoding="utf-8")
@@ -106,8 +111,14 @@ def load_funds(limit=None):
     if start == -1 or end == -1:
         raise ValueError("缓存格式异常，无法解析")
     data = json.loads(content[start:end + 1])
-    funds = [{"c": it[0], "n": it[2], "t": it[3], "p": it[4]}
-             for it in data if len(it) >= 5]
+    funds = []
+    for it in data:
+        if len(it) < 5:
+            continue
+        ftype = it[3]
+        if exclude_bonds and ("债" in ftype or "固收" in ftype):
+            continue
+        funds.append({"c": it[0], "n": it[2], "t": ftype, "p": it[4]})
     if limit:
         funds = funds[:limit]
     return funds
@@ -118,21 +129,27 @@ def main():
     ap.add_argument("--output", "-o", default="/tmp/fund_codes.html", help="输出路径，默认 /tmp/fund_codes.html")
     ap.add_argument("--refresh", action="store_true", help="先从网络更新本地缓存")
     ap.add_argument("--top", type=int, default=0, help="仅嵌入前 N 只（调试），0=全部")
+    ap.add_argument("--include-bonds", action="store_true", help="包含债券类基金（默认排除，货币型始终保留）")
     args = ap.parse_args()
 
     if args.refresh:
         refresh_from_network()
 
-    funds = load_funds(args.top if args.top > 0 else None)
+    exclude_bonds = not args.include_bonds
+    funds = load_funds(args.top if args.top > 0 else None, exclude_bonds=exclude_bonds)
+    total = len(funds)
     html = (HTML_TEMPLATE
             .replace("__DATA__", json.dumps(funds, ensure_ascii=False))
             .replace("__ASOF__", datetime.now().strftime("%Y-%m-%d %H:%M"))
-            .replace("__TOTAL__", str(len(funds))))
+            .replace("__TOTAL__", str(total)))
+    if exclude_bonds:
+        html = html.replace(f"共 {total} 只", f"共 {total} 只（已排除债券类）")
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
-    print(f"✅ 已生成: {out} ({out.stat().st_size / 1024:.0f} KB, {len(funds)} 只基金)")
+    print(f"✅ 已生成: {out} ({out.stat().st_size / 1024:.0f} KB, {total} 只基金"
+          + ("，已排除债券类)" if exclude_bonds else ")"))
 
 
 if __name__ == "__main__":
