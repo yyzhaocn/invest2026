@@ -98,7 +98,7 @@ def main():
     print(f"   共 {len(rows)} 只 ｜ 涨 {up} / 跌 {down}")
     print("   流通市值 TOP5:")
     for r in rows[:5]:
-        print(f"     {r[0]} {r[1]}  chg {r[2]:+.2f}%  流通 {r[3] / 1e4:,.0f}亿 / 总 {r[4] / 1e4:,.0f}亿")
+        print(f"     {r[0]} {r[1]}  chg {r[2]:+.2f}%  流通 {r[3] / 100:,.0f}亿 / 总 {r[4] / 100:,.0f}亿")
 
 
 if __name__ == "__main__":
