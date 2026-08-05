@@ -46,3 +46,4 @@ shared/*.bak.*
 # Fund scratch
 fund/raw_har.json
 fund/urlstmp.txt
+__pycache__/

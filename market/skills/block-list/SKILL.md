@@ -1,0 +1,44 @@
+---
+name: block-list
+description: 查询 A 股板块（行业/概念）列表并按名称或代码搜索，返回板块代码（BKxxxx）、今日涨跌幅、领涨股。数据来自东方财富板块接口（本地缓存 1 小时，--refresh 强制更新）。当用户问「有哪些板块」「今天哪些板块涨得好」「半导体板块代码是多少」「板块列表」时使用。反触发：查个股代码用 stock-list；看板块走势用 block-trend。
+---
+
+# block-list — 板块列表查询
+
+列出并搜索 A 股板块（行业 496 个 / 概念 503 个），返回板块代码（BKxxxx）、今日涨跌幅、领涨股。
+
+## 使用
+
+```bash
+python3 market/skills/block-list/scripts/block-list.py [<查询词>] [--type 行业|概念] [--top N] [--refresh] [--json]
+```
+
+参数：
+
+- `查询词`（可选）：板块代码前缀（如 `BK047`）或名称子串（如 `半导体`、`算力`）。**省略时列出前 N 个**（按今日涨跌幅降序）。
+- `--type`：板块类型，`行业` 或 `概念`（默认 `概念`）。
+- `--top N`：显示条数（默认 15）。
+- `--refresh`：强制从网络刷新板块缓存。
+- `--json`：输出 JSON。
+
+## 输出示例
+
+```
+概念板块（共 503 个，按涨跌幅降序）:
+代码      名称            今日涨跌幅  领涨股
+BK1152   高带宽内存       +7.88%    中巨芯-U
+BK0890   MLCC            +6.91%    博杰股份
+...
+```
+
+## 数据源
+
+- 东方财富板块接口 `push2delay.eastmoney.com/api/qt/clist/get`：
+  - 行业：`m:90+t:2+f:!50`
+  - 概念：`m:90+t:3+f:!50`
+- 本地缓存 `generated/em/boards_<type>.csv`（1 小时 TTL，git 忽略），`--refresh` 强制更新
+
+## 与 block-trend / stock-list 的关系
+
+- 拿到板块代码后看板块走势：`block-trend` 技能
+- 看板块内个股：`stock-list --block <板块代码或名称>`

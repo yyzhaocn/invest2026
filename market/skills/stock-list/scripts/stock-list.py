@@ -19,6 +19,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[4]
 STOCK_DIR = REPO_ROOT / "stock"
 sys.path.insert(0, str(STOCK_DIR))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+from boards import fetch_block_stocks, resolve_block  # noqa: E402
 
 SUGGEST_URL = "https://searchapi.eastmoney.com/api/suggest/get"
 SUGGEST_TOKEN = "D43BF722C8E33BDC906FB84D85E326E8"
@@ -113,11 +115,45 @@ def main():
     ap.add_argument("query", nargs="?", default="", help="股票代码前缀或名称子串，如 688256 / 寒武纪（可省略，缺省列出全市场前 N 只）")
     ap.add_argument("--top", type=int, default=15, help="显示条数，默认 15")
     ap.add_argument("--market", default="", help="市场过滤（模糊包含），如 沪/深/科创/创业/北")
+    ap.add_argument("--block", default="", help="板块代码(BKxxxx)或板块名，列出该板块内全部股票（按涨跌幅降序）")
     ap.add_argument("--json", action="store_true", help="输出 JSON")
     ap.add_argument("--all", action="store_true", help="包含三板/退市股（默认排除）")
     args = ap.parse_args()
 
     query = args.query.strip()
+
+    if args.block:
+        # 板块内股票模式
+        block = args.block.strip()
+        if block.upper().startswith("BK"):
+            bcode = block.upper()
+            bname = None
+        else:
+            resolved = resolve_block(block)
+            if not resolved:
+                print(f"❌ 未找到板块 {block!r}（可用 block-list 确认名称/代码）", file=sys.stderr)
+                sys.exit(1)
+            bcode, bname = resolved
+        total, rows = fetch_block_stocks(bcode)
+        if args.market:
+            pass  # 板块内无需市场过滤
+        if args.json:
+            print(json.dumps({"block": bcode, "block_name": bname, "total": total,
+                              "results": rows[:args.top]}, ensure_ascii=False, indent=2))
+            return
+        shown = rows[:args.top] if args.top > 0 else rows
+        title = f"{bname or bcode} ({bcode}) 板块内 {total} 只（按涨跌幅降序）:"
+        print(title)
+        header = pad("代码", 10) + pad("名称", 16) + pad("现价", 10, "right") + "涨跌幅"
+        print(header)
+        print("-" * display_width(header))
+        for r in shown:
+            pct_str = f"{r['pct']:+.2f}%" if r["pct"] is not None else "--"
+            price_str = f"{r['price']}" if r["price"] not in (None, "-") else "--"
+            print(pad(r["code"], 10) + pad(r["name"], 16) + pad(price_str, 10, "right") + " " + pct_str)
+        if args.top > 0 and len(rows) > args.top:
+            print(f"… 还有 {len(rows) - args.top} 只（--top 0 显示全部）")
+        return
 
     if not query:
         # 无查询词：全市场列表（按代码序）

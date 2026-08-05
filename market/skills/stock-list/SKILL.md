@@ -10,13 +10,14 @@ description: 查询 A 股股票代码列表并搜索个股。支持按股票代�
 ## 使用
 
 ```bash
-python3 market/skills/stock-list/scripts/stock-list.py [<查询词>] [--top N] [--market 市场] [--json]
+python3 market/skills/stock-list/scripts/stock-list.py [<查询词>] [--top N] [--market 市场] [--block 板块] [--json]
 ```
 
 参数：
 
 - `查询词`（可选）：股票代码前缀（如 `688256`、`6005`）或名称子串（如 `寒武纪`、`平安`）。**省略时列出全市场 A 股前 N 只**（按代码序，实时 clist 接口）。
-- `--top N`：最多显示 N 条（默认 15）。
+- `--block 板块`：按**板块**筛选——传入板块代码（`BKxxxx`）或板块名（如 `半导体`、`算力`），列出该板块内全部股票（按涨跌幅降序）。板块可用 `block-list` 技能查到。
+- `--top N`：最多显示 N 条（默认 15，`--block` 模式下 0 显示全部）。
 - `--market`：市场过滤（模糊包含），如 `沪`、`深`、`科创`、`创业`、`北`。
 - `--json`：输出 JSON。
 - 默认排除港股/美股/三板/退市，如需包含用 `--all`。
