@@ -29,6 +29,7 @@ INDUSTRY_LEVELS = ["一级行业", "二级行业", "三级行业"]
 LEVEL_TAG = {"一级行业": "一级", "二级行业": "二级", "三级行业": "三级"}
 BOARD_FIELDS = "f12,f14,f3,f2,f128,f140"
 STOCK_FIELDS = "f12,f14,f3,f2"
+HOTMAP_FIELDS = "f12,f14,f2,f3,f6,f8,f20,f21"
 
 
 def _cache_path(btype: str) -> Path:
@@ -139,15 +140,21 @@ def resolve_block(query: str, refresh: bool = False):
     return matches[0]["code"], matches[0]["name"]
 
 
-def fetch_block_stocks(block_code: str, max_pages: int = 5):
-    """拉取板块内全部股票（按涨跌幅降序）。返回 (total, [{code,name,pct,price}])。"""
+def fetch_block_stocks(block_code: str, max_pages: int = 5, fields: str = None):
+    """拉取板块内全部股票（按涨跌幅降序）。返回 (total, [{code,name,pct,price,...}])。
+
+    fields 默认 f12,f14,f3,f2；额外可用 f6(成交额) f8(换手率) f20(总市值) f21(流通市值)。
+    """
     code = block_code.upper() if block_code.upper().startswith("BK") else block_code
+    fields = fields or STOCK_FIELDS
+    fmap = {"f12": "code", "f14": "name", "f2": "price", "f3": "pct",
+            "f6": "amount", "f8": "turnover", "f20": "mcap", "f21": "fcap"}
     total, rows = None, []
     for pn in range(1, max_pages + 1):
         data = _http_get("https://push2delay.eastmoney.com/api/qt/clist/get", {
             "fid": "f3", "po": "1", "pz": "100", "pn": str(pn), "np": "1",
             "fltt": "2", "invt": "2", "ut": "8dec03ba335b81bf4ebdf7b29ec27d15",
-            "fs": f"b:{code}", "fields": STOCK_FIELDS,
+            "fs": f"b:{code}", "fields": fields,
         }).get("data") or {}
         total = data.get("total", 0)
         diff = data.get("diff") or []
@@ -158,12 +165,19 @@ def fetch_block_stocks(block_code: str, max_pages: int = 5):
                 pct = float(x.get("f3")) if x.get("f3") not in (None, "-") else None
             except (TypeError, ValueError):
                 pct = None
-            rows.append({
+            row = {
                 "code": str(x.get("f12", "")).zfill(6),
                 "name": str(x.get("f14", "")),
                 "pct": pct,
                 "price": x.get("f2"),
-            })
+            }
+            for f, key in fmap.items():
+                if f not in ("f12", "f14", "f3") and x.get(f) not in (None, "-"):
+                    try:
+                        row[key] = float(x.get(f))
+                    except (TypeError, ValueError):
+                        pass
+            rows.append(row)
         if total and len(rows) >= total:
             break
     return total or len(rows), rows
