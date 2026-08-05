@@ -20,9 +20,13 @@ CACHE_TTL = 3600  # 1 小时
 UA = {"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}
 
 BOARD_FS = {
-    "行业": "m:90+t:2+f:!50",
     "概念": "m:90+t:3+f:!50",
+    "一级行业": "m:90+s:2+f:!50",
+    "二级行业": "m:90+s:4+f:!50",
+    "三级行业": "m:90+s:8+f:!50",
 }
+INDUSTRY_LEVELS = ["一级行业", "二级行业", "三级行业"]
+LEVEL_TAG = {"一级行业": "一级", "二级行业": "二级", "三级行业": "三级"}
 BOARD_FIELDS = "f12,f14,f3,f2,f128,f140"
 STOCK_FIELDS = "f12,f14,f3,f2"
 
@@ -80,7 +84,17 @@ def save_boards_cache(btype: str, rows):
 
 
 def load_boards(btype: str, refresh: bool = False):
-    """加载板块列表：优先本地缓存（TTL 内），否则拉取并落盘。"""
+    """加载板块列表：优先本地缓存（TTL 内），否则拉取并落盘。
+
+    btype="行业" 时合并一级/二级/三级行业并标注级别。
+    """
+    if btype == "行业":
+        rows = []
+        for lv in INDUSTRY_LEVELS:
+            for r in load_boards(lv, refresh=refresh):
+                rows.append({**r, "level": LEVEL_TAG[lv]})
+        return rows
+
     path = _cache_path(btype)
     if not refresh and path.exists() and time.time() - path.stat().st_mtime < CACHE_TTL:
         with open(path, encoding="utf-8") as f:
