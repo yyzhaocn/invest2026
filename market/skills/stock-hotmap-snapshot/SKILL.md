@@ -11,12 +11,14 @@ description: 生成全市场热力图数据快照 CSV（market,code,chg_pct,流�
 
 ```bash
 python3 market/skills/stock-hotmap-snapshot/scripts/stock-hotmap-snapshot.py [--out 路径] [--json]
+python3 market/skills/stock-hotmap-snapshot/scripts/stock-hotmap-snapshot.py --watch   # 交易时段自动打快照
 ```
 
 参数：
 
 - `--out, -o`：输出路径，默认 `generated/heatmap_snapshots/snapshot_<YYYYMMDD_HHMM>.csv`
-- `--json`：输出 JSON（统计信息 + 前 N 行）
+- `--watch`：**交易时段自动模式** —— 按历史节奏（09:31 / 10:00 / 10:30 / 11:00 / 11:30 / 14:00 / 14:30 / 15:00）每 30 分钟自动打一张，午休跳过，收盘（15:00）后退出；非交易日直接退出
+- `--json`：输出 JSON（统计信息）
 
 ## 输出格式（与原快照逐字段对齐）
 
@@ -43,5 +45,5 @@ SH,601288,-1.97,2068702,2267890
 ## 用途
 
 - 生成后可喂给热力图前端（treemap：面积 = 流通市值，颜色 = 涨跌幅）
-- 建议**收盘后（15:05+）运行**取当日最终数据
-- 历史快照在 `generated/heatmap_snapshots/`（07-13/07-15 等），用于对比当日市场结构
+- **收盘后（15:05+）运行**取当日最终数据；或盘中 `--watch` 自动按 30 分钟节奏打全天快照
+- 历史快照在 `generated/heatmap_snapshots/`（07-13/07-15 全天 8 时点 + 08-05 收盘）

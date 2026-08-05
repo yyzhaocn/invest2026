@@ -17,9 +17,13 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 SNAP_DIR = REPO_ROOT / "generated" / "heatmap_snapshots"
+STOCK_DIR = REPO_ROOT / "stock"
 
 UA = {"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}
 FS = "m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:7"
+
+# 历史快照节奏（与 heatmap_snapshots/ 现有文件一致）: 开盘1分钟后 + 每30分钟（午休跳过）
+SCHEDULE = ["09:31", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00"]
 
 
 def fetch_market():
@@ -67,38 +71,94 @@ def fetch_market():
     return dedup
 
 
-def main():
-    ap = argparse.ArgumentParser(description="全市场热力图数据快照")
-    ap.add_argument("--out", "-o", default="",
-                    help="输出路径（默认 generated/heatmap_snapshots/snapshot_<时间>.csv）")
-    ap.add_argument("--json", action="store_true")
-    args = ap.parse_args()
+def is_trading_day(now=None):
+    """交易日判断（复用 stock/trading_calendar.py）。"""
+    import sys
+    if str(STOCK_DIR) not in sys.path:
+        sys.path.insert(0, str(STOCK_DIR))
+    try:
+        from trading_calendar import is_trading_day as _td
+        return _td(now)
+    except Exception:
+        return (now or datetime.now()).weekday() < 5
 
+
+def take_snapshot():
+    """拉取并落盘一张快照，返回 (path, rows, up, down)。"""
     rows = fetch_market()
     if not rows:
-        sys.exit("❌ 未获取到行情数据")
-
+        return None, 0, 0, 0
     ts = datetime.now().strftime("%Y%m%d_%H%M")
-    out = Path(args.out) if args.out else SNAP_DIR / f"snapshot_{ts}.csv"
-    out.parent.mkdir(parents=True, exist_ok=True)
+    out = SNAP_DIR / f"snapshot_{ts}.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["market", "code", "chg_pct", "vol_rank", "amt_rank"])
         w.writerows(rows)
-
     up = sum(1 for r in rows if r[2] > 0)
     down = sum(1 for r in rows if r[2] < 0)
+    return out, len(rows), up, down
+
+
+def run_watch():
+    """交易时段按 SCHEDULE 自动打快照，直到收盘。"""
+    import time
+    print(f"📡 watch 模式启动（节奏: {' / '.join(SCHEDULE)}，交易日自动）")
+    if not is_trading_day():
+        print("今天是休息日，无可打快照时点。退出。")
+        return
+    done = set()
+    while True:
+        now = datetime.now()
+        hm = now.strftime("%H:%M")
+        if hm >= "15:00":
+            print(f"✅ 已收盘（{now.strftime('%H:%M')}），共生成 {len(done)} 张快照")
+            return
+        if hm in SCHEDULE and hm not in done:
+            out, n, up, down = take_snapshot()
+            if out:
+                print(f"📸 {hm} → {out.name}（{n} 只，涨 {up} / 跌 {down}）")
+                done.add(hm)
+            else:
+                print(f"⚠️  {hm} 快照失败（网络/限流），稍后重试")
+                time.sleep(60)
+                continue
+        # 睡到下一个计划时点（最多 60s 醒来检查一次，兼容错过时点立即补拍）
+        time.sleep(30)
+
+
+def main():
+    ap = argparse.ArgumentParser(description="全市场热力图数据快照")
+    ap.add_argument("--out", "-o", default="",
+                    help="输出路径（默认 generated/heatmap_snapshots/snapshot_<时间>.csv）")
+    ap.add_argument("--watch", action="store_true", help="交易时段每 30 分钟自动打快照直到收盘")
+    ap.add_argument("--json", action="store_true")
+    args = ap.parse_args()
+
+    if args.watch:
+        run_watch()
+        return
+
+    if args.out:
+        rows = fetch_market()
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        with open(out, "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["market", "code", "chg_pct", "vol_rank", "amt_rank"])
+            w.writerows(rows)
+        total, up, down = len(rows), sum(1 for r in rows if r[2] > 0), sum(1 for r in rows if r[2] < 0)
+    else:
+        out, total, up, down = take_snapshot()
+        if out is None:
+            sys.exit("❌ 未获取到行情数据")
 
     if args.json:
-        print(json.dumps({"out": str(out), "total": len(rows), "up": up, "down": down,
-                          "top5": rows[:5]}, ensure_ascii=False, indent=2))
+        print(json.dumps({"out": str(out), "total": total, "up": up, "down": down},
+                         ensure_ascii=False, indent=2))
         return
 
     print(f"✅ 快照已生成: {out}")
-    print(f"   共 {len(rows)} 只 ｜ 涨 {up} / 跌 {down}")
-    print("   流通市值 TOP5:")
-    for r in rows[:5]:
-        print(f"     {r[0]} {r[1]}  chg {r[2]:+.2f}%  流通 {r[3] / 100:,.0f}亿 / 总 {r[4] / 100:,.0f}亿")
+    print(f"   共 {total} 只 ｜ 涨 {up} / 跌 {down}")
 
 
 if __name__ == "__main__":
