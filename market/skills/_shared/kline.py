@@ -58,7 +58,48 @@ def fetch_kline(code: str, lmt: int = 500):
                 return data.get("name") or code, points
         except Exception:
             continue
-    return None, None
+    return fetch_kline_sina(code, lmt)
+
+
+def fetch_kline_sina(code: str, lmt: int = 500):
+    """新浪日 K 兜底（东财接口限流/不可用时）。返回 (name, points) 或 (None, None)。
+    points 结构与东财一致（无 amount/pct，由收盘价推算 pct）。"""
+    import json
+    import requests
+    code = str(code).zfill(6)
+    symbol = ("sh" if code.startswith("6") else
+              "bj" if code.startswith(("4", "8")) else "sz") + code
+    try:
+        resp = requests.get(
+            "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData",
+            params={"symbol": symbol, "scale": 240, "ma": "no", "datalen": str(lmt)},
+            timeout=15, headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"})
+        resp.raise_for_status()
+        rows = json.loads(resp.text)
+        if not rows:
+            return None, None
+        points = []
+        prev_close = None
+        for r in rows:
+            try:
+                close = float(r["close"])
+            except (TypeError, ValueError):
+                continue
+            pct = ((close / prev_close - 1) * 100) if prev_close else None
+            points.append({
+                "date": r.get("day", ""),
+                "open": float(r["open"]),
+                "high": float(r["high"]),
+                "low": float(r["low"]),
+                "close": close,
+                "volume": float(r["volume"]),
+                "amount": None,
+                "pct": pct,
+            })
+            prev_close = close
+        return code, points
+    except Exception:
+        return None, None
 
 
 def closes(points):
