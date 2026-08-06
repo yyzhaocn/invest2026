@@ -41,34 +41,43 @@ def fmt_wan(v):
 
 
 def fetch_flow(code: str, lmt: int = 60):
-    """日频资金流。返回 (name, [{date, close, pct, main, xl, dl, zl, sl, main_pct}])。"""
+    """日频资金流。返回 (name, [{date, close, pct, main, xl, dl, zl, sl, main_pct}])。带重试。"""
+    import time as _t
     import requests
     code = str(code).zfill(6)
     secid = f"{'1' if code.startswith('6') else '0'}.{code}"
-    resp = requests.get("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
-                        params={"lmt": "0", "klt": "101", "secid": secid,
-                                "fields1": "f1,f2,f3,f7", "fields2": FIELDS2,
-                                "ut": "b2884a393a59ad64002292a3e90d46a5"},
-                        timeout=15, headers=UA)
-    resp.raise_for_status()
-    data = resp.json().get("data") or {}
-    rows = []
-    for line in (data.get("klines") or [])[-lmt:]:
-        p = line.split(",")
-        if len(p) < 15:
-            continue
-        rows.append({
-            "date": p[0],
-            "main": float(p[1]),      # 主力净流入
-            "small": float(p[2]),     # 小单
-            "mid": float(p[3]),       # 中单
-            "big": float(p[4]),       # 大单
-            "xbig": float(p[5]),      # 超大单
-            "main_pct": float(p[6]),  # 主力净占比 %
-            "close": float(p[11]),    # 收盘
-            "pct": float(p[12]),      # 涨跌幅
-        })
-    return data.get("name") or code, rows
+    last_err = None
+    for _ in range(3):
+        try:
+            resp = requests.get("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
+                                params={"lmt": "0", "klt": "101", "secid": secid,
+                                        "fields1": "f1,f2,f3,f7", "fields2": FIELDS2,
+                                        "ut": "b2884a393a59ad64002292a3e90d46a5"},
+                                timeout=15, headers=UA)
+            resp.raise_for_status()
+            data = resp.json().get("data") or {}
+            rows = []
+            for line in (data.get("klines") or [])[-lmt:]:
+                p = line.split(",")
+                if len(p) < 15:
+                    continue
+                rows.append({
+                    "date": p[0],
+                    "main": float(p[1]),      # 主力净流入
+                    "small": float(p[2]),     # 小单
+                    "mid": float(p[3]),       # 中单
+                    "big": float(p[4]),       # 大单
+                    "xbig": float(p[5]),      # 超大单
+                    "main_pct": float(p[6]),  # 主力净占比 %
+                    "close": float(p[11]),    # 收盘
+                    "pct": float(p[12]),      # 涨跌幅
+                })
+            if rows:
+                return data.get("name") or code, rows
+        except Exception as e:
+            last_err = e
+            _t.sleep(1.5)
+    raise ConnectionError(f"资金流接口失败: {last_err}")
 
 
 def write_html(name, code, rows, out):
