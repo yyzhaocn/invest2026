@@ -184,18 +184,21 @@ def get_fund_nav(code: str):
 
 
 def get_price(code: str):
-    """获取标的价格。返回 (price, name, kind, extra)。kind: stock/fund。"""
+    """获取标的价格。返回 (price, name, kind, extra)。kind: stock/fund。
+
+    股票优先：先查实时行情（覆盖股票/基金代码冲突，如 002185 股票=华天科技）；
+    无行情再按 fundcode.csv 判基金。"""
     code = str(code).zfill(6)
+    quotes = batch_quotes([code])
+    q = quotes.get(code)
+    if q:
+        return q["price"], q["name"], "stock", {"pct": q["pct"]}
     if is_fund(code):
         nav, name, date = get_fund_nav(code)
         if nav is None:
             return None, None, "fund", {"error": "未取到基金净值"}
         return nav, (name or code), "fund", {"nav_date": date}
-    quotes = batch_quotes([code])
-    q = quotes.get(code)
-    if not q:
-        return None, None, "stock", {"error": "无行情（代码可能不存在/停牌）"}
-    return q["price"], q["name"], "stock", {"pct": q["pct"]}
+    return None, None, "stock", {"error": "无行情（代码可能不存在/停牌）"}
 
 
 if __name__ == "__main__":
