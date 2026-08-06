@@ -17,6 +17,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 SPARK_CHARS = "▁▂▃▄▅▆▇█"
@@ -51,7 +53,7 @@ def em_secid(code: str) -> str:
 
 def fetch_kline_em(code: str, lmt: int = 500):
     """东方财富日 K（前复权）。返回 (name, [{date,close,pct}...]) 或 (None, None)。"""
-    import requests
+    from httpget import httpget
     secid = em_secid(code)
     params = {
         "secid": secid, "ut": "fa5fd1943c7b386f172d6893dbfba10b",
@@ -62,7 +64,7 @@ def fetch_kline_em(code: str, lmt: int = 500):
     for url in ("https://push2his.eastmoney.com/api/qt/stock/kline/get",
                 "https://push2.eastmoney.com/api/qt/stock/kline/get"):
         try:
-            resp = requests.get(url, params=params, timeout=15,
+            resp = httpget(url, params=params, timeout=15,
                                 headers={"User-Agent": UA, "Referer": f"https://quote.eastmoney.com/{'sh' if secid.startswith('1.') else 'sz'}{code}.html"})
             resp.raise_for_status()
             payload = resp.json()
@@ -93,11 +95,11 @@ def fetch_kline_em(code: str, lmt: int = 500):
 
 def fetch_kline_sina(code: str, datalen: int = 500):
     """新浪日 K 兜底。返回 (name, points)。"""
-    import requests
+    from httpget import httpget
     symbol = ("sh" if code.startswith(("6", "9")) else
               "bj" if code.startswith(("4", "8")) else "sz") + code
     try:
-        resp = requests.get(
+        resp = httpget(
             "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData",
             params={"symbol": symbol, "scale": 240, "ma": "no", "datalen": datalen},
             timeout=15, headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"})

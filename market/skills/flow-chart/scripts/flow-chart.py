@@ -15,6 +15,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
 UA = {"User-Agent": "Mozilla/5.0", "Referer": "https://data.eastmoney.com/"}
 FIELDS2 = "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65"
 LABELS = ["主力", "小单", "中单", "大单", "超大单"]
@@ -43,13 +45,13 @@ def fmt_wan(v):
 def fetch_flow(code: str, lmt: int = 60):
     """日频资金流。返回 (name, [{date, close, pct, main, xl, dl, zl, sl, main_pct}])。带重试。"""
     import time as _t
-    import requests
+    from httpget import httpget
     code = str(code).zfill(6)
     secid = f"{'1' if code.startswith('6') else '0'}.{code}"
     last_err = None
     for _ in range(3):
         try:
-            resp = requests.get("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
+            resp = httpget("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
                                 params={"lmt": "0", "klt": "101", "secid": secid,
                                         "fields1": "f1,f2,f3,f7", "fields2": FIELDS2,
                                         "ut": "b2884a393a59ad64002292a3e90d46a5"},

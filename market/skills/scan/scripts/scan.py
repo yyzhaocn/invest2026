@@ -50,7 +50,7 @@ def fmt_pct(v):
 
 def fetch_market(refresh: bool = False):
     """拉取全市场 A 股行情（缓存 10 分钟）。返回 (asof, rows)。"""
-    import requests
+    from httpget import httpget
     date = datetime.now().strftime("%Y%m%d")
     cache = CACHE_DIR / f"scan_{date}.csv"
     if not refresh and cache.exists() and time.time() - cache.stat().st_mtime < CACHE_TTL:
@@ -67,7 +67,7 @@ def fetch_market(refresh: bool = False):
     fs = "m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:7"
     rows, total, pn = [], None, 1
     while True:
-        resp = requests.get("https://push2delay.eastmoney.com/api/qt/clist/get", params={
+        resp = httpget("https://push2delay.eastmoney.com/api/qt/clist/get", params={
             "fid": "f3", "po": "0", "pz": "100", "pn": str(pn), "np": "1",
             "fltt": "2", "invt": "2", "ut": "8dec03ba335b81bf4ebdf7b29ec27d15",
             "fs": fs, "fields": FIELDS,

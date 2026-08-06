@@ -135,14 +135,14 @@ def is_fund(code: str) -> bool:
 
 def batch_quotes(codes) -> dict:
     """批量取股票实时行情，返回 {code: {name, price, pct}}。"""
-    import requests
+    from httpget import httpget
     result = {}
     unique = list(dict.fromkeys(c for c in codes if c))
     for i in range(0, len(unique), 80):
         chunk = unique[i:i + 80]
         secids = ",".join(f"{'1' if c.startswith('6') else '0'}.{c}" for c in chunk)
         try:
-            resp = requests.get("https://push2delay.eastmoney.com/api/qt/ulist.np/get",
+            resp = httpget("https://push2delay.eastmoney.com/api/qt/ulist.np/get",
                                 params={"fltt": 2, "secids": secids, "fields": "f12,f14,f2,f3",
                                         "ut": "fa5fd1943c7b386f172d6893dbfba10b"},
                                 timeout=15, headers=UA)
@@ -161,9 +161,9 @@ def batch_quotes(codes) -> dict:
 
 def get_fund_nav(code: str):
     """取基金最新单位净值。返回 (nav, name, date) 或 (None, None, None)。"""
-    import requests
+    from httpget import httpget
     try:
-        resp = requests.get(f"https://fund.eastmoney.com/pingzhongdata/{code}.js",
+        resp = httpget(f"https://fund.eastmoney.com/pingzhongdata/{code}.js",
                             timeout=15, headers=UA)
         resp.raise_for_status()
         text = resp.text

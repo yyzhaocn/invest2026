@@ -16,7 +16,7 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
 
 def fetch_kline(code: str, lmt: int = 500):
     """东方财富日 K（前复权）。返回 (name, points) 或 (None, None)。"""
-    import requests
+    from httpget import httpget
     code = str(code).zfill(6)
     secid = f"{'1' if code.startswith('6') else '0'}.{code}"
     params = {
@@ -28,9 +28,9 @@ def fetch_kline(code: str, lmt: int = 500):
     for url in ("https://push2his.eastmoney.com/api/qt/stock/kline/get",
                 "https://push2.eastmoney.com/api/qt/stock/kline/get"):
         try:
-            resp = requests.get(url, params=params, timeout=15,
-                                headers={"User-Agent": UA,
-                                         "Referer": f"https://quote.eastmoney.com/{'sh' if secid.startswith('1.') else 'sz'}{code}.html"})
+            resp = httpget(url, params=params, timeout=15,
+                           headers={"User-Agent": UA,
+                                    "Referer": f"https://quote.eastmoney.com/{'sh' if secid.startswith('1.') else 'sz'}{code}.html"})
             resp.raise_for_status()
             data = resp.json().get("data") or {}
             klines = data.get("klines") or []
@@ -65,12 +65,12 @@ def fetch_kline_sina(code: str, lmt: int = 500):
     """新浪日 K 兜底（东财接口限流/不可用时）。返回 (name, points) 或 (None, None)。
     points 结构与东财一致（无 amount/pct，由收盘价推算 pct）。"""
     import json
-    import requests
+    from httpget import httpget
     code = str(code).zfill(6)
     symbol = ("sh" if code.startswith("6") else
               "bj" if code.startswith(("4", "8")) else "sz") + code
     try:
-        resp = requests.get(
+        resp = httpget(
             "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData",
             params={"symbol": symbol, "scale": 240, "ma": "no", "datalen": str(lmt)},
             timeout=15, headers={"User-Agent": UA, "Referer": "https://finance.sina.com.cn/"})
@@ -168,10 +168,10 @@ def period_return(points, n):
 
 def resolve_name(code: str) -> str:
     """通过东方财富 suggest 接口补股票名称（东财行情被限流/新浪兜底无名称时用）。"""
-    import requests
+    from httpget import httpget
     code = str(code).zfill(6)
     try:
-        r = requests.get("https://searchapi.eastmoney.com/api/suggest/get",
+        r = httpget("https://searchapi.eastmoney.com/api/suggest/get",
                          params={"input": code, "type": "14", "count": "1",
                                  "token": "D43BF722C8E33BDC906FB84D85E326E8"},
                          timeout=10, headers={"User-Agent": UA, "Referer": "https://www.eastmoney.com/"})

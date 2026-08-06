@@ -37,8 +37,8 @@ def _cache_path(btype: str) -> Path:
 
 
 def _http_get(url, params, timeout=15):
-    import requests
-    resp = requests.get(url, params=params, timeout=timeout, headers=UA)
+    from httpget import httpget
+    resp = httpget(url, params=params, timeout=timeout, headers=UA)
     resp.raise_for_status()
     return resp.json()
 
@@ -185,7 +185,7 @@ def fetch_block_stocks(block_code: str, max_pages: int = 5, fields: str = None):
 
 def fetch_board_kline(block_code: str, lmt: int = 500):
     """拉取板块日 K（指数）。返回 (name, [{date, close, pct}]) 或 (None, None)。"""
-    import requests
+    from httpget import httpget
     params = {
         "secid": f"90.{block_code}", "ut": "fa5fd1943c7b386f172d6893dbfba10b",
         "fields1": "f1,f2,f3,f4,f5,f6",
@@ -195,9 +195,9 @@ def fetch_board_kline(block_code: str, lmt: int = 500):
     for url in ("https://push2his.eastmoney.com/api/qt/stock/kline/get",
                 "https://push2.eastmoney.com/api/qt/stock/kline/get"):
         try:
-            resp = requests.get(url, params=params, timeout=15,
-                                headers={"User-Agent": UA["User-Agent"],
-                                         "Referer": f"https://quote.eastmoney.com/bk/{block_code}.html"})
+            resp = httpget(url, params=params, timeout=15,
+                           headers={"User-Agent": UA["User-Agent"],
+                                    "Referer": f"https://quote.eastmoney.com/bk/{block_code}.html"})
             resp.raise_for_status()
             data = resp.json().get("data") or {}
             klines = data.get("klines") or []

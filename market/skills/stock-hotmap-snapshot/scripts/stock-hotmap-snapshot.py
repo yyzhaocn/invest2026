@@ -15,7 +15,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
+REPO_ROOT = Path("/Users/yyz/pydev/invest2026")
 SNAP_DIR = REPO_ROOT / "generated" / "heatmap_snapshots"
 STOCK_DIR = REPO_ROOT / "stock"
 
@@ -28,10 +30,10 @@ SCHEDULE = ["09:31", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:0
 
 def fetch_market():
     """分页拉取全市场。返回 [[market, code, chg, fcap_million, mcap_million]]。"""
-    import requests
+    from httpget import httpget
     rows, total, pn = [], None, 1
     while True:
-        resp = requests.get("https://push2delay.eastmoney.com/api/qt/clist/get", params={
+        resp = httpget("https://push2delay.eastmoney.com/api/qt/clist/get", params={
             "fid": "f12", "po": "0", "pz": "100", "pn": str(pn), "np": "1",
             "fltt": "2", "invt": "2", "ut": "8dec03ba335b81bf4ebdf7b29ec27d15",
             "fs": FS, "fields": "f12,f3,f20,f21",

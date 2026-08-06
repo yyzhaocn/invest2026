@@ -16,7 +16,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path("/Users/yyz/pydev/invest2026")
 STOCK_DIR = REPO_ROOT / "stock"
 sys.path.insert(0, str(STOCK_DIR))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
@@ -41,12 +41,12 @@ def pad(text, width, align="left"):
 
 def suggest(query: str, count: int = 20):
     """东方财富 suggest 搜索，返回 [{'code','name','pinyin','market'}]。"""
-    import requests
+    from httpget import httpget
     params = {
         "input": query, "type": "14", "count": str(count),
         "token": SUGGEST_TOKEN, "markettype": "", "mktnum": "",
     }
-    r = requests.get(SUGGEST_URL, params=params, timeout=10,
+    r = httpget(SUGGEST_URL, params=params, timeout=10,
                      headers={"User-Agent": UA, "Referer": "https://www.eastmoney.com/"})
     r.raise_for_status()
     data = (r.json().get("QuotationCodeTable") or {}).get("Data") or []
@@ -85,14 +85,14 @@ def load_local_snapshot():
 def fetch_full_list(top: int = 20):
     """从 push2delay clist 拉全市场 A 股列表（代码/名称/现价/涨跌幅）。
     返回 (total, rows)。"""
-    import requests
+    from httpget import httpget
     fs = "m:0+t:6,m:0+t:13,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:7"
     params = {
         "fid": "f12", "po": "0", "pz": str(max(top, 50)), "pn": "1", "np": "1",
         "fltt": "2", "invt": "2", "ut": "8dec03ba335b81bf4ebdf7b29ec27d15",
         "fs": fs, "fields": "f12,f14,f3,f2",
     }
-    r = requests.get("https://push2delay.eastmoney.com/api/qt/clist/get",
+    r = httpget("https://push2delay.eastmoney.com/api/qt/clist/get",
                      params=params, timeout=20,
                      headers={"User-Agent": UA, "Referer": "https://quote.eastmoney.com/"})
     r.raise_for_status()

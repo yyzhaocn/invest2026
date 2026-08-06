@@ -42,9 +42,9 @@ def _extract_balanced(text, start, open_c, close_c):
 
 def fetch_fund(code: str):
     """解析 pingzhongdata。返回 dict 或 None。"""
-    import requests
+    from httpget import httpget
     try:
-        resp = requests.get(f"https://fund.eastmoney.com/pingzhongdata/{code}.js",
+        resp = httpget(f"https://fund.eastmoney.com/pingzhongdata/{code}.js",
                             timeout=15, headers=UA)
         resp.raise_for_status()
         text = resp.text

@@ -14,7 +14,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
+REPO_ROOT = Path("/Users/yyz/pydev/invest2026")
 FUND_DIR = REPO_ROOT / "fund"
 JS_FILE = FUND_DIR / "fundcode_search.js"
 
@@ -88,10 +90,10 @@ render(FUNDS);
 
 def refresh_from_network():
     """从东方财富刷新 fundcode_search.js 缓存。"""
-    import requests
+    from httpget import httpget
     url = "http://fund.eastmoney.com/js/fundcode_search.js"
     print(f"📡 正在从网络刷新: {url}")
-    r = requests.get(url, timeout=30, headers={"User-Agent": UA})
+    r = httpget(url, timeout=30, headers={"User-Agent": UA})
     r.raise_for_status()
     JS_FILE.write_text(r.text, encoding="utf-8")
     print(f"✅ 已刷新缓存: {JS_FILE} ({len(r.text) // 1024} KB)")

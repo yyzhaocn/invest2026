@@ -18,7 +18,9 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
+REPO_ROOT = Path("/Users/yyz/pydev/invest2026")
 STOCK_DIR = REPO_ROOT / "stock"
 GENERATED = REPO_ROOT / "generated"
 sys.path.insert(0, str(STOCK_DIR))
@@ -47,13 +49,13 @@ def fmt_wan(v):
 def fetch_flow_raw(code: str, lmt: int = 80):
     """按接口真实口径拉取日频资金流（用于终端摘要）。带重试。"""
     import time as _t
-    import requests
+    from httpget import httpget
     code = str(code).zfill(6)
     secid = f"{'1' if code.startswith('6') else '0'}.{code}"
     last_err = None
     for _ in range(3):
         try:
-            resp = requests.get("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
+            resp = httpget("https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get",
                                 params={"lmt": "0", "klt": "101", "secid": secid,
                                         "fields1": "f1,f2,f3,f7",
                                         "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65",

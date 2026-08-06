@@ -17,6 +17,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
+
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36")
 BASE_URL = "https://fund.eastmoney.com/pingzhongdata/{}.js"
@@ -42,9 +44,9 @@ def fmt_pct(v):
 
 def fetch_and_parse(fundcode: str):
     """拉取并解析 pingzhongdata.js。返回 (basic, net_worth_list, period_returns)。"""
-    import requests
+    from httpget import httpget
     url = BASE_URL.format(fundcode)
-    r = requests.get(url, timeout=15, headers={"User-Agent": UA})
+    r = httpget(url, timeout=15, headers={"User-Agent": UA})
     r.raise_for_status()
     text = r.text
 

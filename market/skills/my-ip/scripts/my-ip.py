@@ -11,6 +11,9 @@ import json
 import os
 import subprocess
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
 
 ECHO_SERVICES = [
     "https://api.ipify.org",
@@ -43,11 +46,11 @@ def is_private(ip: str) -> bool:
 
 def get_public_ip():
     """轮询多个 echo 服务，返回 (ip, results: {service: ip})。"""
-    import requests
+    from httpget import httpget
     results = {}
     for url in ECHO_SERVICES:
         try:
-            r = requests.get(url, timeout=8,
+            r = httpget(url, timeout=8,
                              headers={"User-Agent": "curl/8.0"})
             r.raise_for_status()
             ip = r.text.strip()
@@ -65,9 +68,9 @@ def get_public_ip():
 
 def get_geo(ip: str):
     """归属地（ipinfo 优先，ipip.net 中文兜底）。"""
-    import requests
+    from httpget import httpget
     try:
-        r = requests.get("https://ipinfo.io/json", timeout=8,
+        r = httpget("https://ipinfo.io/json", timeout=8,
                          headers={"User-Agent": "curl/8.0"})
         r.raise_for_status()
         d = r.json()
@@ -77,7 +80,7 @@ def get_geo(ip: str):
     except Exception:
         pass
     try:
-        r = requests.get("https://myip.ipip.net", timeout=8,
+        r = httpget("https://myip.ipip.net", timeout=8,
                          headers={"User-Agent": "curl/8.0"})
         r.raise_for_status()
         return r.text.strip().split("来自于")[-1].strip() if "来自于" in r.text else r.text.strip()

@@ -74,9 +74,9 @@ def do_snapshot(args):
 
 def fetch_benchmark():
     """沪深300 日 K（收盘指数），返回 {date: close}。失败返回 None。"""
-    import requests
+    from httpget import httpget
     try:
-        resp = requests.get("https://push2his.eastmoney.com/api/qt/stock/kline/get",
+        resp = httpget("https://push2his.eastmoney.com/api/qt/stock/kline/get",
                             params={"secid": "1.000300", "ut": "fa5fd1943c7b386f172d6893dbfba10b",
                                     "fields1": "f1,f2,f3,f4,f5,f6",
                                     "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61",
