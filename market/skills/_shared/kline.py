@@ -166,6 +166,24 @@ def period_return(points, n):
     return (points[-1]["close"] / points[-1 - n]["close"] - 1) * 100
 
 
+def resolve_name(code: str) -> str:
+    """通过东方财富 suggest 接口补股票名称（东财行情被限流/新浪兜底无名称时用）。"""
+    import requests
+    code = str(code).zfill(6)
+    try:
+        r = requests.get("https://searchapi.eastmoney.com/api/suggest/get",
+                         params={"input": code, "type": "14", "count": "1",
+                                 "token": "D43BF722C8E33BDC906FB84D85E326E8"},
+                         timeout=10, headers={"User-Agent": UA, "Referer": "https://www.eastmoney.com/"})
+        rows = ((r.json().get("QuotationCodeTable") or {}).get("Data")) or []
+        for x in rows:
+            if str(x.get("Code")).zfill(6) == code:
+                return str(x.get("Name") or code)
+    except Exception:
+        pass
+    return code
+
+
 if __name__ == "__main__":
     import sys
     code = sys.argv[1] if len(sys.argv) > 1 else "688256"

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline  # noqa: E402
+from kline import fetch_kline, resolve_name  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -57,6 +57,8 @@ def main():
 
     code = str(args.code).zfill(6)
     name, pts = fetch_kline(code, lmt=120)
+    if not name or name == code:
+        name = resolve_name(code)
     if not pts:
         sys.exit(f"❌ 无法获取 {code} K 线")
     df = pd.DataFrame(pts)
@@ -85,7 +87,7 @@ def main():
                 state = "偏空（SMA5<SMA20，价格在SMA5上方）"
     else:
         state = "均线未成形"
-    wma_bull = last['WMA'] > last['IWMA'] if pd.notna(last['WMA']) and pd.notna(last['IWMA']) else None
+    wma_bull = bool(last['WMA'] > last['IWMA']) if pd.notna(last['WMA']) and pd.notna(last['IWMA']) else None
 
     if args.json:
         print(json.dumps({"code": code, "name": name, "state": state,

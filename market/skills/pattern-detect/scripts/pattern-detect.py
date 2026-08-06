@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline  # noqa: E402
+from kline import fetch_kline, resolve_name  # noqa: E402
 
 import pandas as pd  # noqa: E402
 
@@ -182,24 +182,6 @@ def visualize(df, code, name, alerts, out, conclusion):
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
     fig.savefig(out, dpi=150, bbox_inches='tight')
     plt.close(fig)
-
-
-def resolve_name(code):
-    """通过东方财富 suggest 接口补股票名称（东财行情被限流时仍可用）。失败返回 code。"""
-    import requests
-    try:
-        r = requests.get("https://searchapi.eastmoney.com/api/suggest/get",
-                         params={"input": code, "type": "14", "count": "1",
-                                 "token": "D43BF722C8E33BDC906FB84D85E326E8"},
-                         timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-        d = r.json().get("QuotationCodeTable") or {}
-        rows = d.get("Data") or []
-        for x in rows:
-            if str(x.get("Code")).zfill(6) == code:
-                return str(x.get("Name") or code)
-    except Exception:
-        pass
-    return code
 
 
 def main():

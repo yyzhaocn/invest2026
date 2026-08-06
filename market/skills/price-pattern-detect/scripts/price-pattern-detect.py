@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline  # noqa: E402
+from kline import fetch_kline, resolve_name  # noqa: E402
 import pandas as pd  # noqa: E402
 
 
@@ -58,6 +58,8 @@ def main():
 
     code = str(args.code).zfill(6)
     name, pts = fetch_kline(code, lmt=120)
+    if not name or name == code:
+        name = resolve_name(code)
     if not pts:
         sys.exit(f"❌ 无法获取 {code} K 线")
     df = pd.DataFrame(pts)
@@ -68,9 +70,11 @@ def main():
         print(f"{name} ({code}) ｜ 近 120 日未识别到双顶/双底结构（容差 {args.tol:.0%}）")
         return
     if args.json:
-        print(json.dumps({"code": code, "name": name, **pat,
-                          "points": [(l, df['date'].iloc[i].strftime('%Y-%m-%d'), v) for l, i, v in pat['points']]},
-                         ensure_ascii=False, indent=2))
+        out = {"code": code, "stock_name": name, "pattern_name": pat['name'],
+               "neck": pat['neck'], "target": pat['target'], "confirmed": pat['confirmed'],
+               "bullish": pat['bullish'],
+               "points": [(l, df['date'].iloc[i].strftime('%Y-%m-%d'), v) for l, i, v in pat['points']]}
+        print(json.dumps(out, ensure_ascii=False, indent=2))
         return
 
     print(f"=== {name} ({code}) 价格形态检测（kaabar ch10）===")

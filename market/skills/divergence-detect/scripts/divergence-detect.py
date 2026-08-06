@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline, rsi  # noqa: E402
+from kline import fetch_kline, resolve_name, rsi  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
@@ -37,6 +37,8 @@ def main():
 
     code = str(args.code).zfill(6)
     name, pts = fetch_kline(code, lmt=120)
+    if not name or name == code:
+        name = resolve_name(code)
     if not pts:
         sys.exit(f"❌ 无法获取 {code} K 线")
     df = pd.DataFrame(pts)

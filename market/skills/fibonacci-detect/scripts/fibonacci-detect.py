@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline  # noqa: E402
+from kline import fetch_kline, resolve_name  # noqa: E402
 import pandas as pd  # noqa: E402
 
 RATIOS = [(0.236, '23.6%'), (0.382, '38.2%'), (0.5, '50.0%'), (0.618, '61.8%'), (0.786, '78.6%')]
@@ -23,6 +23,8 @@ def main():
 
     code = str(args.code).zfill(6)
     name, pts = fetch_kline(code, lmt=120)
+    if not name or name == code:
+        name = resolve_name(code)
     if not pts:
         sys.exit(f"❌ 无法获取 {code} K 线")
     df = pd.DataFrame(pts)
