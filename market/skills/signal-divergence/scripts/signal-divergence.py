@@ -103,13 +103,16 @@ def load_cached(code):
     return d.get("name"), d.get("points")
 
 
-def evaluate(code, m, recent_days):
+def evaluate(code, m, recent_days, end_date=""):
     """底背离 + 确认条件评估（直接读缓存 K 线，避免实时拉取）。返回 dict 或 None。"""
     nm, pts = load_cached(code)
     if not pts or len(pts) < 40:
         return None
     import pandas as pd
     df = pd.DataFrame(pts)
+    if end_date:
+        df["date"] = pd.to_datetime(df["date"])
+        df = df[df["date"] <= pd.Timestamp(end_date)]
     closes = df["close"].astype(float).tolist()
     highs = df["high"].astype(float).tolist()
     lows = df["low"].astype(float).tolist()
@@ -121,8 +124,11 @@ def evaluate(code, m, recent_days):
         return None
     d = bottom[0]
     p2 = str(d["p2_date"])[:10]
-    cutoff = (datetime.now() - timedelta(days=recent_days)).strftime("%Y-%m-%d")
-    if p2 < cutoff:
+    if end_date:
+        cutoff = (pd.Timestamp(end_date) - timedelta(days=recent_days)).strftime("%Y-%m-%d")
+    else:
+        cutoff = (datetime.now() - timedelta(days=recent_days)).strftime("%Y-%m-%d")
+    if p2 < cutoff or (end_date and p2 > end_date):
         return None
 
     # 确认条件
@@ -263,6 +269,36 @@ def plot_annotated(code, r, m, out=None):
     return str(outp)
 
 
+def verify_results(results, end_date):
+    """事后验证：end_date 收盘买入 → 最新收盘，计算收益与胜率。"""
+    import pandas as pd
+    rows = []
+    for r in results:
+        nm, pts = load_cached(r["code"])
+        if not pts:
+            continue
+        df = pd.DataFrame(pts)
+        df["date"] = pd.to_datetime(df["date"])
+        buy_df = df[df["date"] <= pd.Timestamp(end_date)]
+        if buy_df.empty:
+            continue
+        buy = buy_df["close"].astype(float).iloc[-1]
+        sell = df["close"].astype(float).iloc[-1]
+        last_d = df["date"].iloc[-1].strftime("%m-%d")
+        rows.append({"code": r["code"], "name": r["name"], "buy": buy, "sell": sell,
+                     "ret": (sell / buy - 1) * 100, "last": last_d})
+    rows.sort(key=lambda x: -x["ret"])
+    print(f"\n=== 事后验证（{end_date} 收盘买入 → 最新）===")
+    print(f"{'代码':8s}{'名称':10s}{'买入':>9s}{'最新':>8s}{'收益':>8s}  至")
+    for x in rows:
+        print(f"{x['code']:8s}{x['name']:10s}{x['buy']:>9.2f}{x['sell']:>8.2f}{x['ret']:>+7.1f}%  {x['last']}")
+    if rows:
+        pos = sum(1 for x in rows if x["ret"] > 0)
+        avg = sum(x["ret"] for x in rows) / len(rows)
+        print(f"\n胜率: {pos}/{len(rows)} ｜ 平均收益: {avg:+.1f}%")
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser(description="底背离+确认条件共振选股")
     ap.add_argument("codes", nargs="*")
@@ -274,6 +310,8 @@ def main():
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--view", action="store_true", help="生成看板 HTML")
     ap.add_argument("--plot", action="store_true", help="对命中股票画标注K线图（PNG）")
+    ap.add_argument("--end-date", default="", help="数据截断日（YYYY-MM-DD）——找该日收盘后可确认的背离")
+    ap.add_argument("--verify", action="store_true", help="事后验证：end_date 收盘买入 → 最新，输出收益+胜率")
     args = ap.parse_args()
 
     m = dm()
@@ -288,13 +326,16 @@ def main():
 
     results = []
     for i, (code, name) in enumerate(targets):
-        r = evaluate(code, m, args.recent)
+        r = evaluate(code, m, args.recent, args.end_date)
         if r and r["div_score"] >= args.min_score and r["score"] >= args.min_confirm:
             results.append(r)
         if (i + 1) % 25 == 0:
             print(f"  {i+1}/{len(targets)}", file=sys.stderr, flush=True)
 
     results.sort(key=lambda r: (-r["score"], -r["div_score"]))
+    if args.verify:
+        verify_results(results, args.end_date or datetime.now().strftime("%Y-%m-%d"))
+        return
     if args.plot:
         for r in results:
             p = plot_annotated(r["code"], r, m)

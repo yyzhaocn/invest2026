@@ -16,12 +16,24 @@ python3 .../signal-divergence.py --account 7维选股
 python3 .../signal-divergence.py --block BK0448 --min-confirm 4
 python3 .../signal-divergence.py 600570 300627 --json
 python3 .../signal-divergence.py --account 7维选股 --plot   # 命中股票画标注K线图
+python3 .../signal-divergence.py --end-date 2026-07-31 --verify  # 事后验证（end_date买入→最新收益+胜率）
 ```
 
 - 默认扫**缓存 K 线股票池**（快：直接读缓存文件，337 只 ~2 秒）
 - `--recent N`：背离摆动2 在最近 N 天（默认 3）
 - `--min-score`：背离最低共振分（默认 2）
 - `--min-confirm`：确认条件最低满足数（默认 3/5）
+
+## 事后验证（--verify）
+
+对 `--end-date` 视角找到的信号做回测验证：
+- 买入价 = end_date 当日收盘（信号确认日）
+- 卖出价 = 最新收盘
+- 输出每只收益 + 胜率 + 平均收益
+
+已验证（07-31 视角）：
+- 8 只核心信号（确认≥3/5）：**8/8 全部盈利，平均 +6.3%**（坤恒顺维 +11.9% 领涨）
+- 全部 49 条（min-confirm=3）：胜率 82%，平均 +4.3%
 
 ## 标注 K 线图（--plot）
 
