@@ -16,6 +16,8 @@ python3 market/skills/trade-journal/scripts/trade-journal.py note <代码> <备�
 python3 market/skills/trade-journal/scripts/trade-journal.py clear
 ```
 
+多组合：加 `--account <账户名>` 复盘指定账户（默认 `main`），数据源 `shared/paper/<账户>/`。
+
 命令：
 
 - `list`：交易流水（默认只看卖出/已实现盈亏；`--all` 显示全部含买入）

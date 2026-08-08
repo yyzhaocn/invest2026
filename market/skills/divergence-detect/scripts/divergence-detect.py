@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
-from kline import fetch_kline, resolve_name, rsi  # noqa: E402
+from kline import fetch_kline, resolve_name  # noqa: E402
 import matplotlib  # noqa: E402
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
@@ -43,8 +43,22 @@ def main():
         sys.exit(f"❌ 无法获取 {code} K 线")
     df = pd.DataFrame(pts)
     df['date'] = pd.to_datetime(df['date'])
-    rsi_vals = rsi(pts, args.rsi)
-    df['rsi'] = [None] * (len(df) - len(rsi_vals)) + rsi_vals if isinstance(rsi_vals, list) else pd.Series(rsi_vals)
+    # RSI 序列（Wilder 平滑，与 multi-lens 一致；kline.rsi 仅返回单值不可用）
+    closes = df['close'].astype(float).tolist()
+    n = args.rsi
+    rsi_list = [None] * len(closes)
+    if len(closes) > n:
+        gains = losses = 0.0
+        for i in range(1, n + 1):
+            d = closes[i] - closes[i - 1]
+            gains += max(d, 0); losses += max(-d, 0)
+        for i in range(n, len(closes)):
+            if i > n:
+                d = closes[i] - closes[i - 1]
+                gains = gains * (n - 1) / n + max(d, 0)
+                losses = losses * (n - 1) / n + max(-d, 0)
+            rsi_list[i] = 100 - 100 / (1 + gains / losses) if losses > 0 else 50.0
+    df['rsi'] = rsi_list
 
     highs, lows = find_extremes(df, args.window)
     divs = []

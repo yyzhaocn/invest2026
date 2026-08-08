@@ -8,16 +8,60 @@ K 线数据与指标助手 (signal / backtest / position-size 共用)。
 - 指标: ma / rsi / atr / true_range / 区间涨幅
 """
 import json
+import os
 import re
+import time
+from datetime import datetime
+from pathlib import Path
 
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 
+KLINE_CACHE_TTL = 300  # 5 分钟 TTL（盘中日K最后一根动态）
+
+
+def kline_cache_dir():
+    """本地 K 线缓存目录（repo generated/cache/kline/）。"""
+    return Path.home() / "pydev" / "invest2026" / "generated" / "cache" / "kline"
+
+
+def kline_cache_path(code: str) -> Path:
+    return kline_cache_dir() / f"{str(code).zfill(6)}.json"
+
+
+def kline_cache_load(code: str):
+    """读取缓存（TTL 内返回，否则 None）。缓存内容: {fetched, name, points}"""
+    try:
+        p = kline_cache_path(code)
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text(encoding="utf-8"))
+        if time.time() - d.get("fetched", 0) > KLINE_CACHE_TTL:
+            return None
+        return d.get("name"), d.get("points")
+    except Exception:
+        return None
+
+
+def kline_cache_save(code: str, name, points):
+    """写缓存（TTL 起点 = 拉取时刻）。"""
+    try:
+        p = kline_cache_path(code)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"fetched": time.time(), "name": name, "points": points},
+                                ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+
 
 def fetch_kline(code: str, lmt: int = 500):
-    """东方财富日 K（前复权）。返回 (name, points) 或 (None, None)。"""
+    """东方财富日 K（前复权）。返回 (name, points) 或 (None, None)。
+    带 5 分钟本地缓存（generated/cache/kline/）。"""
     from httpget import httpget
     code = str(code).zfill(6)
+    cached = kline_cache_load(code)
+    if cached:
+        return cached
     secid = f"{'1' if code.startswith('6') else '0'}.{code}"
     params = {
         "secid": secid, "ut": "fa5fd1943c7b386f172d6893dbfba10b",
@@ -55,10 +99,14 @@ def fetch_kline(code: str, lmt: int = 500):
                 except (TypeError, ValueError):
                     continue
             if points:
+                kline_cache_save(code, data.get("name") or code, points)
                 return data.get("name") or code, points
         except Exception:
             continue
-    return fetch_kline_sina(code, lmt)
+    name, points = fetch_kline_sina(code, lmt)
+    if points:
+        kline_cache_save(code, name or code, points)
+    return name, points
 
 
 def fetch_kline_sina(code: str, lmt: int = 500):

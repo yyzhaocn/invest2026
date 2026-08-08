@@ -17,6 +17,14 @@ python3 market/skills/portfolio/scripts/portfolio.py add-cash <金额>
 python3 market/skills/portfolio/scripts/portfolio.py show [--json]
 ```
 
+所有命令支持 `--account <账户名>`（**多组合**）：默认 `main`（兼容旧数据，存 `shared/paper/` 根目录）；命名账户存 `shared/paper/<账户>/`，数据完全隔离。示例：
+
+```bash
+portfolio.py --account momentum init --cash 200000   # 动量账户
+portfolio.py --account value buy 161631 5000 --note 定投
+portfolio.py --account momentum show                  # 只查 momentum
+```
+
 命令：
 
 - `init`：初始化组合（默认初始资金 10 万；已存在时需 `--force` 重置）
@@ -37,8 +45,9 @@ python3 market/skills/portfolio/scripts/portfolio.py show [--json]
 ## 数据流
 
 - 行情：`_shared/paper.py`（股票 push2delay ulist 实时；基金 pingzhongdata 最新净值）
-- 持久化：`shared/paper/portfolio.json` + `trades.csv`（买入卖出均记流水，含理由 note）
-- 卖出自动按均价法记已实现盈亏，供 `trade-journal` 复盘
+- 持久化：`shared/paper/<账户>/portfolio.json` + `trades.csv`（`main` 账户在根目录；买入卖出均记流水，含理由 note）
+- 卖出自动按均价法记已实现盈亏，供 `trade-journal` 复盘（`trade-journal --account <名>`）
+- 绩效：`performance --account <名> snapshot/report`
 
 ## 注意事项
 

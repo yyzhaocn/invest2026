@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
 from paper import (  # noqa: E402
-    batch_quotes, get_fund_nav, load_portfolio, load_snapshots, record_snapshot,
+    batch_quotes, get_fund_nav, load_portfolio, load_snapshots, record_snapshot, set_account,
 )
 
 UA = {"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}
@@ -265,6 +265,7 @@ DATA.slice().reverse().forEach(r => {
 
 def main():
     ap = argparse.ArgumentParser(description="纸面交易组合绩效")
+    ap.add_argument("--account", default="main", help="账户名（多组合），默认 main")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p_snap = sub.add_parser("snapshot", help="记录今日净值")
     p_snap.set_defaults(func=do_snapshot)
@@ -276,6 +277,7 @@ def main():
     p_rep.add_argument("--no-benchmark", action="store_true")
     p_rep.set_defaults(func=do_report)
     args = ap.parse_args()
+    set_account(args.account)
     try:
         args.func(args)
     except SystemExit:

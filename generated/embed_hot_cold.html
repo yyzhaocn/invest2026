@@ -1,0 +1,326 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>今日板块热冷榜</title>
+<style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#0f1216;color:#e8eaed}
+#drawer{position:fixed;top:0;left:0;bottom:0;width:240px;background:#161b22;border-right:1px solid #262d38;transform:translateX(-100%);transition:transform .25s;z-index:50;overflow-y:auto;padding:18px 0}
+#drawer.open{transform:translateX(0)}
+.toc-grp{font-size:12px;color:#9aa0a6;font-weight:700;margin:14px 18px 6px}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 18px;color:#d6dae0;text-decoration:none;font-size:13px;border-left:3px solid transparent}
+.toc-item:hover{background:#1c222b;color:#fff}.toc-item.active{border-left-color:#ff4d4f;background:#1a2029;color:#fff}
+.toc-idx{width:18px;height:18px;border-radius:5px;background:#232a35;color:#9aa0a6;font-size:11px;display:flex;align-items:center;justify-content:center}
+.toc-code{margin-left:auto;color:#5c6572;font-size:11px}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#overlay.show{opacity:1;pointer-events:auto}
+#menu-btn{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:9px;border:1px solid #2a313d;background:#161b22;color:#e8eaed;font-size:17px;cursor:pointer}
+.wrap{max-width:960px;margin:0 auto;padding:20px 20px 60px}
+.page-title{text-align:center;padding:6px 0 12px}.page-title h1{font-size:20px;margin:0}.page-title .sub{color:#7c8490;font-size:12px}
+.blk{margin-top:14px;padding:20px;background:#11151b;border:1px solid #1e252f;border-radius:14px}
+.blk .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.blk h2{font-size:19px;margin:0}
+.code{color:#9aa0a6;font-size:13px}.pct{font-size:22px;font-weight:700}.pos{color:#ff4d4f}.neg{color:#2ecc71}
+.metrics{display:flex;gap:24px;margin:12px 0;color:#b6bcc4;font-size:13px}.metrics b{color:#e8eaed;font-size:15px}
+.links{display:flex;gap:10px;margin:10px 0}
+.btn{display:inline-block;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+.btn-fs{background:#ff4d4f;color:#fff}.btn-page{background:#232830;color:#d6dae0}
+.charts{display:flex;gap:14px;flex-wrap:wrap}.chart{background:#14181f;border-radius:10px;padding:10px;flex:1;min-width:320px}
+.chart img{width:100%;height:auto;border-radius:6px}.chart .cap{color:#9aa0a6;font-size:12px;margin-top:6px}
+.blk h3{font-size:14px;margin:16px 0 6px;color:#c9ced6}
+table{width:100%;border-collapse:collapse;background:#14181f;border-radius:10px;overflow:hidden;margin-top:8px}
+th,td{padding:6px 10px;font-size:12px;text-align:right}th{background:#1c2129}td:first-child,th:first-child{text-align:left}
+
+.k-tip{position:fixed;z-index:99;background:#14181f;border:1px solid #2a313d;border-radius:8px;padding:4px;display:none;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.k-tip img{width:260px;height:auto;display:block;border-radius:5px}
+.k-tip .k-name{color:#9aa0a6;font-size:11px;padding:3px 6px}
+tr.hover-row{cursor:pointer}
+tr.hover-row:hover td{background:#1c2530}
+
+</style></head><body>
+<button id="menu-btn" title="目录">☰</button><nav id="drawer"><div class="toc-grp">🔥 热门板块</div><a href="#sec-0" class="toc-item"><span class="toc-idx">1</span>医疗服务<span class="toc-code">BK0727</span></a><a href="#sec-1" class="toc-item"><span class="toc-idx">2</span>生物制品<span class="toc-code">BK1044</span></a><a href="#sec-2" class="toc-item"><span class="toc-idx">3</span>元件<span class="toc-code">BK0459</span></a><a href="#sec-3" class="toc-item"><span class="toc-idx">4</span>化学制药<span class="toc-code">BK0465</span></a><a href="#sec-4" class="toc-item"><span class="toc-idx">5</span>贵金属<span class="toc-code">BK0732</span></a><a href="#sec-5" class="toc-item"><span class="toc-idx">6</span>电子化学品Ⅱ<span class="toc-code">BK1039</span></a><a href="#sec-6" class="toc-item"><span class="toc-idx">7</span>半导体<span class="toc-code">BK1036</span></a><a href="#sec-7" class="toc-item"><span class="toc-idx">8</span>小金属<span class="toc-code">BK1027</span></a><a href="#sec-8" class="toc-item"><span class="toc-idx">9</span>医疗器械<span class="toc-code">BK1041</span></a><a href="#sec-9" class="toc-item"><span class="toc-idx">10</span>能源金属<span class="toc-code">BK1015</span></a><div class="toc-grp">🥶 冷门板块</div><a href="#sec-10" class="toc-item"><span class="toc-idx">11</span>焦炭Ⅱ<span class="toc-code">BK1249</span></a><a href="#sec-11" class="toc-item"><span class="toc-idx">12</span>农业综合Ⅱ<span class="toc-code">BK1257</span></a><a href="#sec-12" class="toc-item"><span class="toc-idx">13</span>房屋建设Ⅱ<span class="toc-code">BK1246</span></a><a href="#sec-13" class="toc-item"><span class="toc-idx">14</span>游戏Ⅱ<span class="toc-code">BK1046</span></a><a href="#sec-14" class="toc-item"><span class="toc-idx">15</span>多元金融<span class="toc-code">BK0738</span></a><a href="#sec-15" class="toc-item"><span class="toc-idx">16</span>种植业<span class="toc-code">BK1261</span></a><a href="#sec-16" class="toc-item"><span class="toc-idx">17</span>软件开发<span class="toc-code">BK0737</span></a><a href="#sec-17" class="toc-item"><span class="toc-idx">18</span>出版<span class="toc-code">BK1218</span></a><a href="#sec-18" class="toc-item"><span class="toc-idx">19</span>通信服务<span class="toc-code">BK0736</span></a><a href="#sec-19" class="toc-item"><span class="toc-idx">20</span>普钢<span class="toc-code">BK1226</span></a></nav><div id="overlay"></div>
+<div class="wrap"><div class="page-title"><h1>今日板块热冷榜（2026-08-07 19:34）</h1>
+<div class="sub">🔥 涨幅前 10 ｜ 🥶 跌幅前 10 ｜ 点击 ☰ 目录 ｜ 悬停成分股看K线</div></div><section class="blk" id="sec-0">
+<div class="top"><h2>医疗服务</h2><span class="code">BK0727</span>
+<span class="pct pos">+8.19%</span></div>
+<div class="metrics"><span>指数 <b>142.21</b></span><span>成交额 <b>490亿</b></span><span>成分 <b>54 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0727.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0727.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0727&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102464" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0727&timespan=1786102464" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="300363" data-name="博腾股份"><td>300363</td><td>博腾股份</td><td>20.44</td><td class="pos">+20.02%</td><td>111.0</td></tr><tr class="hover-row" data-code="688073" data-name="毕得医药"><td>688073</td><td>毕得医药</td><td>61.6</td><td class="pos">+20.01%</td><td>56.0</td></tr><tr class="hover-row" data-code="688265" data-name="南模生物"><td>688265</td><td>南模生物</td><td>42.9</td><td class="pos">+20.00%</td><td>33.0</td></tr><tr class="hover-row" data-code="688046" data-name="药康生物"><td>688046</td><td>药康生物</td><td>33.31</td><td class="pos">+19.99%</td><td>137.0</td></tr><tr class="hover-row" data-code="301230" data-name="泓博医药"><td>301230</td><td>泓博医药</td><td>32.42</td><td class="pos">+19.99%</td><td>59.0</td></tr><tr class="hover-row" data-code="300725" data-name="药石科技"><td>300725</td><td>药石科技</td><td>47.5</td><td class="pos">+18.39%</td><td>111.0</td></tr></tbody></table></section><section class="blk" id="sec-1">
+<div class="top"><h2>生物制品</h2><span class="code">BK1044</span>
+<span class="pct pos">+6.56%</span></div>
+<div class="metrics"><span>指数 <b>100.52</b></span><span>成交额 <b>212亿</b></span><span>成分 <b>58 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1044.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1044.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1044&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102465" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1044&timespan=1786102465" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="688137" data-name="近岸蛋白"><td>688137</td><td>近岸蛋白</td><td>46.72</td><td class="pos">+20.01%</td><td>33.0</td></tr><tr class="hover-row" data-code="301047" data-name="义翘神州"><td>301047</td><td>义翘神州</td><td>107.88</td><td class="pos">+20.00%</td><td>131.0</td></tr><tr class="hover-row" data-code="301080" data-name="百普赛斯"><td>301080</td><td>百普赛斯</td><td>64.75</td><td class="pos">+20.00%</td><td>109.0</td></tr><tr class="hover-row" data-code="688105" data-name="诺唯赞"><td>688105</td><td>诺唯赞</td><td>23.22</td><td class="pos">+18.59%</td><td>120.0</td></tr><tr class="hover-row" data-code="688293" data-name="奥浦迈"><td>688293</td><td>奥浦迈</td><td>63.22</td><td class="pos">+17.60%</td><td>90.0</td></tr><tr class="hover-row" data-code="301393" data-name="昊帆生物"><td>301393</td><td>昊帆生物</td><td>65.67</td><td class="pos">+12.82%</td><td>71.0</td></tr></tbody></table></section><section class="blk" id="sec-2">
+<div class="top"><h2>元件</h2><span class="code">BK0459</span>
+<span class="pct pos">+6.41%</span></div>
+<div class="metrics"><span>指数 <b>5,604.65</b></span><span>成交额 <b>1701亿</b></span><span>成分 <b>67 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0459.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0459.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0459&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102465" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0459&timespan=1786102465" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="301366" data-name="一博科技"><td>301366</td><td>一博科技</td><td>53.33</td><td class="pos">+20.00%</td><td>112.0</td></tr><tr class="hover-row" data-code="688020" data-name="方邦股份"><td>688020</td><td>方邦股份</td><td>146.16</td><td class="pos">+20.00%</td><td>120.0</td></tr><tr class="hover-row" data-code="301251" data-name="威尔高"><td>301251</td><td>威尔高</td><td>46.58</td><td class="pos">+16.95%</td><td>88.0</td></tr><tr class="hover-row" data-code="688519" data-name="南亚新材"><td>688519</td><td>南亚新材</td><td>302.55</td><td class="pos">+16.53%</td><td>712.0</td></tr><tr class="hover-row" data-code="688655" data-name="迅捷兴"><td>688655</td><td>迅捷兴</td><td>38.66</td><td class="pos">+13.37%</td><td>52.0</td></tr><tr class="hover-row" data-code="300814" data-name="中富电路"><td>300814</td><td>中富电路</td><td>141.99</td><td class="pos">+13.34%</td><td>272.0</td></tr></tbody></table></section><section class="blk" id="sec-3">
+<div class="top"><h2>化学制药</h2><span class="code">BK0465</span>
+<span class="pct pos">+4.38%</span></div>
+<div class="metrics"><span>指数 <b>3,628.23</b></span><span>成交额 <b>666亿</b></span><span>成分 <b>159 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0465.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0465.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0465&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102466" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0465&timespan=1786102466" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="300558" data-name="贝达药业"><td>300558</td><td>贝达药业</td><td>70.21</td><td class="pos">+14.37%</td><td>297.0</td></tr><tr class="hover-row" data-code="920478" data-name="峆一药业"><td>920478</td><td>峆一药业</td><td>12.4</td><td class="pos">+14.29%</td><td>14.0</td></tr><tr class="hover-row" data-code="688235" data-name="百济神州"><td>688235</td><td>百济神州</td><td>299.33</td><td class="pos">+11.28%</td><td>4617.0</td></tr><tr class="hover-row" data-code="688221" data-name="前沿生物-U"><td>688221</td><td>前沿生物-U</td><td>21.22</td><td class="pos">+11.27%</td><td>79.0</td></tr><tr class="hover-row" data-code="688197" data-name="首药控股-U"><td>688197</td><td>首药控股-U</td><td>36.2</td><td class="pos">+10.91%</td><td>54.0</td></tr><tr class="hover-row" data-code="688690" data-name="纳微科技"><td>688690</td><td>纳微科技</td><td>42.0</td><td class="pos">+10.24%</td><td>170.0</td></tr></tbody></table></section><section class="blk" id="sec-4">
+<div class="top"><h2>贵金属</h2><span class="code">BK0732</span>
+<span class="pct pos">+4.36%</span></div>
+<div class="metrics"><span>指数 <b>255.83</b></span><span>成交额 <b>286亿</b></span><span>成分 <b>13 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0732.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0732.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0732&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102467" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0732&timespan=1786102467" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="000506" data-name="招金黄金"><td>000506</td><td>招金黄金</td><td>18.13</td><td class="pos">+10.01%</td><td>168.0</td></tr><tr class="hover-row" data-code="000603" data-name="盛达资源"><td>000603</td><td>盛达资源</td><td>34.43</td><td class="pos">+10.00%</td><td>238.0</td></tr><tr class="hover-row" data-code="001337" data-name="四川黄金"><td>001337</td><td>四川黄金</td><td>47.77</td><td class="pos">+6.13%</td><td>201.0</td></tr><tr class="hover-row" data-code="002716" data-name="湖南白银"><td>002716</td><td>湖南白银</td><td>9.09</td><td class="pos">+5.45%</td><td>257.0</td></tr><tr class="hover-row" data-code="000426" data-name="兴业银锡"><td>000426</td><td>兴业银锡</td><td>39.48</td><td class="pos">+5.06%</td><td>701.0</td></tr><tr class="hover-row" data-code="300139" data-name="晓程科技"><td>300139</td><td>晓程科技</td><td>48.0</td><td class="pos">+4.26%</td><td>132.0</td></tr></tbody></table></section><section class="blk" id="sec-5">
+<div class="top"><h2>电子化学品Ⅱ</h2><span class="code">BK1039</span>
+<span class="pct pos">+4.36%</span></div>
+<div class="metrics"><span>指数 <b>333.3</b></span><span>成交额 <b>587亿</b></span><span>成分 <b>37 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1039.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1039.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1039&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102467" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1039&timespan=1786102467" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="688150" data-name="莱特光电"><td>688150</td><td>莱特光电</td><td>42.83</td><td class="pos">+13.31%</td><td>172.0</td></tr><tr class="hover-row" data-code="688603" data-name="天承科技"><td>688603</td><td>天承科技</td><td>117.3</td><td class="pos">+11.00%</td><td>146.0</td></tr><tr class="hover-row" data-code="301319" data-name="唯特偶"><td>301319</td><td>唯特偶</td><td>119.63</td><td class="pos">+10.46%</td><td>218.0</td></tr><tr class="hover-row" data-code="002741" data-name="光华科技"><td>002741</td><td>光华科技</td><td>26.3</td><td class="pos">+10.00%</td><td>123.0</td></tr><tr class="hover-row" data-code="300576" data-name="容大感光"><td>300576</td><td>容大感光</td><td>31.99</td><td class="pos">+7.67%</td><td>129.0</td></tr><tr class="hover-row" data-code="688683" data-name="莱尔科技"><td>688683</td><td>莱尔科技</td><td>32.14</td><td class="pos">+7.60%</td><td>52.0</td></tr></tbody></table></section><section class="blk" id="sec-6">
+<div class="top"><h2>半导体</h2><span class="code">BK1036</span>
+<span class="pct pos">+3.51%</span></div>
+<div class="metrics"><span>指数 <b>276.15</b></span><span>成交额 <b>3983亿</b></span><span>成分 <b>185 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1036.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1036.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1036&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102469" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1036&timespan=1786102469" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="301707" data-name="N展芯"><td>301707</td><td>N展芯</td><td>116.52</td><td class="pos">+396.89%</td><td>479.0</td></tr><tr class="hover-row" data-code="688419" data-name="耐科装备"><td>688419</td><td>耐科装备</td><td>49.67</td><td class="pos">+20.00%</td><td>57.0</td></tr><tr class="hover-row" data-code="688693" data-name="锴威特"><td>688693</td><td>锴威特</td><td>93.38</td><td class="pos">+19.99%</td><td>69.0</td></tr><tr class="hover-row" data-code="300672" data-name="国科微"><td>300672</td><td>国科微</td><td>168.48</td><td class="pos">+14.82%</td><td>366.0</td></tr><tr class="hover-row" data-code="688508" data-name="芯朋微"><td>688508</td><td>芯朋微</td><td>86.94</td><td class="pos">+12.25%</td><td>115.0</td></tr><tr class="hover-row" data-code="600206" data-name="有研新材"><td>600206</td><td>有研新材</td><td>48.17</td><td class="pos">+10.00%</td><td>408.0</td></tr></tbody></table></section><section class="blk" id="sec-7">
+<div class="top"><h2>小金属</h2><span class="code">BK1027</span>
+<span class="pct pos">+3.09%</span></div>
+<div class="metrics"><span>指数 <b>408.51</b></span><span>成交额 <b>638亿</b></span><span>成分 <b>26 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1027.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1027.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1027&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102469" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1027&timespan=1786102469" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="002428" data-name="云南锗业"><td>002428</td><td>云南锗业</td><td>100.08</td><td class="pos">+10.00%</td><td>654.0</td></tr><tr class="hover-row" data-code="000831" data-name="中国稀土"><td>000831</td><td>中国稀土</td><td>57.19</td><td class="pos">+10.00%</td><td>607.0</td></tr><tr class="hover-row" data-code="000657" data-name="中钨高新"><td>000657</td><td>中钨高新</td><td>67.01</td><td class="pos">+7.22%</td><td>1527.0</td></tr><tr class="hover-row" data-code="600259" data-name="中稀有色"><td>600259</td><td>中稀有色</td><td>90.68</td><td class="pos">+6.71%</td><td>305.0</td></tr><tr class="hover-row" data-code="600392" data-name="盛和资源"><td>600392</td><td>盛和资源</td><td>23.94</td><td class="pos">+5.74%</td><td>420.0</td></tr><tr class="hover-row" data-code="600111" data-name="北方稀土"><td>600111</td><td>北方稀土</td><td>44.06</td><td class="pos">+5.13%</td><td>1593.0</td></tr></tbody></table></section><section class="blk" id="sec-8">
+<div class="top"><h2>医疗器械</h2><span class="code">BK1041</span>
+<span class="pct pos">+3.04%</span></div>
+<div class="metrics"><span>指数 <b>92.43</b></span><span>成交额 <b>272亿</b></span><span>成分 <b>139 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1041.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1041.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1041&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102470" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1041&timespan=1786102470" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="301234" data-name="五洲医疗"><td>301234</td><td>五洲医疗</td><td>83.62</td><td class="pos">+20.01%</td><td>57.0</td></tr><tr class="hover-row" data-code="301093" data-name="华兰股份"><td>301093</td><td>华兰股份</td><td>84.23</td><td class="pos">+18.00%</td><td>180.0</td></tr><tr class="hover-row" data-code="920166" data-name="海圣医疗"><td>920166</td><td>海圣医疗</td><td>23.0</td><td class="pos">+15.17%</td><td>17.0</td></tr><tr class="hover-row" data-code="300981" data-name="中红医疗"><td>300981</td><td>中红医疗</td><td>16.06</td><td class="pos">+11.07%</td><td>69.0</td></tr><tr class="hover-row" data-code="688399" data-name="硕世生物"><td>688399</td><td>硕世生物</td><td>30.19</td><td class="pos">+8.91%</td><td>37.0</td></tr><tr class="hover-row" data-code="301188" data-name="力诺药包"><td>301188</td><td>力诺药包</td><td>41.69</td><td class="pos">+8.54%</td><td>112.0</td></tr></tbody></table></section><section class="blk" id="sec-9">
+<div class="top"><h2>能源金属</h2><span class="code">BK1015</span>
+<span class="pct pos">+2.84%</span></div>
+<div class="metrics"><span>指数 <b>85.67</b></span><span>成交额 <b>196亿</b></span><span>成分 <b>11 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1015.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1015.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1015&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102470" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1015&timespan=1786102470" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="300618" data-name="寒锐钴业"><td>300618</td><td>寒锐钴业</td><td>36.79</td><td class="pos">+8.53%</td><td>114.0</td></tr><tr class="hover-row" data-code="603799" data-name="华友钴业"><td>603799</td><td>华友钴业</td><td>44.01</td><td class="pos">+6.30%</td><td>833.0</td></tr><tr class="hover-row" data-code="301219" data-name="腾远钴业"><td>301219</td><td>腾远钴业</td><td>50.06</td><td class="pos">+5.86%</td><td>192.0</td></tr><tr class="hover-row" data-code="002192" data-name="融捷股份"><td>002192</td><td>融捷股份</td><td>69.49</td><td class="pos">+3.79%</td><td>180.0</td></tr><tr class="hover-row" data-code="002240" data-name="盛新锂能"><td>002240</td><td>盛新锂能</td><td>32.05</td><td class="pos">+2.99%</td><td>293.0</td></tr><tr class="hover-row" data-code="002466" data-name="天齐锂业"><td>002466</td><td>天齐锂业</td><td>47.87</td><td class="pos">+1.46%</td><td>820.0</td></tr></tbody></table></section><section class="blk" id="sec-10">
+<div class="top"><h2>焦炭Ⅱ</h2><span class="code">BK1249</span>
+<span class="pct neg">-3.02%</span></div>
+<div class="metrics"><span>指数 <b>73.67</b></span><span>成交额 <b>13亿</b></span><span>成分 <b>7 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1249.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1249.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1249&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102470" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1249&timespan=1786102470" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="601011" data-name="宝泰隆"><td>601011</td><td>宝泰隆</td><td>2.63</td><td class="neg">-1.13%</td><td>50.0</td></tr><tr class="hover-row" data-code="600792" data-name="云煤能源"><td>600792</td><td>云煤能源</td><td>3.6</td><td class="neg">-1.64%</td><td>40.0</td></tr><tr class="hover-row" data-code="600740" data-name="山西焦化"><td>600740</td><td>山西焦化</td><td>3.54</td><td class="neg">-2.21%</td><td>91.0</td></tr><tr class="hover-row" data-code="000723" data-name="美锦能源"><td>000723</td><td>美锦能源</td><td>3.52</td><td class="neg">-2.22%</td><td>155.0</td></tr><tr class="hover-row" data-code="600997" data-name="开滦股份"><td>600997</td><td>开滦股份</td><td>5.41</td><td class="neg">-2.70%</td><td>86.0</td></tr><tr class="hover-row" data-code="600408" data-name="安泰集团"><td>600408</td><td>安泰集团</td><td>2.74</td><td class="neg">-4.53%</td><td>28.0</td></tr></tbody></table></section><section class="blk" id="sec-11">
+<div class="top"><h2>农业综合Ⅱ</h2><span class="code">BK1257</span>
+<span class="pct neg">-1.62%</span></div>
+<div class="metrics"><span>指数 <b>213.12</b></span><span>成交额 <b>1亿</b></span><span>成分 <b>3 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1257.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1257.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1257&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102471" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1257&timespan=1786102471" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="300021" data-name="大禹节水"><td>300021</td><td>大禹节水</td><td>3.9</td><td class="neg">-1.52%</td><td>40.0</td></tr><tr class="hover-row" data-code="920964" data-name="润农节水"><td>920964</td><td>润农节水</td><td>4.5</td><td class="neg">-1.53%</td><td>12.0</td></tr><tr class="hover-row" data-code="002556" data-name="辉隆股份"><td>002556</td><td>辉隆股份</td><td>4.89</td><td class="neg">-1.81%</td><td>46.0</td></tr></tbody></table></section><section class="blk" id="sec-12">
+<div class="top"><h2>房屋建设Ⅱ</h2><span class="code">BK1246</span>
+<span class="pct neg">-1.37%</span></div>
+<div class="metrics"><span>指数 <b>177.92</b></span><span>成交额 <b>18亿</b></span><span>成分 <b>8 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1246.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1246.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1246&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102472" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1246&timespan=1786102472" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="000628" data-name="高新发展"><td>000628</td><td>高新发展</td><td>39.01</td><td class="neg">-0.76%</td><td>137.0</td></tr><tr class="hover-row" data-code="600491" data-name="ST龙元"><td>600491</td><td>ST龙元</td><td>1.23</td><td class="neg">-0.81%</td><td>19.0</td></tr><tr class="hover-row" data-code="600170" data-name="上海建工"><td>600170</td><td>上海建工</td><td>2.31</td><td class="neg">-0.86%</td><td>205.0</td></tr><tr class="hover-row" data-code="601668" data-name="中国建筑"><td>601668</td><td>中国建筑</td><td>4.52</td><td class="neg">-1.09%</td><td>1868.0</td></tr><tr class="hover-row" data-code="600248" data-name="陕建股份"><td>600248</td><td>陕建股份</td><td>2.84</td><td class="neg">-1.39%</td><td>105.0</td></tr><tr class="hover-row" data-code="002761" data-name="浙江建投"><td>002761</td><td>浙江建投</td><td>7.13</td><td class="neg">-1.66%</td><td>94.0</td></tr></tbody></table></section><section class="blk" id="sec-13">
+<div class="top"><h2>游戏Ⅱ</h2><span class="code">BK1046</span>
+<span class="pct neg">-1.29%</span></div>
+<div class="metrics"><span>指数 <b>135.15</b></span><span>成交额 <b>121亿</b></span><span>成分 <b>24 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1046.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1046.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1046&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102473" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1046&timespan=1786102473" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="300031" data-name="宝通科技"><td>300031</td><td>宝通科技</td><td>21.88</td><td class="pos">+2.63%</td><td>92.0</td></tr><tr class="hover-row" data-code="002624" data-name="完美世界"><td>002624</td><td>完美世界</td><td>11.49</td><td class="pos">+1.95%</td><td>223.0</td></tr><tr class="hover-row" data-code="002558" data-name="巨人网络"><td>002558</td><td>巨人网络</td><td>29.34</td><td class="pos">+0.27%</td><td>558.0</td></tr><tr class="hover-row" data-code="002174" data-name="游族网络"><td>002174</td><td>游族网络</td><td>11.8</td><td class="pos">+0.17%</td><td>116.0</td></tr><tr class="hover-row" data-code="002517" data-name="恺英网络"><td>002517</td><td>恺英网络</td><td>17.93</td><td class="pos">+0.17%</td><td>383.0</td></tr><tr class="hover-row" data-code="002605" data-name="姚记科技"><td>002605</td><td>姚记科技</td><td>18.42</td><td class="pos">+0.11%</td><td>77.0</td></tr></tbody></table></section><section class="blk" id="sec-14">
+<div class="top"><h2>多元金融</h2><span class="code">BK0738</span>
+<span class="pct neg">-1.28%</span></div>
+<div class="metrics"><span>指数 <b>56.8</b></span><span>成交额 <b>53亿</b></span><span>成分 <b>26 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0738.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0738.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0738&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102473" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0738&timespan=1786102473" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="000987" data-name="越秀资本"><td>000987</td><td>越秀资本</td><td>7.75</td><td class="pos">+0.13%</td><td>389.0</td></tr><tr class="hover-row" data-code="603093" data-name="南华期货"><td>603093</td><td>南华期货</td><td>18.05</td><td class="pos">+0.11%</td><td>138.0</td></tr><tr class="hover-row" data-code="600120" data-name="浙江东方"><td>600120</td><td>浙江东方</td><td>5.12</td><td class="pos">+0.00%</td><td>175.0</td></tr><tr class="hover-row" data-code="000415" data-name="渤海租赁"><td>000415</td><td>渤海租赁</td><td>4.52</td><td class="pos">+0.00%</td><td>280.0</td></tr><tr class="hover-row" data-code="600061" data-name="国投资本"><td>600061</td><td>国投资本</td><td>6.4</td><td class="neg">-0.31%</td><td>409.0</td></tr><tr class="hover-row" data-code="600390" data-name="五矿资本"><td>600390</td><td>五矿资本</td><td>4.89</td><td class="neg">-0.61%</td><td>220.0</td></tr></tbody></table></section><section class="blk" id="sec-15">
+<div class="top"><h2>种植业</h2><span class="code">BK1261</span>
+<span class="pct neg">-1.19%</span></div>
+<div class="metrics"><span>指数 <b>231.95</b></span><span>成交额 <b>47亿</b></span><span>成分 <b>21 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1261.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1261.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1261&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102474" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1261&timespan=1786102474" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="601118" data-name="海南橡胶"><td>601118</td><td>海南橡胶</td><td>5.48</td><td class="pos">+2.81%</td><td>235.0</td></tr><tr class="hover-row" data-code="603336" data-name="宏辉果蔬"><td>603336</td><td>宏辉果蔬</td><td>10.29</td><td class="pos">+1.08%</td><td>63.0</td></tr><tr class="hover-row" data-code="002772" data-name="众兴菌业"><td>002772</td><td>众兴菌业</td><td>10.7</td><td class="pos">+0.47%</td><td>40.0</td></tr><tr class="hover-row" data-code="600883" data-name="博闻科技"><td>600883</td><td>博闻科技</td><td>7.46</td><td class="pos">+0.00%</td><td>18.0</td></tr><tr class="hover-row" data-code="920087" data-name="秋乐种业"><td>920087</td><td>秋乐种业</td><td>11.63</td><td class="neg">-0.26%</td><td>19.0</td></tr><tr class="hover-row" data-code="000998" data-name="隆平高科"><td>000998</td><td>隆平高科</td><td>8.21</td><td class="neg">-0.48%</td><td>121.0</td></tr></tbody></table></section><section class="blk" id="sec-16">
+<div class="top"><h2>软件开发</h2><span class="code">BK0737</span>
+<span class="pct neg">-1.16%</span></div>
+<div class="metrics"><span>指数 <b>109.09</b></span><span>成交额 <b>667亿</b></span><span>成分 <b>134 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0737.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0737.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0737&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102475" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0737&timespan=1786102475" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="688296" data-name="和达科技"><td>688296</td><td>和达科技</td><td>19.29</td><td class="pos">+11.31%</td><td>21.0</td></tr><tr class="hover-row" data-code="688479" data-name="友车科技"><td>688479</td><td>友车科技</td><td>33.58</td><td class="pos">+10.39%</td><td>68.0</td></tr><tr class="hover-row" data-code="603990" data-name="麦迪科技"><td>603990</td><td>麦迪科技</td><td>22.31</td><td class="pos">+7.78%</td><td>68.0</td></tr><tr class="hover-row" data-code="300209" data-name="行云科技"><td>300209</td><td>行云科技</td><td>37.19</td><td class="pos">+7.27%</td><td>345.0</td></tr><tr class="hover-row" data-code="688206" data-name="概伦电子"><td>688206</td><td>概伦电子</td><td>36.14</td><td class="pos">+5.40%</td><td>158.0</td></tr><tr class="hover-row" data-code="003007" data-name="直真科技"><td>003007</td><td>直真科技</td><td>39.9</td><td class="pos">+5.03%</td><td>48.0</td></tr></tbody></table></section><section class="blk" id="sec-17">
+<div class="top"><h2>出版</h2><span class="code">BK1218</span>
+<span class="pct neg">-1.15%</span></div>
+<div class="metrics"><span>指数 <b>184.37</b></span><span>成交额 <b>33亿</b></span><span>成分 <b>28 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1218.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1218.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1218&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102475" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1218&timespan=1786102475" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="301231" data-name="荣信文化"><td>301231</td><td>荣信文化</td><td>28.12</td><td class="pos">+0.61%</td><td>24.0</td></tr><tr class="hover-row" data-code="000793" data-name="ST华闻"><td>000793</td><td>ST华闻</td><td>2.22</td><td class="pos">+0.45%</td><td>98.0</td></tr><tr class="hover-row" data-code="601858" data-name="中国科传"><td>601858</td><td>中国科传</td><td>26.32</td><td class="pos">+0.15%</td><td>208.0</td></tr><tr class="hover-row" data-code="603999" data-name="读者传媒"><td>603999</td><td>读者传媒</td><td>5.52</td><td class="neg">-0.18%</td><td>32.0</td></tr><tr class="hover-row" data-code="600757" data-name="长江传媒"><td>600757</td><td>长江传媒</td><td>7.75</td><td class="neg">-0.26%</td><td>94.0</td></tr><tr class="hover-row" data-code="300788" data-name="中信出版"><td>300788</td><td>中信出版</td><td>25.72</td><td class="neg">-0.39%</td><td>49.0</td></tr></tbody></table></section><section class="blk" id="sec-18">
+<div class="top"><h2>通信服务</h2><span class="code">BK0736</span>
+<span class="pct neg">-1.12%</span></div>
+<div class="metrics"><span>指数 <b>107.33</b></span><span>成交额 <b>178亿</b></span><span>成分 <b>39 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK0736.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK0736.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK0736&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102476" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK0736&timespan=1786102476" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="301139" data-name="*ST元道"><td>301139</td><td>*ST元道</td><td>3.89</td><td class="pos">+4.57%</td><td>5.0</td></tr><tr class="hover-row" data-code="300560" data-name="中富通"><td>300560</td><td>中富通</td><td>16.47</td><td class="pos">+3.45%</td><td>38.0</td></tr><tr class="hover-row" data-code="300921" data-name="南凌科技"><td>300921</td><td>南凌科技</td><td>15.52</td><td class="pos">+2.65%</td><td>40.0</td></tr><tr class="hover-row" data-code="300959" data-name="线上线下"><td>300959</td><td>线上线下</td><td>102.92</td><td class="pos">+2.31%</td><td>83.0</td></tr><tr class="hover-row" data-code="300442" data-name="润泽科技"><td>300442</td><td>润泽科技</td><td>69.75</td><td class="pos">+1.38%</td><td>1145.0</td></tr><tr class="hover-row" data-code="002929" data-name="润建股份"><td>002929</td><td>润建股份</td><td>57.91</td><td class="pos">+1.21%</td><td>166.0</td></tr></tbody></table></section><section class="blk" id="sec-19">
+<div class="top"><h2>普钢</h2><span class="code">BK1226</span>
+<span class="pct neg">-1.11%</span></div>
+<div class="metrics"><span>指数 <b>74.73</b></span><span>成交额 <b>49亿</b></span><span>成分 <b>24 只</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/bk/90.BK1226.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/bk/90.BK1226.html" target="_blank">🔗 板块主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=90.BK1226&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786102477" alt="K线"><div class="cap">📈 日K线 · RSI</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=90.BK1226&timespan=1786102477" alt="分时"><div class="cap">⏱ 分时快照</div></div>
+</div>
+<h3>成分股涨幅榜（悬停看K线）</h3>
+<table><thead><tr><th>代码</th><th>名称</th><th>现价</th><th>涨跌%</th><th>总市值(亿)</th></tr></thead><tbody><tr class="hover-row" data-code="600010" data-name="包钢股份"><td>600010</td><td>包钢股份</td><td>2.28</td><td class="pos">+1.33%</td><td>1031.0</td></tr><tr class="hover-row" data-code="600581" data-name="*ST八钢"><td>600581</td><td>*ST八钢</td><td>2.34</td><td class="pos">+1.30%</td><td>36.0</td></tr><tr class="hover-row" data-code="601005" data-name="重庆钢铁"><td>601005</td><td>重庆钢铁</td><td>1.2</td><td class="pos">+0.00%</td><td>115.0</td></tr><tr class="hover-row" data-code="600808" data-name="马钢股份"><td>600808</td><td>马钢股份</td><td>2.58</td><td class="pos">+0.00%</td><td>199.0</td></tr><tr class="hover-row" data-code="000709" data-name="河钢股份"><td>000709</td><td>河钢股份</td><td>2.13</td><td class="neg">-0.47%</td><td>220.0</td></tr><tr class="hover-row" data-code="000932" data-name="华菱钢铁"><td>000932</td><td>华菱钢铁</td><td>3.73</td><td class="neg">-0.53%</td><td>256.0</td></tr></tbody></table></section></div>
+<script>
+const KTS=1786102478;
+const ktip=document.createElement('div');ktip.className='k-tip';document.body.appendChild(ktip);
+ktip.innerHTML='<div class="k-name">加载中…</div><img alt="K线">';
+const kimg=ktip.querySelector('img'),kname=ktip.querySelector('.k-name');
+document.querySelectorAll('tr.hover-row,.hold-code').forEach(tr=>{
+  tr.addEventListener('mouseenter',()=>{
+    const code=tr.dataset.code;
+    kname.textContent=tr.dataset.name+' ('+code+') · 东财K线';
+    kimg.src='https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid='+(code[0]==='6'?'1.':'0.')+code+'&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan='+KTS;
+    ktip.style.display='block';
+  });
+  tr.addEventListener('mousemove',e=>{
+    let x=e.clientX+16,y=e.clientY+12;
+    if(x+270>innerWidth)x=e.clientX-276;
+    if(y+220>innerHeight)y=e.clientY-210;
+    ktip.style.left=x+'px';ktip.style.top=y+'px';
+  });
+  tr.addEventListener('mouseleave',()=>{ktip.style.display='none'});
+});
+</script>
+<script>
+const drawer=document.getElementById("drawer"),overlay=document.getElementById("overlay"),btn=document.getElementById("menu-btn");
+btn.onclick=()=>{drawer.classList.add("open");overlay.classList.add("show");};
+overlay.onclick=()=>{drawer.classList.remove("open");overlay.classList.remove("show");};
+const items=[...document.querySelectorAll(".toc-item")];
+items.forEach(it=>it.onclick=()=>{items.forEach(x=>x.classList.remove("active"));it.classList.add("active");drawer.classList.remove("open");overlay.classList.remove("show");document.querySelector(it.getAttribute("href")).scrollIntoView({behavior:"smooth"});});
+</script></body></html>

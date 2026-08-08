@@ -48,3 +48,6 @@ fund/raw_har.json
 fund/urlstmp.txt
 __pycache__/
 shared/paper/
+
+# Pi session db
+sessions.db

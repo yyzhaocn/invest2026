@@ -28,7 +28,7 @@ def main():
     ap = argparse.ArgumentParser(description="仓位与风控计算")
     ap.add_argument("code", help="股票代码")
     ap.add_argument("--capital", type=float, default=100000.0, help="可用资金，默认 10 万")
-    ap.add_argument("--risk-pct", type=float, default=2.0, help="单笔风险预算 %，默认 2")
+    ap.add_argument("--risk-pct", type=float, default=2.0, help="单笔风险预算 %%，默认 2")
     ap.add_argument("--atr-mult", type=float, default=2.0, help="止损距离 = 倍数×ATR14，默认 2")
     ap.add_argument("--method", default="risk", choices=["fixed", "risk", "kelly"])
     ap.add_argument("--fixed-pct", type=float, default=0.20, help="fixed 法仓位比例，默认 0.2")

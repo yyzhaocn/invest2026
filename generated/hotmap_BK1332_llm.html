@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>BK1332 (BK1332) 热力图</title>
+<style>
+  body { background:#101418; color:#fff; font-family:Arial, sans-serif; margin:0; padding:0; }
+  .container { display:flex; flex-direction:column; align-items:center; }
+  .header { background:#222; padding:10px; text-align:center; }
+  .footer { background:#222; padding:10px; text-align:center; }
+  .treemap { position:relative; width:100%; max-width:1200px; }
+  .box { position:absolute; left:0; top:0; background:#ff4d4f; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; min-width:30px; min-height:30px; }
+  .box:hover { background:#2ecc71; }
+  .box[data-p='0'] { background:#2ecc71; }
+  .box[data-p='1'] { background:#ff4d4f; }
+  .tooltip { position:absolute; background:#333; color:#fff; padding:5px; border-radius:3px; font-size:12px; white-space:nowrap; z-index:10; }
+  .legend { display:flex; gap:10px; justify-content:center; align-items:center; }
+  .legend-item { display:flex; align-items:center; }
+  .legend-color { width:20px; height:20px; margin-right:5px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    BK1332 (BK1332) 热力图
+    <span>2026-08-07 15:12:38</span>
+  </div>
+  <div class="treemap" id="treemap"></div>
+  <div class="footer">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#2ecc71;"></div>涨</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ff4d4f;"></div>跌</div>
+    </div>
+    <div class="stats">涨幅 > 0: 22 条，涨幅 < 0: 1 条</div>
+  </div>
+</div>
+
+<script>
+  const data = [
+    {"c": "300054", "n": "鼎龙股份", "p": 1.22, "m": 742.0},
+    {"c": "300285", "n": "国瓷材料", "p": 1.94, "m": 706.7},
+    {"c": "688019", "n": "安集科技", "p": 2.98, "m": 574.7},
+    {"c": "688548", "n": "广钢气体", "p": 1.35, "m": 496.9},
+    {"c": "688549", "n": "中巨芯-U", "p": 3.3, "m": 425.0},
+    {"c": "300346", "n": "南大光电", "p": 4.33, "m": 403.1},
+    {"c": "688545", "n": "兴福电子", "p": 6.59, "m": 308.5},
+    {"c": "300236", "n": "上海新阳", "p": 1.11, "m": 291.2},
+    {"c": "600330", "n": "天通股份", "p": 6.28, "m": 283.8},
+    {"c": "603435", "n": "嘉德利", "p": 2.12, "m": 251.6},
+    {"c": "301319", "n": "唯特偶", "p": 10.46, "m": 218.3},
+    {"c": "300398", "n": "飞凯材料", "p": 3.43, "m": 209.8},
+    {"c": "688268", "n": "华特气体", "p": 2.98, "m": 198.7},
+    {"c": "688150", "n": "莱特光电", "p": 13.31, "m": 172.4},
+    {"c": "603002", "n": "宏昌电子", "p": 7.19, "m": 170.7},
+    {"c": "688106", "n": "金宏气体", "p": 1.47, "m": 162.7},
+    {"c": "300684", "n": "中石科技", "p": 7.37, "m": 154.8},
+    {"c": "300655", "n": "晶瑞电材", "p": 1.51, "m": 151.9},
+    {"c": "688603", "n": "天承科技", "p": 11.0, "m": 146.3},
+    {"c": "603078", "n": "江化微", "p": 6.38, "m": 140.3},
+    {"c": "002643", "n": "万润股份", "p": 2.39, "m": 129.6},
+    {"c": "300576", "n": "容大感光", "p": 7.67, "m": 129.1},
+    {"c": "002741", "n": "光华科技", "p": 10.0, "m": 123.2},
+    {"c": "301489", "n": "思泉新材", "p": 4.54, "m": 119.2},
+    {"c": "688359", "n": "三孚新科", "p": 6.2, "m": 104.3},
+    {"c": "301630", "n": "同宇新材", "p": 5.49, "m": 98.2},
+    {"c": "688371", "n": "菲沃泰", "p": 5.58, "m": 95.9},
+    {"c": "688035", "n": "德邦科技", "p": 5.57, "m": 91.6},
+    {"c": "603931", "n": "格林达", "p": 1.24, "m": 73.5},
+    {"c": "688550", "n": "瑞联新材", "p": 0.66, "m": 69.4},
+    {"c": "300429", "n": "强力新材", "p": 1.23, "m": 59.4},
+    {"c": "688683", "n": "莱尔科技", "p": 7.6, "m": 51.8},
+    {"c": "002584", "n": "西陇科学", "p": 1.75, "m": 47.5},
+    {"c": "300537", "n": "广信材料", "p": 3.58, "m": 41.9},
+    {"c": "300481", "n": "濮阳惠成", "p": 1.0, "m": 41.2},
+    {"c": "920189", "n": "康美特", "p": 0.81, "m": 31.7},
+    {"c": "920526", "n": "凯华材料", "p": -0.34, "m": 16.9}
+  ];
+
+  const treemap = document.getElementById('treemap');
+  let totalArea = 0;
+  data.forEach(item => totalArea += item.m);
+
+  data.forEach(item => {
+    const box = document.createElement('div');
+    box.className = 'box';
+    box.dataset.code = item.c;
+    box.dataset.p = item.p;
+    box.dataset.m = item.m;
+    box.dataset.name = item.n;
+    box.style.width = `${(item.m / totalArea * 100).toFixed(2)}%`;
+    box.style.height = `${(item.m / totalArea * 100).toFixed(2)}%`;
+    box.title = `${item.n} (${item.p.toFixed(2)}%, 市值 ${item.m} 亿)`;
+    box.addEventListener('mouseenter', () => {
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = `${item.n}<br>涨幅: ${item.p.toFixed(2)}%<br>市值: ${item.m} 亿`;
+      document.body.appendChild(tooltip);
+      tooltip.style.left = `${box.offsetLeft + box.offsetWidth / 2}px`;
+      tooltip.style.top = `${box.offsetTop}px`;
+    });
+    box.addEventListener('mouseleave', () => {
+      document.body.removeChild(document.querySelector('.tooltip'));
+    });
+    box.addEventListener('click', () => {
+      const marketPrefix = item.c.startsWith('6') ? 'sh' : item.c.startsWith('6') ? 'sz' : '';
+      const url = `https://quote.eastmoney.com/${marketPrefix}${item.c}`;
+      window.open(url, '_blank');
+    });
+    treemap.appendChild(box);
+  });
+</script>
+</body>
+</html>

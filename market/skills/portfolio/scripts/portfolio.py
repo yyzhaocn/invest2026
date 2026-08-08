@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
 from paper import (  # noqa: E402
-    append_trade, get_price, load_portfolio, load_trades, save_portfolio,
+    append_trade, get_price, load_portfolio, load_trades, save_portfolio, set_account,
 )
 
 
@@ -45,8 +45,8 @@ def fmt_pct(v):
 def do_init(args):
     from paper import init_portfolio
     pf = init_portfolio(args.cash, force=args.force)
-    print(f"✅ 组合已初始化：初始资金 {pf['base_capital']:,.2f}（{pf['created']}）")
-    print("买入示例: portfolio.py buy 600600 100 --note 理由")
+    print(f"✅ 组合[{args.account}]已初始化：初始资金 {pf['base_capital']:,.2f}（{pf['created']}）")
+    print("买入示例: portfolio.py --account %s buy 600600 100 --note 理由" % args.account)
 
 
 def do_buy(args):
@@ -133,8 +133,8 @@ def do_show(args):
     pf = load_portfolio()
     positions = pf.get("positions", {})
     if not positions:
-        print(f"💰 空仓 ｜ 现金 {fmt_money(pf['cash'])}（初始 {fmt_money(pf['base_capital'])}）")
-        print("  买入示例: portfolio.py buy 600600 100 --note 理由")
+        print(f"💰 账户[{args.account}]空仓 ｜ 现金 {fmt_money(pf['cash'])}（初始 {fmt_money(pf['base_capital'])}）")
+        print("  买入示例: portfolio.py --account %s buy 600600 100 --note 理由" % args.account)
         return
 
     from paper import batch_quotes, get_fund_nav
@@ -178,7 +178,7 @@ def do_show(args):
                           "day_pnl": round(day_pnl, 2), "positions": rows}, ensure_ascii=False, indent=2))
         return
 
-    print(f"现金 {fmt_money(pf['cash'])} ｜ 持仓市值 {fmt_money(mkt_total)} ｜ 总市值 {fmt_money(total)}")
+    print(f"账户[{args.account}] 现金 {fmt_money(pf['cash'])} ｜ 持仓市值 {fmt_money(mkt_total)} ｜ 总市值 {fmt_money(total)}")
     print(f"总盈亏 {fmt_pct(total_pct)}（{fmt_money(total_pnl)}）｜ 当日浮动 {fmt_money(day_pnl)}")
     print()
     header = (pad("代码", 8) + pad("名称", 22) + " " + pad("类型", 6) + pad("数量", 8, "right")
@@ -202,6 +202,7 @@ def do_show(args):
 
 def main():
     ap = argparse.ArgumentParser(description="纸面交易组合管理")
+    ap.add_argument("--account", default="main", help="账户名（多组合），默认 main；数据存 shared/paper/<account>/")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p_init = sub.add_parser("init", help="初始化组合")
@@ -231,6 +232,7 @@ def main():
     p_show.set_defaults(func=do_show)
 
     args = ap.parse_args()
+    set_account(args.account)
     try:
         args.func(args)
     except SystemExit:

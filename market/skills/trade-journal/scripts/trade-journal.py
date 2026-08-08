@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
 from paper import (  # noqa: E402
-    TRADES_FILE, load_portfolio, load_trades, save_portfolio,
+    TRADES_FILE, account_paths, load_portfolio, load_trades, save_portfolio, set_account,
 )
 
 
@@ -127,16 +127,18 @@ def do_note(args):
 def do_clear(args):
     if not args.force:
         sys.exit("❌ 确认清空请加 --force")
-    if TRADES_FILE.exists():
-        TRADES_FILE.unlink()
+    _, tr_file, _ = account_paths()
+    if tr_file.exists():
+        tr_file.unlink()
     pf = load_portfolio()
     pf["positions"] = {}
     save_portfolio(pf)
-    print("✅ 已清空交易流水与持仓")
+    print(f"✅ 已清空账户[{args.account}]的交易流水与持仓")
 
 
 def main():
     ap = argparse.ArgumentParser(description="纸面交易复盘")
+    ap.add_argument("--account", default="main", help="账户名（多组合），默认 main")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p_list = sub.add_parser("list", help="交易流水")
@@ -156,6 +158,7 @@ def main():
     p_clr.set_defaults(func=do_clear)
 
     args = ap.parse_args()
+    set_account(args.account)
     try:
         args.func(args)
     except SystemExit:

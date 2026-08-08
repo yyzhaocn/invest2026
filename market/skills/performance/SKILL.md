@@ -15,6 +15,8 @@ python3 market/skills/performance/scripts/performance.py report [--days N] [--ou
 python3 market/skills/performance/scripts/performance.py list
 ```
 
+多组合：加 `--account <账户名>`（默认 `main`），快照/报告按账户独立（`shared/paper/<账户>/snapshots.csv`）。
+
 命令：
 
 - `snapshot`：记录今日组合净值（幂等，同日多次运行只保留最新）。**建议每个交易日收盘后运行一次**

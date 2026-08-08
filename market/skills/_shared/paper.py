@@ -27,6 +27,25 @@ TRADES_FILE = PAPER_DIR / "trades.csv"
 SNAPSHOTS_FILE = PAPER_DIR / "snapshots.csv"
 FUNDCODE_FILE = REPO_ROOT / "fund" / "fundcode.csv"
 
+# ---------- 多账户 ----------
+# 默认账户 main 使用 shared/paper/ 根目录（向后兼容）；命名账户使用 shared/paper/<account>/
+_ACCOUNT = "main"
+
+
+def set_account(name: str):
+    """切换当前账户（线程外单进程使用）。main 为默认兼容账户。"""
+    global _ACCOUNT
+    _ACCOUNT = (name or "main").strip() or "main"
+
+
+def account_paths(account=None):
+    """返回 (portfolio_file, trades_file, snapshots_file)。"""
+    a = account or _ACCOUNT
+    if a == "main":
+        return PORTFOLIO_FILE, TRADES_FILE, SNAPSHOTS_FILE
+    d = PAPER_DIR / a
+    return d / "portfolio.json", d / "trades.csv", d / "snapshots.csv"
+
 UA = {"User-Agent": "Mozilla/5.0", "Referer": "https://quote.eastmoney.com/"}
 
 _fund_codes = None
@@ -35,24 +54,27 @@ _fund_codes = None
 # ---------- 数据存取 ----------
 
 def load_portfolio() -> dict:
-    if PORTFOLIO_FILE.exists():
+    pf_file, _, _ = account_paths()
+    if pf_file.exists():
         try:
-            return json.loads(PORTFOLIO_FILE.read_text(encoding="utf-8"))
+            return json.loads(pf_file.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             pass
     return {"base_capital": 100000.0, "cash": 100000.0, "positions": {}, "created": ""}
 
 
 def save_portfolio(pf: dict):
-    PAPER_DIR.mkdir(parents=True, exist_ok=True)
+    pf_file, _, _ = account_paths()
+    pf_file.parent.mkdir(parents=True, exist_ok=True)
     if not pf.get("created"):
         pf["created"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    PORTFOLIO_FILE.write_text(json.dumps(pf, ensure_ascii=False, indent=2), encoding="utf-8")
+    pf_file.write_text(json.dumps(pf, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def init_portfolio(cash: float, force: bool = False) -> dict:
-    pf = load_portfolio()
-    if (pf.get("positions") or pf.get("cash")) and not force:
+    pf_file, _, _ = account_paths()
+    if pf_file.exists() and not force:
+        pf = load_portfolio()
         raise ValueError(f"组合已存在 (现金 {pf['cash']:.2f}, {len(pf.get('positions', {}))} 个持仓)；如需重置用 --force")
     pf = {"base_capital": float(cash), "cash": float(cash), "positions": {},
           "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
@@ -61,17 +83,19 @@ def init_portfolio(cash: float, force: bool = False) -> dict:
 
 
 def load_trades() -> list:
-    if not TRADES_FILE.exists():
+    _, tr_file, _ = account_paths()
+    if not tr_file.exists():
         return []
-    with open(TRADES_FILE, encoding="utf-8") as f:
+    with open(tr_file, encoding="utf-8") as f:
         return [dict(r) for r in csv.DictReader(f)]
 
 
 def append_trade(trade: dict):
-    PAPER_DIR.mkdir(parents=True, exist_ok=True)
+    _, tr_file, _ = account_paths()
+    tr_file.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = ["ts", "date", "side", "code", "name", "kind", "qty", "price", "amount", "note", "realized_pnl"]
-    new = not TRADES_FILE.exists()
-    with open(TRADES_FILE, "a", newline="", encoding="utf-8") as f:
+    new = not tr_file.exists()
+    with open(tr_file, "a", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         if new:
             w.writeheader()
@@ -79,15 +103,17 @@ def append_trade(trade: dict):
 
 
 def load_snapshots() -> list:
-    if not SNAPSHOTS_FILE.exists():
+    _, _, snap_file = account_paths()
+    if not snap_file.exists():
         return []
-    with open(SNAPSHOTS_FILE, encoding="utf-8") as f:
+    with open(snap_file, encoding="utf-8") as f:
         return [dict(r) for r in csv.DictReader(f)]
 
 
 def record_snapshot(total_value: float, cash: float, market_value: float,
                     total_pnl: float, day_pnl: float = None):
-    PAPER_DIR.mkdir(parents=True, exist_ok=True)
+    _, _, snap_file = account_paths()
+    snap_file.parent.mkdir(parents=True, exist_ok=True)
     date = datetime.now().strftime("%Y-%m-%d")
     rows = load_snapshots()
     prev = None
@@ -112,7 +138,7 @@ def record_snapshot(total_value: float, cash: float, market_value: float,
            "total_pct": round(total_pct, 4)}
     rows.append(row)
     rows.sort(key=lambda r: r["date"])
-    with open(SNAPSHOTS_FILE, "w", newline="", encoding="utf-8") as f:
+    with open(snap_file, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(row.keys()))
         w.writeheader()
         w.writerows(rows)

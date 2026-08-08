@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>通信设备板块(BK0448) K线·成交量</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#101418;color:#e8eaed}
+.wrap{max-width:1000px;margin:0 auto;padding:20px}h1{font-size:19px;margin-bottom:4px}
+.meta{color:#9aa0a6;font-size:13px;margin-bottom:14px}
+svg{width:100%;background:#1a1e24;border-radius:10px}
+.legend{color:#9aa0a6;font-size:12px;margin:8px 0}.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;background:#1a1e24;border-radius:10px;overflow:hidden;margin-top:14px}
+th,td{padding:6px 10px;font-size:12px;text-align:right}th{background:#232830}td:first-child,th:first-child{text-align:left}
+.pos{color:#ff4d4f}.neg{color:#2ecc71}</style></head><body><div class="wrap">
+<h1>通信设备 板块指数 (BK0448) K线·成交量</h1>
+<div class="meta">蜡烛=日K 红涨绿跌 ｜ 蓝线=MA5 黄线=MA10 ｜ 下方=成交量(手) ｜ 数据源: 东财板块K线存档(截至08-04)</div>
+<svg id="p" viewBox="0 0 960 560" preserveAspectRatio="none"></svg>
+<div class="legend">
+<span><i style="background:#ff4d4f"></i>MA5</span><span><i style="background:#f59e0b"></i>MA10</span>
+<span style="margin-left:12px"><span style="display:inline-block;width:10px;height:10px;background:#ff4d4f;border-radius:2px;margin-right:4px"></span>阳线</span>
+<span><span style="display:inline-block;width:10px;height:10px;background:#2ecc71;border-radius:2px;margin-right:4px"></span>阴线</span>
+</div>
+<table><thead><tr><th>日期</th><th>开</th><th>高</th><th>低</th><th>收</th><th>涨跌%</th><th>成交量(手)</th><th>成交额(亿)</th></tr></thead><tbody id="tb"></tbody></table>
+</div><script>
+const D=[{"d": "2026-07-20", "o": 21107.73, "c": 19946.93, "h": 21323.0, "l": 19487.05, "v": 29750088.0, "amt": 2100.80874614, "pct": -3.83, "ma5": 19946.93, "ma10": 19946.93}, {"d": "2026-07-21", "o": 20026.15, "c": 20928.88, "h": 20946.18, "l": 18564.12, "v": 34416018.0, "amt": 2451.69130222, "pct": 4.92, "ma5": 20437.905, "ma10": 20437.905}, {"d": "2026-07-22", "o": 20673.6, "c": 20683.35, "h": 21245.57, "l": 20578.51, "v": 30614992.0, "amt": 2183.15277283, "pct": -1.17, "ma5": 20519.72, "ma10": 20519.72}, {"d": "2026-07-23", "o": 20757.08, "c": 20835.83, "h": 21179.33, "l": 20548.64, "v": 24391217.0, "amt": 1559.35543399, "pct": 0.74, "ma5": 20598.7475, "ma10": 20598.7475}, {"d": "2026-07-24", "o": 20525.73, "c": 20348.89, "h": 20895.58, "l": 20315.34, "v": 19077086.0, "amt": 1197.52964303, "pct": -2.34, "ma5": 20548.776, "ma10": 20548.776}, {"d": "2026-07-27", "o": 20246.07, "c": 20958.77, "h": 20958.77, "l": 20152.11, "v": 20250941.0, "amt": 1259.77834281, "pct": 3.0, "ma5": 20751.144, "ma10": 20617.108333333334}, {"d": "2026-07-28", "o": 20568.94, "c": 20184.96, "h": 20886.82, "l": 20092.21, "v": 23285975.0, "amt": 1759.00753565, "pct": -3.69, "ma5": 20602.36, "ma10": 20555.372857142855}, {"d": "2026-07-29", "o": 20137.68, "c": 20113.35, "h": 20300.67, "l": 19499.92, "v": 23818112.0, "amt": 1626.78207374, "pct": -0.35, "ma5": 20488.36, "ma10": 20500.12}, {"d": "2026-07-30", "o": 19976.96, "c": 19042.99, "h": 20087.47, "l": 18904.92, "v": 24143528.0, "amt": 1888.02501307, "pct": -5.32, "ma5": 20129.791999999998, "ma10": 20338.216666666667}, {"d": "2026-07-31", "o": 19936.07, "c": 19775.72, "h": 20329.3, "l": 19766.91, "v": 27109685.0, "amt": 1927.20355648, "pct": 3.85, "ma5": 20015.158000000003, "ma10": 20281.967}, {"d": "2026-08-03", "o": 19710.96, "c": 20080.86, "h": 20169.06, "l": 19710.96, "v": 19562091.0, "amt": 1261.09517622, "pct": 1.54, "ma5": 19839.576, "ma10": 20295.36}, {"d": "2026-08-04", "o": 20405.94, "c": 21128.57, "h": 21222.93, "l": 20362.82, "v": 24281974.0, "amt": 1880.67252876, "pct": 5.22, "ma5": 20028.298000000003, "ma10": 20315.329}];
+const svg=document.getElementById('p'),NS='http://www.w3.org/2000/svg';
+const W=960, PH=340, VH=130, n=D.length;
+const X=i=>40+(i/(n-1))*880;
+const lo=Math.min(...D.map(d=>d.l)), hi=Math.max(...D.map(d=>d.h));
+const pad=(hi-lo)*0.08;
+const Y=v=>PH-10-((v-(lo-pad))/((hi+pad)-(lo-pad)))*PH;
+const VY=v=>PH+30-((v)/(Math.max(...D.map(d=>d.v))))*VH;
+const bw=Math.max(6, 860/n*0.6);
+// candles
+D.forEach((d,i)=>{
+  const up=d.c>=d.o;
+  const col=up?'#ff4d4f':'#2ecc71';
+  const x=X(i);
+  // wick
+  let w=document.createElementNS(NS,'line');
+  w.setAttribute('x1',x);w.setAttribute('y1',Y(d.h));w.setAttribute('x2',x);w.setAttribute('y2',Y(d.l));
+  w.setAttribute('stroke',col);w.setAttribute('stroke-width',1);svg.appendChild(w);
+  // body
+  let b=document.createElementNS(NS,'rect');
+  b.setAttribute('x',x-bw/2);b.setAttribute('y',Math.min(Y(d.o),Y(d.c)));b.setAttribute('width',bw);
+  b.setAttribute('height',Math.max(Math.abs(Y(d.o)-Y(d.c)),1));b.setAttribute('fill',col);b.setAttribute('opacity','0.9');
+  svg.appendChild(b);
+  // volume
+  let v=document.createElementNS(NS,'rect');
+  v.setAttribute('x',x-bw/2);v.setAttribute('y',VY(d.v));v.setAttribute('width',bw);
+  v.setAttribute('height',PH+30+VH-VY(d.v));v.setAttribute('fill',up?'#ff4d4f':'#2ecc71');v.setAttribute('opacity','0.5');
+  svg.appendChild(v);
+});
+// MA lines
+function line(key,col){
+  let s='';D.forEach((d,i)=>{s+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(d[key]).toFixed(1)});
+  const el=document.createElementNS(NS,'path');el.setAttribute('d',s);el.setAttribute('stroke',col);
+  el.setAttribute('stroke-width',1.5);el.setAttribute('fill','none');el.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(el);
+}
+line('ma5','#3b82f6'); line('ma10','#f59e0b');
+// labels
+const t0=document.createElementNS(NS,'text');t0.setAttribute('x',40);t0.setAttribute('y',555);t0.setAttribute('fill','#9aa0a6');t0.setAttribute('font-size','10');t0.textContent=D[0].d;svg.appendChild(t0);
+const t1=document.createElementNS(NS,'text');t1.setAttribute('x',X(n-1)-50);t1.setAttribute('y',555);t1.setAttribute('fill','#9aa0a6');t1.setAttribute('font-size','10');t1.textContent=D[n-1].d;svg.appendChild(t1);
+// table
+const tb=document.getElementById('tb');
+D.slice().reverse().forEach(d=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d.d+'</td><td>'+d.o.toFixed(2)+'</td><td>'+d.h.toFixed(2)+'</td><td>'+d.l.toFixed(2)+'</td><td>'+d.c.toFixed(2)+'</td>'+
+    '<td class="'+(d.pct>=0?'pos':'neg')+'">'+(d.pct>=0?'+':'')+d.pct.toFixed(2)+'</td><td>'+Math.round(d.v/1000).toLocaleString()+'万</td><td>'+d.amt.toFixed(0)+'</td>';
+  tb.appendChild(tr);
+});
+</script></body></html>

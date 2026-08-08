@@ -67,6 +67,7 @@ def main():
     ap.add_argument("codes", nargs="*", help="股票代码（空格分隔）")
     ap.add_argument("--block", default="", help="板块（代码或名称）")
     ap.add_argument("--portfolio", action="store_true", help="当前模拟盘持仓")
+    ap.add_argument("--account", default="", help="组合账户名（--portfolio 时指定，默认 main）")
     ap.add_argument("--breakout-window", type=int, default=20, help="新高/新低窗口，默认 20")
     ap.add_argument("--only", default="", help="只显示指定信号，逗号分隔")
     ap.add_argument("--top", type=int, default=50, help="最多输出条数")
@@ -90,7 +91,9 @@ def main():
         codes = [s["code"] for s in stks]
         print(f"板块 {bname or bcode} 共 {len(codes)} 只:", file=sys.stderr)
     if args.portfolio:
-        from paper import load_portfolio
+        from paper import load_portfolio, set_account
+        if args.account:
+            set_account(args.account)
         codes = list(load_portfolio().get("positions", {}).keys())
         print(f"当前持仓 {len(codes)} 个:", file=sys.stderr)
 

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BK1332 (BK1332) 热力图</title>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; background: #101418; color: #e8eaed; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .meta { color: #9aa0a6; font-size: 13px; margin-bottom: 12px; }
+  .stats { display: flex; gap: 16px; font-size: 13px; margin-bottom: 12px; }
+  .stats b.up { color: #ff4d4f; } .stats b.down { color: #2ecc71; } .stats b.flat { color: #9aa0a6; }
+  .ai-note { background: #1a2230; border: 1px solid #2a3a52; border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 14px; font-size: 13px; line-height: 1.7; color: #cdd5e0; }
+  .ai-note .ai-tag { display: inline-block; background: #3a5a8a; color: #fff; font-size: 11px;
+    border-radius: 5px; padding: 1px 7px; margin-right: 8px; vertical-align: 1px; }
+  .legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9aa0a6; margin-bottom: 8px; }
+  .legend .bar { width: 160px; height: 10px; border-radius: 3px;
+    background: linear-gradient(90deg, #1f8b4c, #9aa0a6, #d63031); }
+  #hm { position: relative; width: 100%; height: 78vh; background: #1a1e24; border-radius: 10px; overflow: hidden; }
+  .cell { position: absolute; box-sizing: border-box; border: 1px solid rgba(16,20,24,.9); border-radius: 3px;
+    overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; text-align: center; transition: filter .15s; }
+  .cell:hover { filter: brightness(1.25); z-index: 5; }
+  .cell .nm { font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+  .cell .chg { font-size: 11px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+  .cell.small .nm { font-size: 10px; } .cell.tiny .nm { font-size: 8px; } .cell.tiny .chg { display: none; }
+  #tip { position: absolute; pointer-events: none; background: rgba(0,0,0,.85); color: #fff; padding: 8px 10px;
+    border-radius: 6px; font-size: 12px; line-height: 1.6; display: none; z-index: 10; white-space: nowrap; }
+  .tip-name { font-weight: 600; font-size: 13px; }
+  .tip-row { display: grid; grid-template-columns: auto auto; gap: 0 12px; }
+  .tip-row .k { color: #b0b6bc; }
+  .foot { color: #6b7075; font-size: 11px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BK1332 (BK1332) 热力图</h1>
+  <div class="meta">数据时间 2026-08-07 15:09:53 ｜ 面积 = 总市值，颜色 = 当日涨跌幅（红涨绿跌）｜ 点击方块查看个股</div>
+  <div class="ai-note"><span class="ai-tag">AI解读</span>1) 板块整体表现强势，涨36只，平均涨幅+4.36%，成交额587亿元，资金倾向于买盘，显示市场对该板块的信心提升。<br><br>2) 领涨概况显示，莱特光电、天承科技等多元化行业的上涨，表明科技与新能源领域的投资热度持续，结构性需求驱动。<br><br>3) 次日关注要点：观察是否有持续的上涨趋势，关注领涨股的成交量是否支撑涨幅，以及凯华材料等领跌股的后续表现，判断板块整体趋势的持续性。</div>
+  <div class="stats">
+    <span>共 <b>37</b> 只</span>
+    <span>上涨 <b class="up">36</b></span>
+    <span>下跌 <b class="down">1</b></span>
+    <span>平盘 <b class="flat">0</b></span>
+  </div>
+  <div class="legend"><span>-10%</span><div class="bar"></div><span>0</span><div class="bar" style="width:4px"></div><span>+10%</span></div>
+  <div id="hm"><div id="tip"></div></div>
+  <div class="foot">方块面积按 总市值，颜色深浅按涨跌幅（±10% 封顶）。数据为实时/延迟行情快照。</div>
+</div>
+<script>
+const DATA = {"stocks": [{"code": "300054", "name": "鼎龙股份", "pct": 1.22, "price": 77.74, "amount": 3342084388.84, "turnover": 5.77, "mcap": 74202344902.0, "fcap": 57861478374.0}, {"code": "300285", "name": "国瓷材料", "pct": 1.94, "price": 70.88, "amount": 12396849874.74, "turnover": 20.74, "mcap": 70670783433.0, "fcap": 60465813035.0}, {"code": "688019", "name": "安集科技", "pct": 2.98, "price": 251.68, "amount": 1851481480.0, "turnover": 3.25, "mcap": 57472774742.0, "fcap": 57472774742.0}, {"code": "688548", "name": "广钢气体", "pct": 1.35, "price": 37.66, "amount": 1397772880.0, "turnover": 5.4, "mcap": 49688548301.0, "fcap": 26030931015.0}, {"code": "688549", "name": "中巨芯-U", "pct": 3.3, "price": 28.77, "amount": 4615784509.0, "turnover": 27.27, "mcap": 42501230520.0, "fcap": 16954707630.0}, {"code": "300346", "name": "南大光电", "pct": 4.33, "price": 58.32, "amount": 4376450772.69, "turnover": 11.64, "mcap": 40308270583.0, "fcap": 38257339191.0}, {"code": "688545", "name": "兴福电子", "pct": 6.59, "price": 85.7, "amount": 2163034749.0, "turnover": 14.31, "mcap": 30852000000.0, "fcap": 15618825000.0}, {"code": "300236", "name": "上海新阳", "pct": 1.11, "price": 92.91, "amount": 1232450291.03, "turnover": 4.79, "mcap": 29116335835.0, "fcap": 25880089977.0}, {"code": "600330", "name": "天通股份", "pct": 6.28, "price": 23.01, "amount": 4136658024.0, "turnover": 15.16, "mcap": 28381325912.0, "fcap": 28381325912.0}, {"code": "603435", "name": "嘉德利", "pct": 2.12, "price": 54.79, "amount": 338410621.0, "turnover": 17.43, "mcap": 25157789517.0, "fcap": 1955320426.0}, {"code": "301319", "name": "唯特偶", "pct": 10.46, "price": 119.63, "amount": 2973528569.74, "turnover": 19.13, "mcap": 21827363808.0, "fcap": 16450764768.0}, {"code": "300398", "name": "飞凯材料", "pct": 3.43, "price": 36.81, "amount": 1766287580.13, "turnover": 8.58, "mcap": 20982923933.0, "fcap": 20868952479.0}, {"code": "688268", "name": "华特气体", "pct": 2.98, "price": 155.6, "amount": 1917236870.0, "turnover": 9.85, "mcap": 19867325113.0, "fcap": 19867325113.0}, {"code": "688150", "name": "莱特光电", "pct": 13.31, "price": 42.83, "amount": 790624566.0, "turnover": 4.8, "mcap": 17236401766.0, "fcap": 17236401766.0}, {"code": "603002", "name": "宏昌电子", "pct": 7.19, "price": 15.05, "amount": 1539981720.0, "turnover": 9.19, "mcap": 17067881560.0, "fcap": 17067881560.0}, {"code": "688106", "name": "金宏气体", "pct": 1.47, "price": 30.39, "amount": 1003090216.0, "turnover": 6.24, "mcap": 16270346746.0, "fcap": 16270346746.0}, {"code": "300684", "name": "中石科技", "pct": 7.37, "price": 51.7, "amount": 991010920.64, "turnover": 9.58, "mcap": 15484626829.0, "fcap": 10576536651.0}, {"code": "300655", "name": "晶瑞电材", "pct": 1.51, "price": 13.48, "amount": 1141161191.82, "turnover": 7.63, "mcap": 15186924829.0, "fcap": 15117713050.0}, {"code": "688603", "name": "天承科技", "pct": 11.0, "price": 117.3, "amount": 1166465043.0, "turnover": 8.24, "mcap": 14630186665.0, "fcap": 14630186665.0}, {"code": "603078", "name": "江化微", "pct": 6.38, "price": 36.37, "amount": 1934870336.0, "turnover": 14.12, "mcap": 14025626710.0, "fcap": 14025626710.0}, {"code": "002643", "name": "万润股份", "pct": 2.39, "price": 14.15, "amount": 390434857.16, "turnover": 3.08, "mcap": 12959985354.0, "fcap": 12766341826.0}, {"code": "300576", "name": "容大感光", "pct": 7.67, "price": 31.99, "amount": 1680849687.65, "turnover": 21.36, "mcap": 12913991052.0, "fcap": 8128043992.0}, {"code": "002741", "name": "光华科技", "pct": 10.0, "price": 26.3, "amount": 878841129.33, "turnover": 8.09, "mcap": 12324240753.0, "fcap": 11309699449.0}, {"code": "301489", "name": "思泉新材", "pct": 4.54, "price": 102.5, "amount": 622358563.07, "turnover": 8.91, "mcap": 11920096460.0, "fcap": 7132028618.0}, {"code": "688359", "name": "三孚新科", "pct": 6.2, "price": 104.6, "amount": 996260454.0, "turnover": 9.62, "mcap": 10426543376.0, "fcap": 10426543376.0}, {"code": "301630", "name": "同宇新材", "pct": 5.49, "price": 175.33, "amount": 332545818.17, "turnover": 9.22, "mcap": 9818480000.0, "fcap": 3678370801.0}, {"code": "688371", "name": "菲沃泰", "pct": 5.58, "price": 28.58, "amount": 339013022.0, "turnover": 3.6, "mcap": 9587799934.0, "fcap": 9587799934.0}, {"code": "688035", "name": "德邦科技", "pct": 5.57, "price": 64.4, "amount": 388139416.0, "turnover": 4.36, "mcap": 9160256000.0, "fcap": 9160256000.0}, {"code": "603931", "name": "格林达", "pct": 1.24, "price": 36.85, "amount": 368463541.0, "turnover": 5.07, "mcap": 7353726303.0, "fcap": 7353726303.0}, {"code": "688550", "name": "瑞联新材", "pct": 0.66, "price": 39.39, "amount": 216514270.0, "turnover": 3.13, "mcap": 6935323089.0, "fcap": 6935323089.0}, {"code": "300429", "name": "强力新材", "pct": 1.23, "price": 10.7, "amount": 289747007.72, "turnover": 6.58, "mcap": 5942755700.0, "fcap": 4469837185.0}, {"code": "688683", "name": "莱尔科技", "pct": 7.6, "price": 32.14, "amount": 101959693.0, "turnover": 2.01, "mcap": 5177683292.0, "fcap": 5177683292.0}, {"code": "002584", "name": "西陇科学", "pct": 1.75, "price": 8.12, "amount": 326549166.0, "turnover": 8.73, "mcap": 4751957347.0, "fcap": 3803623399.0}, {"code": "300537", "name": "广信材料", "pct": 3.58, "price": 20.23, "amount": 315491186.7, "turnover": 10.48, "mcap": 4191845231.0, "fcap": 3070147951.0}, {"code": "300481", "name": "濮阳惠成", "pct": 1.0, "price": 14.1, "amount": 165835895.21, "turnover": 4.1, "mcap": 4115161676.0, "fcap": 4090066298.0}, {"code": "920189", "name": "康美特", "pct": 0.81, "price": 22.4, "amount": 164660976.66, "turnover": 8.59, "mcap": 3167584000.0, "fcap": 1901029760.0}, {"code": "920526", "name": "凯华材料", "pct": -0.34, "price": 20.4, "amount": 60000120.04, "turnover": 5.62, "mcap": 1687080000.0, "fcap": 1068296714.0}]};
+const SIZE_KEY = "mcap";
+const money = v => v == null ? '--' : (v >= 1e8 ? (v/1e8).toFixed(2)+'亿' : (v/1e4).toFixed(0)+'万');
+function color(pct) {
+  if (pct == null) return '#5b616a';
+  const t = Math.max(-10, Math.min(10, pct)) / 10;   // -1..1
+  const c = t < 0 ? [47,140,86] : [214,48,49];       // 绿 / 红
+  const g = t < 0 ? [0x9a,0xa0,0xa6] : [0x9a,0xa0,0xa6];
+  // mix: |t|: 0 -> gray, 1 -> full color
+  const a = Math.abs(t);
+  const rgb = c.map((v,i) => Math.round(g[i] + (v - g[i]) * a));
+  return 'rgb(' + rgb.join(',') + ')';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// ---- squarified treemap (Bruls et al.) ----
+function treemap(items, x, y, w, h) {
+  const out = [];
+  function worst(row, length) {
+    let sum = 0, min = Infinity, max = 0;
+    for (const it of row) { sum += it.size; if (it.size < min) min = it.size; if (it.size > max) max = it.size; }
+    const s2 = sum * sum, l2 = length * length;
+    return Math.max(l2 * max / s2, s2 / (l2 * min));
+  }
+  (function layout(r, list) {
+    if (!list.length) return;
+    const total = list.reduce((s, it) => s + it.size, 0) || 1;
+    const length = Math.min(r.w, r.h);
+    let row = [], i = 0;
+    while (i < list.length) {
+      if (!row.length || worst(row.concat([list[i]]), length) <= worst(row, length)) { row.push(list[i]); i++; }
+      else break;
+    }
+    const rowSum = row.reduce((s, it) => s + it.size, 0) || 1;
+    if (r.w >= r.h) {
+      const thick = (r.w * r.h) * (rowSum / total) / (r.h || 1);
+      let off = r.y;
+      for (const it of row) {
+        const hh = it.size / rowSum * r.h;
+        out.push({data: it.data, x: r.x, y: off, w: thick, h: hh});
+        off += hh;
+      }
+      r.x += thick; r.w -= thick;
+    } else {
+      const thick = (r.w * r.h) * (rowSum / total) / (r.w || 1);
+      let off = r.x;
+      for (const it of row) {
+        const ww = it.size / rowSum * r.w;
+        out.push({data: it.data, x: off, y: r.y, w: ww, h: thick});
+        off += ww;
+      }
+      r.y += thick; r.h -= thick;
+    }
+    layout(r, list.slice(i));
+  })({x, y, w, h}, items.slice());
+  return out;
+}
+// ---- render ----
+const hm = document.getElementById('hm');
+const tip = document.getElementById('tip');
+const items = DATA.stocks.map(s => ({size: Math.max(s[SIZE_KEY] || 1, 1e4), data: s}))
+  .sort((a, b) => b.size - a.size);
+const W = hm.clientWidth, H = hm.clientHeight;
+const cells = treemap(items, 0, 0, W, H);
+const minArea = W * H / Math.max(items.length, 1) * 0.12;
+cells.forEach(c => {
+  const s = c.data;
+  const el = document.createElement('div');
+  el.className = 'cell' + (c.w * c.h < minArea ? ' tiny' : (c.w < 46 || c.h < 34 ? ' small' : ''));
+  el.style.left = c.x + 'px'; el.style.top = c.y + 'px';
+  el.style.width = c.w + 'px'; el.style.height = c.h + 'px';
+  el.style.background = color(s.pct);
+  const pct = s.pct == null ? '--' : (s.pct > 0 ? '+' : '') + s.pct.toFixed(2) + '%';
+  el.innerHTML = '<div class="nm">' + esc(s.name) + '</div><div class="chg">' + esc(pct) + '</div>';
+  el.addEventListener('mousemove', e => {
+    tip.innerHTML = '<div class="tip-name">' + esc(s.name) + ' <span style="color:#b0b6bc">' + s.code + '</span></div>' +
+      '<div class="tip-row"><span class="k">现价</span><span>' + (s.price ?? '--') + '</span>' +
+      '<span class="k">涨跌</span><span style="color:' + color(s.pct) + '">' + pct + '</span>' +
+      '<span class="k">成交额</span><span>' + money(s.amount) + '</span>' +
+      '<span class="k">换手</span><span>' + (s.turnover == null ? '--' : s.turnover.toFixed(2) + '%') + '</span>' +
+      '<span class="k">' + '总市值' + '</span><span>' + money(s[SIZE_KEY]) + '</span></div>';
+    tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX - hm.getBoundingClientRect().left + 12, W - 220) + 'px';
+    tip.style.top = Math.max(e.clientY - hm.getBoundingClientRect().top - 10, 4) + 'px';
+  });
+  el.addEventListener('mouseleave', () => tip.style.display = 'none');
+  el.addEventListener('click', () => {
+    const prefix = s.code.startsWith('6') ? 'sh' : (s.code.startsWith('4') || s.code.startsWith('8') || s.code.startsWith('9') ? 'bj' : 'sz');
+    window.open('https://quote.eastmoney.com/' + prefix + s.code + '.html', '_blank');
+  });
+  hm.appendChild(el);
+});
+</script>
+</body>
+</html>

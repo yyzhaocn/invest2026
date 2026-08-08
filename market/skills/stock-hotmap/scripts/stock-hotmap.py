@@ -10,6 +10,7 @@ stock-hotmap: 把板块内全部股票生成为热力图 HTML（treemap）。
 """
 import argparse
 import json
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -37,6 +38,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .meta { color: #9aa0a6; font-size: 13px; margin-bottom: 12px; }
   .stats { display: flex; gap: 16px; font-size: 13px; margin-bottom: 12px; }
   .stats b.up { color: #ff4d4f; } .stats b.down { color: #2ecc71; } .stats b.flat { color: #9aa0a6; }
+  .ai-note { background: #1a2230; border: 1px solid #2a3a52; border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 14px; font-size: 13px; line-height: 1.7; color: #cdd5e0; }
+  .ai-note .ai-tag { display: inline-block; background: #3a5a8a; color: #fff; font-size: 11px;
+    border-radius: 5px; padding: 1px 7px; margin-right: 8px; vertical-align: 1px; }
   .legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9aa0a6; margin-bottom: 8px; }
   .legend .bar { width: 160px; height: 10px; border-radius: 3px;
     background: linear-gradient(90deg, #1f8b4c, #9aa0a6, #d63031); }
@@ -60,6 +65,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <div class="wrap">
   <h1>__TITLE__</h1>
   <div class="meta">数据时间 __ASOF__ ｜ 面积 = __SIZELABEL__，颜色 = 当日涨跌幅（红涨绿跌）｜ 点击方块查看个股</div>
+  __AI__
   <div class="stats">
     <span>共 <b>__TOTAL__</b> 只</span>
     <span>上涨 <b class="up">__UP__</b></span>
@@ -172,6 +178,61 @@ def fmt_pct(v):
     return f"{v:+.2f}%" if v is not None else "--"
 
 
+def llm_review(name, bcode, rows, up, down, flat, url):
+    """本地 LLM 板块解读（curl 子进程，勿用 urllib/requests——会走代理 502）。"""
+    by_pct = sorted([r for r in rows if r.get("pct") is not None], key=lambda r: r["pct"], reverse=True)
+    avg = sum(r.get("pct") or 0 for r in rows) / len(rows) if rows else 0
+    amt = sum(r.get("amount") or 0 for r in rows) / 1e8
+    top = "、".join(f"{r['name']}({fmt_pct(r['pct'])})" for r in by_pct[:5])
+    bot = "、".join(f"{r['name']}({fmt_pct(r['pct'])})" for r in by_pct[-5:])
+    prompt = (f"你是A股板块分析师。解读板块 {name}({bcode}) 今日行情（{len(rows)}只成分，涨{up}/跌{down}/平{flat}，"
+              f"平均涨幅{avg:+.2f}%，总成交额{amt:.0f}亿）。领涨：{top}；领跌：{bot}。"
+              "用中文分3点，各≤60字：1)板块强弱与资金方向 2)领涨结构含义 3)次日关注要点")
+    body = json.dumps({"model": "", "messages": [{"role": "user", "content": prompt}],
+                       "max_tokens": 350, "temperature": 0.3})
+    try:
+        p = subprocess.run(["curl", "-sS", "--max-time", "150",
+                            "-H", "Content-Type: application/json", "-d", body, url],
+                           capture_output=True, text=True, timeout=170)
+        if p.returncode != 0:
+            return f"⚠️ 本地模型不可用: {p.stderr[:80]}"
+        return json.loads(p.stdout)["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        return f"⚠️ 本地模型调用失败: {str(e)[:80]}"
+
+
+def llm_render_html(name, bcode, rows, asof, url):
+    """本地 LLM 直接生成热力图 HTML（treemap）。返回 (html, 是否成功)。"""
+    stocks = [{"c": r["code"], "n": r["name"], "p": r.get("pct"),
+               "m": round((r.get("mcap") or 0) / 1e8, 1)} for r in rows]
+    data_json = json.dumps(stocks, ensure_ascii=False)
+    prompt = (f"你是前端工程师。根据下面 JSON 股票数据，生成一个自包含 HTML 热力图（treemap）页面：\n"
+              f"1) 单文件内联 CSS/JS，暗色主题(#101418底)，红涨绿跌(#ff4d4f/#2ecc71)，方块面积=市值m(亿)，颜色=涨跌幅p\n"
+              f"2) 顶部标题 '{name} ({bcode}) 热力图' + 时间 {asof}，底部图例与涨跌统计\n"
+              f"3) 方块悬停显示 名称/涨跌幅/市值，点击跳转 https://quote.eastmoney.com/（按代码自动加市场前缀：6开头sh其余sz）\n"
+              f"4) 布局：可用 flex 网格或绝对定位 treemap，方块大小正比于市值，最小方块不小于 30px\n"
+              f"5) 直接输出完整 HTML 代码（<html>...</html>），不要任何解释文字。\n数据：{data_json}")
+    body = json.dumps({"model": "", "messages": [{"role": "user", "content": prompt}],
+                       "max_tokens": 6000, "temperature": 0.2})
+    try:
+        p = subprocess.run(["curl", "-sS", "--max-time", "400",
+                            "-H", "Content-Type: application/json", "-d", body, url],
+                           capture_output=True, text=True, timeout=420)
+        if p.returncode != 0:
+            return "", False
+        html = json.loads(p.stdout)["choices"][0]["message"]["content"].strip()
+        # 提取代码块
+        if "```html" in html:
+            html = html.split("```html")[1].split("```")[0].strip()
+        elif html.startswith("```"):
+            html = html.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        if "<html" in html or "<!DOCTYPE" in html:
+            return html, True
+        return "", False
+    except Exception:
+        return "", False
+
+
 def main():
     ap = argparse.ArgumentParser(description="生成板块股票热力图 HTML")
     ap.add_argument("block", help="板块代码 (BKxxxx) 或名称")
@@ -179,6 +240,10 @@ def main():
     ap.add_argument("--top", type=int, default=0, help="只取面积前 N 只，0=全部")
     ap.add_argument("--output", "-o", default="/tmp/stock_hotmap.html", help="输出路径，默认 /tmp/stock_hotmap.html")
     ap.add_argument("--json", action="store_true", help="输出 JSON 数据（不生成 HTML）")
+    ap.add_argument("--llm", action="store_true", help="用本地 LLM 生成板块解读（默认 8080）")
+    ap.add_argument("--llm-render", action="store_true", help="用本地 LLM 直接生成整个热力图 HTML（实验性，失败回退模板）")
+    ap.add_argument("--llm-url", default="http://localhost:8080/v1/chat/completions",
+                    help="本地 LLM 端点（需 --llm 或 --llm-render）")
     args = ap.parse_args()
 
     block = args.block.strip()
@@ -217,12 +282,29 @@ def main():
         }, ensure_ascii=False, indent=2))
         return
 
+    if args.llm_render:
+        llm_html, ok = llm_render_html(name, bcode, rows, asof, args.llm_url)
+        if ok:
+            out = Path(args.output)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(llm_html, encoding="utf-8")
+            print(f"✅ 已生成(LLM渲染): {out} ({out.stat().st_size / 1024:.0f} KB, {len(rows)} 只)")
+            return
+        print("⚠️ LLM 渲染失败/超时，回退脚本模板", file=sys.stderr)
+
+    ai_html = ""
+    if args.llm:
+        review = llm_review(name, bcode, rows, up, down, flat, args.llm_url)
+        safe = review.replace("<", "&lt;").replace("\n", "<br>")
+        ai_html = f'<div class="ai-note"><span class="ai-tag">AI解读</span>{safe}</div>'
+
     html = (HTML_TEMPLATE
             .replace("__DATA__", json.dumps({"stocks": rows}, ensure_ascii=False))
             .replace("__TITLE__", f"{name} ({bcode}) 热力图")
             .replace("__ASOF__", asof)
             .replace("__SIZELABEL__", SIZE_LABELS[args.size])
             .replace("__SIZEKEY__", sizefield)
+            .replace("__AI__", ai_html)
             .replace("__TOTAL__", str(len(rows)))
             .replace("__UP__", str(up)).replace("__DOWN__", str(down)).replace("__FLAT__", str(flat)))
 

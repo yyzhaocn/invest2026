@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>云南锗业 (002428) 资金流向</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#101418;color:#e8eaed}
+.wrap{max-width:1000px;margin:0 auto;padding:20px}h1{font-size:19px;margin-bottom:4px}
+.meta{color:#9aa0a6;font-size:13px;margin-bottom:16px}
+svg{width:100%;height:440px;background:#1a1e24;border-radius:10px}
+.legend{color:#9aa0a6;font-size:12px;margin:8px 0}
+.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.bar{display:inline-block;vertical-align:middle;width:10px;height:10px;border-radius:2px;margin-right:6px}
+table{width:100%;border-collapse:collapse;background:#1a1e24;border-radius:10px;overflow:hidden;margin-top:14px}
+th,td{padding:6px 10px;font-size:12px;text-align:right}th{background:#232830}td:first-child,th:first-child{text-align:left}
+.pos{color:#ff4d4f}.neg{color:#2ecc71}</style></head><body><div class="wrap">
+<h1>云南锗业 (002428) 资金流向</h1><div class="meta">主力净流入（万元）日频柱状图 ｜ 红=净流入 绿=净流出 ｜ 蓝线=5日主力均线 ｜ 黄线=收盘价</div>
+<svg id="c" viewBox="0 0 960 440" preserveAspectRatio="none"></svg>
+<div class="legend">
+<span><span class="bar" style="background:#ff4d4f"></span>主力净流入</span>
+<span><i style="background:#3b82f6"></i>5日均线</span>
+<span><i style="background:#f59e0b"></i>收盘价</span>
+</div>
+<table><thead><tr><th>日期</th><th>收盘</th><th>涨跌%</th><th>主力(万)</th><th>主力占比%</th><th>超大单(万)</th><th>大单(万)</th></tr></thead>
+<tbody id="tb"></tbody></table>
+</div><script>
+const D=[{"d": "2026-05-14", "main": -92103.3568, "main_pct": -9.16, "close": 97.19, "pct": -4.25}, {"d": "2026-05-15", "main": -143912.3776, "main_pct": -13.23, "close": 90.32, "pct": -7.07}, {"d": "2026-05-18", "main": -29123.192, "main_pct": -3.58, "close": 91.43, "pct": 1.23}, {"d": "2026-05-19", "main": -38211.3488, "main_pct": -5.44, "close": 90.58, "pct": -0.93}, {"d": "2026-05-20", "main": 17045.5504, "main_pct": 1.8, "close": 90.99, "pct": 0.45}, {"d": "2026-05-21", "main": -114781.1728, "main_pct": -13.64, "close": 83.79, "pct": -7.91}, {"d": "2026-05-22", "main": -3987.0496, "main_pct": -0.56, "close": 87.09, "pct": 3.94}, {"d": "2026-05-25", "main": 10357.344, "main_pct": 1.47, "close": 89.39, "pct": 2.64}, {"d": "2026-05-26", "main": -87977.664, "main_pct": -12.22, "close": 83.09, "pct": -7.05}, {"d": "2026-05-27", "main": -15484.9616, "main_pct": -2.28, "close": 81.67, "pct": -1.71}, {"d": "2026-05-28", "main": 158379.6896, "main_pct": 20.36, "close": 89.84, "pct": 10.0}, {"d": "2026-05-29", "main": -95618.1344, "main_pct": -8.04, "close": 91.17, "pct": 1.48}, {"d": "2026-06-01", "main": -101953.8224, "main_pct": -12.9, "close": 82.05, "pct": -10.0}, {"d": "2026-06-02", "main": 26256.224, "main_pct": 2.93, "close": 86.36, "pct": 5.25}, {"d": "2026-06-03", "main": -4753.5344, "main_pct": -0.49, "close": 88.98, "pct": 3.03}, {"d": "2026-06-04", "main": -48739.3584, "main_pct": -8.13, "close": 88.6, "pct": -0.43}, {"d": "2026-06-05", "main": -28869.576, "main_pct": -3.97, "close": 85.49, "pct": -3.51}, {"d": "2026-06-08", "main": -75499.008, "main_pct": -13.22, "close": 78.63, "pct": -8.02}, {"d": "2026-06-09", "main": 22195.0496, "main_pct": 4.01, "close": 84.66, "pct": 7.67}, {"d": "2026-06-10", "main": -62413.7456, "main_pct": -13.48, "close": 80.21, "pct": -5.26}, {"d": "2026-06-11", "main": 218085.3536, "main_pct": 19.33, "close": 88.23, "pct": 10.0}, {"d": "2026-06-12", "main": -42137.8432, "main_pct": -3.55, "close": 92.25, "pct": 4.56}, {"d": "2026-06-15", "main": 132559.648, "main_pct": 13.8, "close": 101.48, "pct": 10.01}, {"d": "2026-06-16", "main": -115502.3856, "main_pct": -7.69, "close": 101.19, "pct": -0.29}, {"d": "2026-06-17", "main": -82521.8112, "main_pct": -8.36, "close": 99.25, "pct": -1.92}, {"d": "2026-06-18", "main": -74379.8048, "main_pct": -7.87, "close": 100.43, "pct": 1.19}, {"d": "2026-06-22", "main": 86186.3184, "main_pct": 22.36, "close": 110.47, "pct": 10.0}, {"d": "2026-06-23", "main": -78271.3456, "main_pct": -5.31, "close": 111.89, "pct": 1.29}, {"d": "2026-06-24", "main": 88084.2048, "main_pct": 6.21, "close": 123.08, "pct": 10.0}, {"d": "2026-06-25", "main": -32138.352, "main_pct": -2.61, "close": 130.09, "pct": 5.7}, {"d": "2026-06-26", "main": -125606.9744, "main_pct": -10.22, "close": 120.47, "pct": -7.39}, {"d": "2026-06-29", "main": -22440.3328, "main_pct": -1.96, "close": 123.99, "pct": 2.92}, {"d": "2026-06-30", "main": -26366.1184, "main_pct": -2.97, "close": 120.17, "pct": -3.08}, {"d": "2026-07-01", "main": -87960.5552, "main_pct": -9.85, "close": 114.84, "pct": -4.44}, {"d": "2026-07-02", "main": -63369.5072, "main_pct": -8.27, "close": 106.89, "pct": -6.92}, {"d": "2026-07-03", "main": -33706.1024, "main_pct": -5.69, "close": 105.07, "pct": -1.7}, {"d": "2026-07-06", "main": 3733.1392, "main_pct": 0.61, "close": 105.31, "pct": 0.23}, {"d": "2026-07-07", "main": 41925.3232, "main_pct": 5.89, "close": 110.0, "pct": 4.45}, {"d": "2026-07-08", "main": -61749.3152, "main_pct": -9.21, "close": 99.0, "pct": -10.0}, {"d": "2026-07-09", "main": -16964.6672, "main_pct": -1.97, "close": 102.98, "pct": 4.02}, {"d": "2026-07-10", "main": 4658.1824, "main_pct": 0.58, "close": 100.26, "pct": -2.64}, {"d": "2026-07-13", "main": -91201.04, "main_pct": -17.96, "close": 90.23, "pct": -10.0}, {"d": "2026-07-14", "main": 4235.6368, "main_pct": 0.75, "close": 94.77, "pct": 5.03}, {"d": "2026-07-15", "main": -56448.1344, "main_pct": -13.7, "close": 87.83, "pct": -7.32}, {"d": "2026-07-16", "main": -56983.0576, "main_pct": -15.41, "close": 83.39, "pct": -5.06}, {"d": "2026-07-17", "main": -34442.4176, "main_pct": -9.62, "close": 75.05, "pct": -10.0}, {"d": "2026-07-20", "main": -24583.9248, "main_pct": -6.89, "close": 67.55, "pct": -9.99}, {"d": "2026-07-21", "main": -10540.1728, "main_pct": -2.0, "close": 73.98, "pct": 9.52}, {"d": "2026-07-22", "main": 43618.3232, "main_pct": 7.99, "close": 75.2, "pct": 1.65}, {"d": "2026-07-23", "main": 14996.9408, "main_pct": 3.49, "close": 76.58, "pct": 1.84}, {"d": "2026-07-24", "main": 20159.6, "main_pct": 3.23, "close": 78.08, "pct": 1.96}, {"d": "2026-07-27", "main": -18775.896, "main_pct": -3.64, "close": 79.04, "pct": 1.23}, {"d": "2026-07-28", "main": -55714.424, "main_pct": -15.55, "close": 71.14, "pct": -9.99}, {"d": "2026-07-29", "main": -60279.1232, "main_pct": -13.27, "close": 66.98, "pct": -5.85}, {"d": "2026-07-30", "main": -38830.2784, "main_pct": -9.71, "close": 61.8, "pct": -7.73}, {"d": "2026-07-31", "main": 74403.856, "main_pct": 19.3, "close": 66.95, "pct": 8.33}, {"d": "2026-08-03", "main": 7007.376, "main_pct": 1.34, "close": 68.35, "pct": 2.09}, {"d": "2026-08-04", "main": 85428.5792, "main_pct": 29.55, "close": 75.19, "pct": 10.01}, {"d": "2026-08-05", "main": 57821.5875, "main_pct": 22.47, "close": 82.71, "pct": 10.0}, {"d": "2026-08-06", "main": 46716.2112, "main_pct": 6.61, "close": 90.98, "pct": 10.0}];
+const svg=document.getElementById('c'),NS='http://www.w3.org/2000/svg';
+const n=D.length,X=i=>30+(i/(n-1||1))*900;
+const mains=D.map(d=>d.main);const M=Math.max(...mains.map(Math.abs))*1.1;
+const closes=D.map(d=>d.close);const cmin=Math.min(...closes),cmax=Math.max(...closes);
+const Y=v=>220-(v/M)*180;   // 0 线在 220
+const CY=v=>400-((v-cmin)/(cmax-cmin||1))*170;
+// bars
+D.forEach((d,i)=>{
+  const h=Math.abs(d.main)/M*180;
+  const el=document.createElementNS(NS,'rect');
+  el.setAttribute('x',X(i)-9);el.setAttribute('y',d.main>=0?220-h:220);
+  el.setAttribute('width',18);el.setAttribute('height',Math.max(h,1));
+  el.setAttribute('fill',d.main>=0?'#ff4d4f':'#2ecc71');
+  el.setAttribute('opacity','0.85');
+  svg.appendChild(el);
+});
+function line(pts,color,w){
+  let s='';pts.forEach((p,i)=>{s+=(i?'L':'M')+X(i).toFixed(1)+' '+p.toFixed(1)});
+  const el=document.createElementNS(NS,'path');el.setAttribute('d',s);el.setAttribute('stroke',color);
+  el.setAttribute('stroke-width',w);el.setAttribute('fill','none');el.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(el);
+}
+// 5日主力均线
+const ma5=[];D.forEach((d,i)=>{const seg=D.slice(Math.max(0,i-4),i+1);ma5.push(Y(seg.reduce((s,x)=>s+x.main,0)/seg.length));});
+line(ma5,'#3b82f6',1.5);
+// 收盘价线
+line(closes.map((c,i)=>CY(c)),'#f59e0b',1.2);
+// 0 轴
+const ax=document.createElementNS(NS,'line');
+ax.setAttribute('x1',20);ax.setAttribute('y1',220);ax.setAttribute('x2',940);ax.setAttribute('y2',220);
+ax.setAttribute('stroke','#555b66');ax.setAttribute('stroke-width','1');
+svg.appendChild(ax);
+// 日期标签
+const t0=document.createElementNS(NS,'text');t0.setAttribute('x',30);t0.setAttribute('y',435);t0.setAttribute('fill','#9aa0a6');t0.setAttribute('font-size','10');t0.textContent=D[0].d;
+svg.appendChild(t0);
+const t1=document.createElementNS(NS,'text');t1.setAttribute('x',X(n-1)-50);t1.setAttribute('y',435);t1.setAttribute('fill','#9aa0a6');t1.setAttribute('font-size','10');t1.textContent=D[n-1].d;
+svg.appendChild(t1);
+// table
+const tb=document.getElementById('tb');
+D.slice().reverse().forEach(d=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d.d+'</td><td>'+d.close.toFixed(2)+'</td><td class="'+(d.pct>=0?'pos':'neg')+'">'+(d.pct>=0?'+':'')+d.pct.toFixed(2)+'</td>'+
+    '<td class="'+(d.main>=0?'pos':'neg')+'">'+(d.main>=0?'+':'')+d.main.toFixed(1)+'</td><td>'+(d.main_pct>=0?'+':'')+d.main_pct.toFixed(2)+'</td>'+
+    '<td class="'+(d.xbig>=0?'pos':'neg')+'">'+(d.xbig>=0?'+':'')+d.xbig.toFixed(1)+'</td><td class="'+(d.big>=0?'pos':'neg')+'">'+(d.big>=0?'+':'')+d.big.toFixed(1)+'</td>';
+  tb.appendChild(tr);
+});
+</script></body></html>

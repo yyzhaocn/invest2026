@@ -1,0 +1,64 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>股票组 embed</title>
+<style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#0f1216;color:#e8eaed}
+#drawer{position:fixed;top:0;left:0;bottom:0;width:230px;background:#161b22;border-right:1px solid #262d38;transform:translateX(-100%);transition:transform .25s;z-index:50;overflow-y:auto;padding:18px 0}
+#drawer.open{transform:translateX(0)}
+.toc-item{display:flex;align-items:center;gap:8px;padding:7px 18px;color:#d6dae0;text-decoration:none;font-size:13px;border-left:3px solid transparent}
+.toc-item:hover{background:#1c222b;color:#fff}.toc-item.active{border-left-color:#ff4d4f;background:#1a2029;color:#fff}
+.toc-idx{width:18px;height:18px;border-radius:5px;background:#232a35;color:#9aa0a6;font-size:11px;display:flex;align-items:center;justify-content:center}
+.toc-code{margin-left:auto;color:#5c6572;font-size:11px}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#overlay.show{opacity:1;pointer-events:auto}
+#menu-btn{position:fixed;top:14px;left:14px;z-index:60;width:38px;height:38px;border-radius:9px;border:1px solid #2a313d;background:#161b22;color:#e8eaed;font-size:17px;cursor:pointer}
+.wrap{max-width:960px;margin:0 auto;padding:20px 20px 60px}
+.page-title{text-align:center;padding:6px 0 12px}.page-title h1{font-size:20px;margin:0}.page-title .sub{color:#7c8490;font-size:12px}
+.blk{margin-top:14px;padding:20px;background:#11151b;border:1px solid #1e252f;border-radius:14px}
+.blk .top{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.blk h2{font-size:19px;margin:0}
+.code{color:#9aa0a6;font-size:13px}.pct{font-size:22px;font-weight:700}.price{color:#b6bcc4;font-size:14px}
+.pos{color:#ff4d4f}.neg{color:#2ecc71}
+.links{display:flex;gap:10px;margin:12px 0}
+.btn{display:inline-block;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600}
+.btn-fs{background:#ff4d4f;color:#fff}.btn-page{background:#232830;color:#d6dae0}
+.charts{display:flex;gap:14px;flex-wrap:wrap}
+.chart{background:#14181f;border-radius:10px;padding:10px;flex:1;min-width:320px}
+.chart img{width:100%;height:auto;border-radius:6px}.chart .cap{color:#9aa0a6;font-size:12px;margin-top:6px}
+</style></head><body>
+<button id="menu-btn" title="目录">☰</button><nav id="drawer"><a href="#sec-0" class="toc-item"><span class="toc-idx">1</span>科大讯飞<span class="toc-code">002230</span></a><a href="#sec-1" class="toc-item"><span class="toc-idx">2</span>中国软件<span class="toc-code">600536</span></a><a href="#sec-2" class="toc-item"><span class="toc-idx">3</span>利尔化学<span class="toc-code">002258</span></a></nav><div id="overlay"></div>
+<div class="wrap"><div class="page-title"><h1>📈 股票组（3 只）</h1><div class="sub">点击 ☰ 查看目录</div></div><section class="blk" id="sec-0">
+<div class="top"><h2>科大讯飞</h2><span class="code">002230</span>
+<span class="pct neg">-0.34%</span><span class="price">现价 <b>43.53</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/sz002230.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/sz002230.html" target="_blank">🔗 个股主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002230&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786096169" alt="科大讯飞 K线"><div class="cap">📈 日K线 · RSI（东财官方）</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002230&timespan=1786096169" alt="科大讯飞 分时"><div class="cap">⏱ 分时快照</div></div>
+</div></section><section class="blk" id="sec-1">
+<div class="top"><h2>中国软件</h2><span class="code">600536</span>
+<span class="pct neg">-1.83%</span><span class="price">现价 <b>32.17</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/sh600536.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/sh600536.html" target="_blank">🔗 个股主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=1.600536&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786096169" alt="中国软件 K线"><div class="cap">📈 日K线 · RSI（东财官方）</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=1.600536&timespan=1786096169" alt="中国软件 分时"><div class="cap">⏱ 分时快照</div></div>
+</div></section><section class="blk" id="sec-2">
+<div class="top"><h2>利尔化学</h2><span class="code">002258</span>
+<span class="pct neg">-1.47%</span><span class="price">现价 <b>14.09</b></span></div>
+<div class="links">
+<a class="btn btn-fs" href="https://quote.eastmoney.com/sz002258.html#fullScreenChart" target="_blank">📈 全屏K线</a>
+<a class="btn btn-page" href="https://quote.eastmoney.com/sz002258.html" target="_blank">🔗 个股主页</a>
+</div>
+<div class="charts">
+<div class="chart"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002258&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786096169" alt="利尔化学 K线"><div class="cap">📈 日K线 · RSI（东财官方）</div></div>
+<div class="chart"><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002258&timespan=1786096169" alt="利尔化学 分时"><div class="cap">⏱ 分时快照</div></div>
+</div></section></div>
+<script>
+const drawer=document.getElementById('drawer'),overlay=document.getElementById('overlay'),btn=document.getElementById('menu-btn');
+btn.onclick=()=>{drawer.classList.add('open');overlay.classList.add('show');};
+overlay.onclick=()=>{drawer.classList.remove('open');overlay.classList.remove('show');};
+const items=[...document.querySelectorAll('.toc-item')];
+items.forEach(it=>it.onclick=()=>{items.forEach(x=>x.classList.remove('active'));it.classList.add('active');drawer.classList.remove('open');overlay.classList.remove('show');document.querySelector(it.getAttribute('href')).scrollIntoView({behavior:'smooth'});});
+</script></body></html>
