@@ -32,6 +32,7 @@ def main():
     ap.add_argument("code", help="6 位股票代码")
     ap.add_argument("--window", type=int, default=5)
     ap.add_argument("--rsi", type=int, default=14)
+    ap.add_argument("--end-date", default="", help="数据截断日（YYYY-MM-DD）——生成该日收盘后视角的检测（回测背离可发现性）")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
@@ -41,6 +42,10 @@ def main():
         name = resolve_name(code)
     if not pts:
         sys.exit(f"❌ 无法获取 {code} K 线")
+    if args.end_date:
+        pts = [p for p in pts if str(p.get("date", "")) <= args.end_date]
+        if len(pts) < 30:
+            sys.exit(f"❌ {args.end_date} 后数据不足（{len(pts)} 天）")
     df = pd.DataFrame(pts)
     df['date'] = pd.to_datetime(df['date'])
     # RSI 序列（Wilder 平滑，与 multi-lens 一致；kline.rsi 仅返回单值不可用）
@@ -115,7 +120,8 @@ def main():
         axr.plot([d1, d2], [df['rsi'].iloc[i1], df['rsi'].iloc[i2]], color=color, lw=2, ls='--')
         ax.annotate(d['type'], xy=(d2, p2), xytext=(d2, p2 + (max(seg['high']) - min(seg['low'])) * 0.08),
                     fontsize=10, color=color, fontweight='bold', ha='center')
-    ax.set_title(f"{name} ({code}) RSI 背离检测 ｜ {'、'.join(d['type'] for d in divs) if divs else '无背离'}", fontsize=12, fontweight='bold')
+    view = f"（截至 {args.end_date} 视角）" if args.end_date else ""
+    ax.set_title(f"{name} ({code}) RSI 背离检测 {view}｜ {'、'.join(d['type'] for d in divs) if divs else '无背离'}", fontsize=12, fontweight='bold')
     ax.grid(alpha=0.25); axr.grid(alpha=0.25); axr.legend(loc='upper left', fontsize=9)
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
     out = Path(f"/tmp/divergence_{code}.png")
