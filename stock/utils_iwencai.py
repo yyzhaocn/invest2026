@@ -16,6 +16,11 @@ import requests
 IWENCAI_PREFIX_RE = re.compile(r'^(?:\?|？)\s*(.+)$', re.DOTALL)
 IWENCAI_ROBOT_URL = 'https://www.iwencai.com/customized/chart/get-robot-data'
 IWENCAI_COOKIE_PROBE_QUERY = '沪深300'
+IWENCAI_LOGIN_COOKIE_KEYS = ('THSSESSID', 'u_ukey')
+
+
+class IwencaiCaptchaError(Exception):
+    """问财要求验证码校验（未登录 / 会话被风控 / 请求过快时触发）。"""
 
 _cookie_refresh_lock = threading.Lock()
 _cookie_watcher_started = False
@@ -197,6 +202,13 @@ def fetch_iwencai_cookie_from_chrome(profile: Optional[str] = None) -> Optional[
     return '; '.join(f'{k}={v}' for k, v in seen.items())
 
 
+def _cookie_has_login(cookie: Optional[str]) -> bool:
+    """判断 Cookie 是否含登录态字段（无登录态的访客 Cookie 易触发验证码）。"""
+    if not cookie:
+        return False
+    return any(k in cookie for k in IWENCAI_LOGIN_COOKIE_KEYS)
+
+
 def save_iwencai_cookie(cookie: str) -> str:
     path = _primary_iwencai_cookie_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -217,7 +229,28 @@ def sync_iwencai_cookie_from_chrome(save: bool = True, profile: Optional[str] = 
             ),
         }
 
-    df = _fetch_iwencai_via_https(IWENCAI_COOKIE_PROBE_QUERY, cookie)
+    if not _cookie_has_login(cookie):
+        return {
+            'success': False,
+            'error': (
+                'Chrome 中 iwencai.com 仅有访客 Cookie（未登录，缺少 THSSESSID/u_ukey）。'
+                '请先在 Chrome 打开 https://www.iwencai.com 登录同花顺账号并完成验证码，'
+                '再重新运行本命令同步 Cookie'
+            ),
+            'cookie_fields': len(cookie.split(';')),
+        }
+
+    try:
+        df = _fetch_iwencai_via_https(IWENCAI_COOKIE_PROBE_QUERY, cookie)
+    except IwencaiCaptchaError as exc:
+        return {
+            'success': False,
+            'error': (
+                f'问财要求验证码校验（{exc}）。请在 Chrome 打开 iwencai.com '
+                '完成验证后重新同步 Cookie'
+            ),
+            'cookie_fields': len(cookie.split(';')),
+        }
     if df is None or df.empty:
         return {
             'success': False,
@@ -232,6 +265,7 @@ def sync_iwencai_cookie_from_chrome(save: bool = True, profile: Optional[str] = 
         'path': path,
         'cookie_fields': len(cookie.split(';')),
         'sample_count': len(df),
+        'has_login': True,
     }
 
 
@@ -260,7 +294,13 @@ def auto_refresh_iwencai_cookie(force: bool = False) -> Dict[str, Any]:
                     'reason': 'cookie still fresh',
                     'path': _primary_iwencai_cookie_path(),
                 }
-        return sync_iwencai_cookie_from_chrome(save=True)
+        try:
+            return sync_iwencai_cookie_from_chrome(save=True)
+        except IwencaiCaptchaError as exc:
+            return {
+                'success': False,
+                'error': f'问财要求验证码校验（{exc}），请在 Chrome 登录 iwencai.com 后重试',
+            }
 
 
 def _load_iwencai_cookie() -> Optional[str]:
@@ -449,10 +489,19 @@ def _fetch_iwencai_via_https(query: str, cookie: str) -> Optional[pd.DataFrame]:
     }
     try:
         resp = requests.post(IWENCAI_ROBOT_URL, headers=headers, json=payload, timeout=30)
+        if resp.status_code in (401, 403):
+            raise IwencaiCaptchaError(f'HTTP {resp.status_code}')
         resp.raise_for_status()
         body = resp.json()
+    except IwencaiCaptchaError:
+        raise
     except Exception:
         return None
+
+    if not isinstance(body, dict):
+        return None
+    if (body.get('data') or {}).get('captcha_url'):
+        raise IwencaiCaptchaError('账号触发验证码风控')
 
     if body.get('status_code') == 0 or body.get('code') == 0:
         data = body.get('data') or {}
@@ -480,31 +529,55 @@ def fetch_iwencai_results(query: str) -> Dict[str, Any]:
     cookie = _load_iwencai_cookie()
     df = None
 
-    if cookie:
-        df = _fetch_iwencai_via_https(query, cookie)
-
-    if df is None and _auto_chrome_cookie_enabled():
-        refreshed = _refresh_iwencai_cookie_from_chrome()
-        if refreshed:
-            cookie = refreshed
+    try:
+        if cookie:
             df = _fetch_iwencai_via_https(query, cookie)
 
-    if df is None:
-        try:
-            import pywencai
-        except ImportError:
+        if df is None and _auto_chrome_cookie_enabled():
+            refreshed = _refresh_iwencai_cookie_from_chrome()
+            if refreshed:
+                cookie = refreshed
+                df = _fetch_iwencai_via_https(query, cookie)
+
+        if df is None:
+            try:
+                import pywencai
+            except ImportError:
+                return {
+                    'success': False,
+                    'error': '未安装 pywencai，请在 venv 中执行: pip install pywencai',
+                }
+
+            kwargs = {'query': query, 'loop': True}
+            if cookie:
+                kwargs['cookie'] = cookie
+            try:
+                df = pywencai.get(**kwargs)
+            except Exception:
+                df = None
+    except IwencaiCaptchaError as exc:
+        if cookie and not _cookie_has_login(cookie):
             return {
                 'success': False,
-                'error': '未安装 pywencai，请在 venv 中执行: pip install pywencai',
+                'error': (
+                    f'问财要求验证码校验（{exc}），且当前 Cookie 仅为访客态（未登录）。\n'
+                    '更新步骤：\n'
+                    '1. 在 Chrome 打开 https://www.iwencai.com 登录同花顺账号并完成验证码；\n'
+                    '2. 重新同步 Cookie：cd stock && source venv/bin/activate && '
+                    'python -m stock.utils_iwencai（从项目根目录运行）\n'
+                    '3. 或手动将浏览器 DevTools 里的 Cookie 写入 shared/iwencai_cookie.txt，'
+                    '或设置环境变量 IWENCAI_COOKIE；\n'
+                    '4. 若刚完成多次查询，等待几分钟再试（问财限流）'
+                ),
             }
-
-        kwargs = {'query': query, 'loop': True}
-        if cookie:
-            kwargs['cookie'] = cookie
-        try:
-            df = pywencai.get(**kwargs)
-        except Exception:
-            df = None
+        return {
+            'success': False,
+            'error': (
+                f'问财要求验证码校验（{exc}）。'
+                '请在 Chrome 打开 https://www.iwencai.com 完成验证后，'
+                '运行 python -m stock.utils_iwencai 重新同步 Cookie'
+            ),
+        }
 
     if df is None or (isinstance(df, pd.DataFrame) and df.empty):
         if not cookie:
@@ -514,6 +587,15 @@ def fetch_iwencai_results(query: str) -> Dict[str, Any]:
                     '问财查询失败：需要登录 Cookie。'
                     '请在浏览器登录 iwencai.com 后，将 Cookie 写入 '
                     'shared/iwencai_cookie.txt 或设置环境变量 IWENCAI_COOKIE'
+                ),
+            }
+        if cookie and not _cookie_has_login(cookie):
+            return {
+                'success': False,
+                'error': (
+                    '问财未返回结果，且当前 Cookie 仅为访客态（未登录，缺少 THSSESSID/u_ukey）。\n'
+                    '请在 Chrome 打开 https://www.iwencai.com 登录同花顺账号并完成验证码，'
+                    '然后运行 python -m stock.utils_iwencai 重新同步 Cookie'
                 ),
             }
         return {'success': False, 'error': f'问财未返回结果，请检查问句或更新 Cookie: {query}'}

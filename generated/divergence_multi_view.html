@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<title>多指标共振背离看板</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#0f1216;color:#e8eaed}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:#9aa0a6;font-size:12px;margin-bottom:16px}
+.cards{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.card{background:#14181f;border-radius:12px;padding:14px 20px;min-width:130px;border:1px solid #1e252f}
+.card .num{font-size:26px;font-weight:700}
+.card .lab{color:#9aa0a6;font-size:12px;margin-top:2px}
+.card.red .num{color:#ff6b6b}.card.green .num{color:#2ecc71}.card.blue .num{color:#4aa8ff}
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.fbtn{padding:6px 16px;border-radius:8px;border:1px solid #2a313d;background:#161b22;color:#d6dae0;cursor:pointer;font-size:13px}
+.fbtn.active{background:#3a5a8a;border-color:#3a5a8a;color:#fff}
+table{width:100%;border-collapse:collapse;background:#14181f;border-radius:12px;overflow:hidden}
+th,td{padding:9px 12px;font-size:13px;text-align:left;border-bottom:1px solid #1c2129}
+th{background:#1c2129;color:#9aa0a6;font-weight:600}
+tr.hover-row{cursor:pointer}
+tr.hover-row:hover td{background:#1a2230}
+.sc{display:inline-block;border-radius:6px;padding:2px 8px;font-weight:700;font-size:12px}
+.sc3{background:#3a1d1f;color:#ff6b6b}.sc2{background:#232a35;color:#9aa0a6}
+.tag{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;margin-right:4px}
+.tag-rsi{background:#3a2d12;color:#f0b45a}.tag-macd{background:#123a3a;color:#4ad0d0}
+.tag-kdj{background:#1d3a12;color:#8ae05a}.tag-vol{background:#2a123a;color:#c05ad0}
+.bull{color:#ff6b6b}.bear{color:#4aa8ff}
+.hint{color:#5c6572;font-size:12px;margin-bottom:10px}
+.k-tip{position:fixed;z-index:99;background:#14181f;border:1px solid #2a313d;border-radius:8px;padding:4px;display:none;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.k-tip img{width:260px;height:auto;display:block;border-radius:5px}
+.k-tip .k-name{color:#9aa0a6;font-size:11px;padding:3px 6px}</style></head><body><div class="wrap">
+<h1>📊 多指标共振背离看板（MACD+RSI+KDJ+量价）</h1>
+<div class="sub">股票池 111 只 ｜ 生成 2026-08-08 10:33 ｜ 共振分 = 背离指标数</div>
+<div class="cards">
+<div class="card"><div class="num">37</div><div class="lab">背离总数</div></div>
+<div class="card red"><div class="num">30</div><div class="lab">🔴 底背离</div></div>
+<div class="card green"><div class="num">7</div><div class="lab">🟢 顶背离</div></div>
+<div class="card blue"><div class="num">17</div><div class="lab">⭐ 三重共振</div></div>
+</div>
+<div class="filters">
+<button class="fbtn active" data-f="all">全部</button>
+<button class="fbtn" data-f="底背离">🔴 底背离</button>
+<button class="fbtn" data-f="顶背离">🟢 顶背离</button>
+<button class="fbtn" data-f="3">⭐ ≥3 共振</button>
+</div>
+<div class="hint">🖱 悬停股票行查看东财K线图</div>
+<table><thead><tr><th>股票</th><th>方向</th><th>共振</th><th>指标</th><th>摆动1</th><th>摆动2</th></tr></thead>
+<tbody id="tb"></tbody></table>
+</div><script>
+const R=[{"code": "003040", "name": "楚天龙", "type": "底背离", "score": 4, "indicators": ["RSI", "MACD", "KDJ", "量价"], "p1_date": "2026-06-29", "p1": 10.33, "p2_date": "2026-07-14", "p2": 9.78}, {"code": "600478", "name": "科力远", "type": "底背离", "score": 4, "indicators": ["RSI", "MACD", "KDJ", "量价"], "p1_date": "2026-06-29", "p1": 4.84, "p2_date": "2026-07-20", "p2": 4.48}, {"code": "300098", "name": "高新兴", "type": "底背离", "score": 4, "indicators": ["RSI", "MACD", "KDJ", "量价"], "p1_date": "2026-06-29", "p1": 4.33, "p2_date": "2026-07-20", "p2": 4.12}, {"code": "688819", "name": "天能股份", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 20.99, "p2_date": "2026-07-20", "p2": 20.67}, {"code": "002533", "name": "金杯电工", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "量价"], "p1_date": "2026-06-29", "p1": 10.1, "p2_date": "2026-07-14", "p2": 10.04}, {"code": "300213", "name": "佳讯飞鸿", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 5.82, "p2_date": "2026-07-21", "p2": 5.33}, {"code": "002017", "name": "东信和平", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-11", "p1": 15.3, "p2_date": "2026-07-27", "p2": 12.21}, {"code": "300183", "name": "东软载波", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 9.79, "p2_date": "2026-07-21", "p2": 9.01}, {"code": "002104", "name": "恒宝股份", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-07-17", "p1": 9.01, "p2_date": "2026-07-27", "p2": 8.88}, {"code": "002796", "name": "世嘉科技", "type": "底背离", "score": 3, "indicators": ["MACD", "KDJ", "量价"], "p1_date": "2026-07-21", "p1": 23.17, "p2_date": "2026-07-30", "p2": 23.03}, {"code": "300711", "name": "广哈通信", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 15.48, "p2_date": "2026-07-21", "p2": 13.29}, {"code": "002313", "name": "日海智能", "type": "底背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 7.03, "p2_date": "2026-07-21", "p2": 6.82}, {"code": "300698", "name": "万马科技", "type": "底背离", "score": 3, "indicators": ["RSI", "KDJ", "量价"], "p1_date": "2026-06-29", "p1": 25.9, "p2_date": "2026-07-21", "p2": 21.72}, {"code": "600776", "name": "东方通信", "type": "底背离", "score": 3, "indicators": ["RSI", "KDJ", "量价"], "p1_date": "2026-06-29", "p1": 12.62, "p2_date": "2026-07-21", "p2": 11.16}, {"code": "003031", "name": "中瓷电子", "type": "顶背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-05-19", "p1": 175.97, "p2_date": "2026-06-23", "p2": 205.95}, {"code": "300408", "name": "三环集团", "type": "顶背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-06-18", "p1": 166.66, "p2_date": "2026-06-29", "p2": 180.35}, {"code": "600584", "name": "长电科技", "type": "顶背离", "score": 3, "indicators": ["RSI", "MACD", "KDJ"], "p1_date": "2026-07-01", "p1": 111.11, "p2_date": "2026-07-10", "p2": 113.87}, {"code": "300409", "name": "道氏技术", "type": "底背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-29", "p1": 18.75, "p2_date": "2026-07-27", "p2": 15.8}, {"code": "003031", "name": "中瓷电子", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-07-21", "p1": 90.0, "p2_date": "2026-07-30", "p2": 89.09}, {"code": "603421", "name": "鼎信通讯", "type": "底背离", "score": 2, "indicators": ["MACD", "KDJ"], "p1_date": "2026-06-29", "p1": 5.81, "p2_date": "2026-07-21", "p2": 4.83}, {"code": "600775", "name": "南京熊猫", "type": "底背离", "score": 2, "indicators": ["RSI", "量价"], "p1_date": "2026-06-29", "p1": 9.1, "p2_date": "2026-07-21", "p2": 7.99}, {"code": "688205", "name": "德科立", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-07-21", "p1": 111.86, "p2_date": "2026-07-30", "p2": 105.01}, {"code": "301121", "name": "紫建电子", "type": "底背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-30", "p1": 30.45, "p2_date": "2026-07-21", "p2": 27.0}, {"code": "001267", "name": "汇绿生态", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-07-21", "p1": 28.29, "p2_date": "2026-07-30", "p2": 27.11}, {"code": "603236", "name": "移远通信", "type": "底背离", "score": 2, "indicators": ["RSI", "MACD"], "p1_date": "2026-07-09", "p1": 48.24, "p2_date": "2026-07-20", "p2": 47.03}, {"code": "300638", "name": "广和通", "type": "底背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-11", "p1": 19.31, "p2_date": "2026-07-14", "p2": 16.66}, {"code": "600498", "name": "烽火通信", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-07-21", "p1": 32.85, "p2_date": "2026-07-30", "p2": 31.36}, {"code": "300205", "name": "*ST天喻", "type": "底背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-26", "p1": 4.88, "p2_date": "2026-07-14", "p2": 4.37}, {"code": "002281", "name": "光迅科技", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-07-21", "p1": 153.46, "p2_date": "2026-07-30", "p2": 152.33}, {"code": "300565", "name": "科信技术", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-06-10", "p1": 11.44, "p2_date": "2026-07-21", "p2": 7.68}, {"code": "002156", "name": "通富微电", "type": "底背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-07-08", "p1": 62.42, "p2_date": "2026-07-21", "p2": 57.0}, {"code": "301191", "name": "菲菱科思", "type": "底背离", "score": 2, "indicators": ["RSI", "MACD"], "p1_date": "2026-06-29", "p1": 94.0, "p2_date": "2026-07-21", "p2": 83.2}, {"code": "688027", "name": "国盾量子", "type": "底背离", "score": 2, "indicators": ["KDJ", "量价"], "p1_date": "2026-06-11", "p1": 474.74, "p2_date": "2026-07-27", "p2": 358.72}, {"code": "002077", "name": "大港股份", "type": "顶背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-07-01", "p1": 19.88, "p2_date": "2026-07-10", "p2": 20.3}, {"code": "002185", "name": "华天科技", "type": "顶背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-26", "p1": 23.86, "p2_date": "2026-07-13", "p2": 26.81}, {"code": "688372", "name": "伟测科技", "type": "顶背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-06-30", "p1": 190.0, "p2_date": "2026-07-10", "p2": 199.73}, {"code": "300689", "name": "澄天伟业", "type": "顶背离", "score": 2, "indicators": ["RSI", "KDJ"], "p1_date": "2026-07-01", "p1": 71.77, "p2_date": "2026-07-10", "p2": 78.92}], KTS=1786156390;
+const tb=document.getElementById('tb');
+const IN={RSI:'tag-rsi',MACD:'tag-macd',KDJ:'tag-kdj','量价':'tag-vol'};
+const ktip=document.createElement('div');ktip.className='k-tip';document.body.appendChild(ktip);
+ktip.innerHTML='<div class="k-name"></div><img alt="K线">';
+const kimg=ktip.querySelector('img'),kname=ktip.querySelector('.k-name');
+function bindHover(){
+  document.querySelectorAll('tr.hover-row').forEach(tr=>{
+    tr.onmouseenter=()=>{
+      const c=tr.dataset.code;
+      kname.textContent=tr.dataset.name+' ('+c+') · 东财K线';
+      kimg.src='https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid='+(c[0]==='6'?'1.':'0.')+c+'&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan='+KTS;
+      ktip.style.display='block';
+    };
+    tr.onmousemove=e=>{
+      let x=e.clientX+16,y=e.clientY+12;
+      if(x+270>innerWidth)x=e.clientX-276;
+      if(y+220>innerHeight)y=e.clientY-210;
+      ktip.style.left=x+'px';ktip.style.top=y+'px';
+    };
+    tr.onmouseleave=()=>{ktip.style.display='none'};
+  });
+}
+function render(f){
+  let rs=R.filter(r=>{
+    if(f==='all')return true;
+    if(f==='3')return r.score>=3;
+    return r.type===f;
+  }).sort((a,b)=>b.score-a.score);
+  tb.innerHTML=rs.map(r=>{
+    const tags=r.indicators.map(i=>'<span class="tag '+(IN[i]||'')+'">'+i+'</span>').join('');
+    const sc=r.score>=3?'<span class="sc sc3">'+r.score+'重</span>':'<span class="sc sc2">'+r.score+'重</span>';
+    const dir=r.type==='底背离'?'<span class="bull">🔴 底背离</span>':'<span class="bear">🟢 顶背离</span>';
+    return '<tr class="hover-row" data-code="'+r.code+'" data-name="'+r.name+'">'+
+      '<td><b>'+r.name+'</b> <span style="color:#5c6572">'+r.code+'</span></td>'+
+      '<td>'+dir+'</td><td>'+sc+'</td><td>'+tags+'</td>'+
+      '<td>'+r.p1_date+' ('+r.p1+')</td><td>'+r.p2_date+' ('+r.p2+')</td></tr>';
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:#5c6572">无匹配</td></tr>';
+  bindHover();
+}
+render('all');
+document.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');render(b.dataset.f);
+});
+</script></body></html>

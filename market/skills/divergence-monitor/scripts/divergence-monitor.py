@@ -24,42 +24,50 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "_shared"))
 from kline import fetch_kline  # noqa: E402
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-SCAN = Path(__file__).resolve().parents[2] / "divergence-scan" / "scripts" / "divergence-scan.py"
+DM = Path(__file__).resolve().parents[2] / "divergence-multi" / "scripts" / "divergence-multi.py"
 REPORT_DIR = Path.cwd() / "generated" / "divergence_monitor"
 
 
-def scan_target(args) -> list:
-    """复用 divergence-scan 逻辑（importlib 加载，文件名带横线）。"""
+def scan_target(args):
+    """标准背离 + live 即时背离（divergence-multi 模块）。返回 (label, std, live)。"""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("ds", str(SCAN))
-    ds = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(ds)
+    spec = importlib.util.spec_from_file_location("dm", str(DM))
+    dm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(dm)
     import pandas as pd
     if args.blocks:
         targets = []
         for bk in args.blocks.split(","):
-            targets += ds.get_block_stocks(bk.strip())
+            targets += dm.block_stocks(bk.strip())
         label = f"板块 {args.blocks}"
     elif args.account:
-        targets = ds.get_account_codes(args.account)
+        targets = dm.account_stocks(args.account)
         label = f"组合 {args.account}"
     else:
         raise SystemExit("❌ 需 --account 或 --blocks")
 
-    results = []
-    for i, (code, name) in enumerate(targets):
+    std, live = [], []
+    for code, name in targets:
         try:
             nm, pts = fetch_kline(code, lmt=120)
             if not pts:
                 continue
             df = pd.DataFrame(pts)
-            for t, d1, p1, r1, d2, p2, r2 in ds.find_divergence(df, 5, 14):
-                results.append({"code": code, "name": name or nm, "type": t,
-                                "p1_date": d1, "p1": round(p1, 2), "p1_rsi": round(r1, 1),
-                                "p2_date": d2, "p2": round(p2, 2), "p2_rsi": round(r2, 1)})
+            for d in dm.detect_multi(df, 5, live=False):
+                if d["score"] >= 2:
+                    std.append({"code": code, "name": dm.fix_name(code, name or nm),
+                                "type": d["type"], "score": d["score"],
+                                "indicators": d["indicators"],
+                                "p1_date": str(d["p1_date"])[:10], "p2_date": str(d["p2_date"])[:10]})
+            for d in dm.detect_multi(df, 2, live=True):
+                if d["score"] >= 2:
+                    live.append({"code": code, "name": dm.fix_name(code, name or nm),
+                                 "type": d["type"], "score": d["score"],
+                                 "indicators": d["indicators"],
+                                 "p1_date": str(d["p1_date"])[:10], "p2_date": str(d["p2_date"])[:10]})
         except Exception:
             pass
-    return label, results
+    return label, std, live
 
 
 def main():
@@ -70,7 +78,7 @@ def main():
     ap.add_argument("--full", action="store_true", help="报告全部背离（默认仅新增）")
     args = ap.parse_args()
 
-    label, results = scan_target(args)
+    label, results, live_results = scan_target(args)
     today = datetime.now().strftime("%Y-%m-%d")
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -102,13 +110,20 @@ def main():
     if new:
         for r in new:
             icon = "🔴底背离" if r["type"] == "底背离" else "🟢顶背离"
-            lines.append(f"- {icon} **{r['name']}**({r['code']}) {r['p1_date']}({r['p1']},{r['p1_rsi']}) → {r['p2_date']}({r['p2']},{r['p2_rsi']})")
+            lines.append(f"- {icon} **{r['name']}**({r['code']}) 共振{r['score']} {r['p1_date']}→{r['p2_date']} {'/'.join(r['indicators'])}")
     else:
         lines.append("- （无新增背离）")
     if gone:
         lines.append("\n## ⚠️ 已消失")
         for r in gone:
             lines.append(f"- {r['type']} {r['name']}({r['code']})")
+    lines.append(f"\n## ⚡ 即时新信号（{len(live_results)} 条，待5天窗口确认）")
+    if live_results:
+        for r in sorted(live_results, key=lambda x: -x["score"])[:10]:
+            icon = "🔴底" if r["type"] == "底背离" else "🟢顶"
+            lines.append(f"- {icon} 共振{r['score']} {r['name']}({r['code']}) {r['p1_date']}→{r['p2_date']} {'/'.join(r['indicators'])}")
+    else:
+        lines.append("- （无）")
     report = "\n".join(lines) + "\n"
 
     out = Path(args.out) if args.out else REPORT_DIR / f"{today}.md"
