@@ -1,0 +1,26 @@
+# Glossary — Larson Indicators
+
+- **Technical indicator** — a calculation from price (and usually volume) used to judge entry/exit; in Larson's view more important than fundamentals for *when* to trade.
+- **Parameter** — the input (e.g., # days, threshold) that tunes an indicator; **the most important part of any indicator**. Right parameter = better entries/exits.
+- **Lagging indicator** — moves *after* price (moving averages); slower but confirms trend.
+- **Leading indicator** — changes *before* price (TSV, money stream, BOP); best for anticipation, price+volume based.
+- **Volume goes with the trend** — normal for volume to rise with price up and fall with price down; volume is the enabling force of a move.
+- **Upside breakaway / breakout** — price breaking resistance; must be confirmed by EXPANDING volume (enthusiasm).
+- **Downside breakout** — price breaking support; expanding volume on the downside emphasizes bearishness (more sellers).
+- **Moving average** — average of closing prices over N days; the total represents that period's average price.
+- **30-day MA** — Larson's common short-term buy/sell line. Drop below → set a stop.
+- **200-day MA** — the STRONGEST support/resistance level for stocks/indexes.
+- **SMA / EMA** — Simple (cleaner, slower) vs Exponential (faster, noisier) average. Larson mostly uses SMA.
+- **3-day confirmation** — verify a moving-average signal holds ≥3 consecutive days before acting.
+- **Balance of Power (BOP)** — indicator of whether action is systematic buying accumulation or distribution (institutional blocks ≥10,000 shares); plotted vs a zero center line.
+- **Change of character** — a stock shifts from bearish→bullish (or vice-versa) across indicators = the pivot to buy/sell.
+- **MACD** — Moving Average Convergence/Divergence; uses three EMA's; histogram view clarifies change of character.
+- **PRC / Price Rate of Change** — an oscillator (Larson: 21-day + 15-day) measured against a 50% level; with MACD has ~90% success at exact crossover.
+- **TSV (Time-Segmented Volume)** — leading, volume-based indicator (Worden) that anticipates price by segmenting volume over time.
+- **RSI** — Relative Strength Index; used with TSV for confirmation.
+- **Inertia** — indicator on a 0-100 scale; *negative inertia = bullish, positive = bearish* (Larson convention); price must trend with inertia.
+- **ATR (Average True Range)** — volatility measure used for trailing stops and option exits.
+- **Stop-loss** — a sell order to limit losses; Larson places it when price drops below a key MA (e.g., 30-day), sized via ATR.
+- **Stock scan / screen** — a filter combining indicators+parameters+timeframes to find strong candidates across hundreds of stocks (often ≥6 ingredients).
+- **12-plus tab system** — track one stock across multiple indicator "tabs" and tally bullish vs bearish reads before acting.
+- **Make the trend your friend** — trade in the direction of the prevailing trend and its volume confirmation.
