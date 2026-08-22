@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>华天科技 002185 (002185) 资金流向</title>
+<style>body{font-family:-apple-system,"PingFang SC",sans-serif;margin:0;background:#101418;color:#e8eaed}
+.wrap{max-width:1000px;margin:0 auto;padding:20px}h1{font-size:19px;margin-bottom:4px}
+.meta{color:#9aa0a6;font-size:13px;margin-bottom:16px}
+svg{width:100%;height:440px;background:#1a1e24;border-radius:10px}
+.legend{color:#9aa0a6;font-size:12px;margin:8px 0}
+.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.bar{display:inline-block;vertical-align:middle;width:10px;height:10px;border-radius:2px;margin-right:6px}
+table{width:100%;border-collapse:collapse;background:#1a1e24;border-radius:10px;overflow:hidden;margin-top:14px}
+th,td{padding:6px 10px;font-size:12px;text-align:right}th{background:#232830}td:first-child,th:first-child{text-align:left}
+.pos{color:#ff4d4f}.neg{color:#2ecc71}</style></head><body><div class="wrap">
+<h1>华天科技 002185 (002185) 资金流向</h1><div class="meta">主力净流入（万元）日频柱状图 ｜ 红=净流入 绿=净流出 ｜ 蓝线=5日主力均线 ｜ 黄线=收盘价</div>
+<svg id="c" viewBox="0 0 960 440" preserveAspectRatio="none"></svg>
+<div class="legend">
+<span><span class="bar" style="background:#ff4d4f"></span>主力净流入</span>
+<span><i style="background:#3b82f6"></i>5日均线</span>
+<span><i style="background:#f59e0b"></i>收盘价</span>
+</div>
+<table><thead><tr><th>日期</th><th>收盘</th><th>涨跌%</th><th>主力(万)</th><th>主力占比%</th><th>超大单(万)</th><th>大单(万)</th></tr></thead>
+<tbody id="tb"></tbody></table>
+</div><script>
+const D=[{"d": "2026-06-23", "main": -31932.31983, "main_pct": -3.8719080000000003, "close": 19.54, "pct": -4.40313}, {"d": "2026-06-24", "main": 149860.788087, "main_pct": 12.282468, "close": 20.98, "pct": 7.3694999999999995}, {"d": "2026-06-25", "main": 68647.78939600001, "main_pct": 5.683966, "close": 22.4, "pct": 6.768349999999999}, {"d": "2026-06-26", "main": 6877.472881000001, "main_pct": 0.460231, "close": 22.56, "pct": 0.714286}, {"d": "2026-06-29", "main": -96161.318353, "main_pct": -7.203342, "close": 21.92, "pct": -2.83688}, {"d": "2026-06-30", "main": 35904.482837999996, "main_pct": 3.480253, "close": 22.31, "pct": 1.7792}, {"d": "2026-07-01", "main": -15523.661961000002, "main_pct": -1.308412, "close": 21.86, "pct": -2.0170299999999997}, {"d": "2026-07-02", "main": -16935.119454, "main_pct": -1.91839, "close": 20.27, "pct": -7.27356}, {"d": "2026-07-03", "main": -14299.292568, "main_pct": -2.218845, "close": 19.51, "pct": -3.74938}, {"d": "2026-07-06", "main": -10846.159285, "main_pct": -1.5524980000000002, "close": 19.94, "pct": 2.204}, {"d": "2026-07-07", "main": 484577.617709, "main_pct": 40.384488000000005, "close": 21.93, "pct": 9.97994}, {"d": "2026-07-08", "main": -148855.31808499998, "main_pct": -10.12931, "close": 21.59, "pct": -1.55039}, {"d": "2026-07-09", "main": 308171.11110599997, "main_pct": 29.354833000000003, "close": 23.73, "pct": 10.013900000000001}, {"d": "2026-07-10", "main": 525480.4446800001, "main_pct": 41.168065999999996, "close": 25.31, "pct": 6.65824}, {"d": "2026-07-13", "main": 54911.024059, "main_pct": 2.659133, "close": 24.08, "pct": -4.8597399999999995}, {"d": "2026-07-14", "main": 3642.974015, "main_pct": 0.17279, "close": 25.68, "pct": 6.42354}, {"d": "2026-07-15", "main": -397009.645533, "main_pct": -26.28354, "close": 23.11, "pct": -10.0078}, {"d": "2026-07-16", "main": -258644.611761, "main_pct": -23.912394, "close": 20.8, "pct": -9.995669999999999}, {"d": "2026-07-17", "main": -144016.428659, "main_pct": -14.329555, "close": 18.72, "pct": -10.0}, {"d": "2026-07-20", "main": -97741.88161499999, "main_pct": -12.753889, "close": 16.85, "pct": -9.98932}, {"d": "2026-07-21", "main": 14353.061083, "main_pct": 1.227436, "close": 18.35, "pct": 8.90208}, {"d": "2026-07-22", "main": 62600.31841, "main_pct": 5.075583, "close": 18.42, "pct": 0.381471}, {"d": "2026-07-23", "main": -71976.35810900001, "main_pct": -9.642347, "close": 17.69, "pct": -3.96308}, {"d": "2026-07-24", "main": 61733.289437, "main_pct": 6.405325, "close": 18.59, "pct": 5.08762}, {"d": "2026-07-27", "main": -37625.798953, "main_pct": -4.657522, "close": 18.59, "pct": 0.0}, {"d": "2026-07-28", "main": -103389.098973, "main_pct": -12.738480999999998, "close": 17.47, "pct": -6.0247399999999995}, {"d": "2026-07-29", "main": -51926.179768, "main_pct": -7.4887, "close": 16.57, "pct": -5.151689999999999}, {"d": "2026-07-30", "main": -70317.233359, "main_pct": -11.398068, "close": 14.91, "pct": -10.0181}, {"d": "2026-07-31", "main": 28396.56145, "main_pct": 4.768675, "close": 15.47, "pct": 3.75587}, {"d": "2026-08-03", "main": -32412.462776, "main_pct": -7.7027280000000005, "close": 14.77, "pct": -4.52489}, {"d": "2026-08-04", "main": 40284.266487, "main_pct": 8.499525, "close": 15.52, "pct": 5.07786}, {"d": "2026-08-05", "main": 75697.766076, "main_pct": 10.286347999999998, "close": 16.59, "pct": 6.8255}, {"d": "2026-08-06", "main": 25173.970044, "main_pct": 3.13002, "close": 17.26, "pct": 4.03858}, {"d": "2026-08-07", "main": 21674.592963, "main_pct": 2.811393, "close": 17.98, "pct": 4.17149}, {"d": "2026-08-10", "main": 11053.072746, "main_pct": 1.9460959999999998, "close": 18.06, "pct": 0.44493900000000003}, {"d": "2026-08-11", "main": -3848.165764, "main_pct": -0.728903, "close": 17.93, "pct": -0.719823}, {"d": "2026-08-12", "main": 34067.703847000004, "main_pct": 7.223936999999999, "close": 18.3, "pct": 2.06358}, {"d": "2026-08-13", "main": -39792.610394999996, "main_pct": -6.906254000000001, "close": 17.88, "pct": -2.29508}, {"d": "2026-08-14", "main": 4643.021006, "main_pct": 1.05646, "close": 17.98, "pct": 0.559284}, {"d": "2026-08-17", "main": 83575.63266, "main_pct": 11.414411, "close": 19.0, "pct": 5.67297}];
+const svg=document.getElementById('c'),NS='http://www.w3.org/2000/svg';
+const n=D.length,X=i=>30+(i/(n-1||1))*900;
+const mains=D.map(d=>d.main);const M=Math.max(...mains.map(Math.abs))*1.1;
+const closes=D.map(d=>d.close);const cmin=Math.min(...closes),cmax=Math.max(...closes);
+const Y=v=>220-(v/M)*180;   // 0 线在 220
+const CY=v=>400-((v-cmin)/(cmax-cmin||1))*170;
+// bars
+D.forEach((d,i)=>{
+  const h=Math.abs(d.main)/M*180;
+  const el=document.createElementNS(NS,'rect');
+  el.setAttribute('x',X(i)-9);el.setAttribute('y',d.main>=0?220-h:220);
+  el.setAttribute('width',18);el.setAttribute('height',Math.max(h,1));
+  el.setAttribute('fill',d.main>=0?'#ff4d4f':'#2ecc71');
+  el.setAttribute('opacity','0.85');
+  svg.appendChild(el);
+});
+function line(pts,color,w){
+  let s='';pts.forEach((p,i)=>{s+=(i?'L':'M')+X(i).toFixed(1)+' '+p.toFixed(1)});
+  const el=document.createElementNS(NS,'path');el.setAttribute('d',s);el.setAttribute('stroke',color);
+  el.setAttribute('stroke-width',w);el.setAttribute('fill','none');el.setAttribute('vector-effect','non-scaling-stroke');
+  svg.appendChild(el);
+}
+// 5日主力均线
+const ma5=[];D.forEach((d,i)=>{const seg=D.slice(Math.max(0,i-4),i+1);ma5.push(Y(seg.reduce((s,x)=>s+x.main,0)/seg.length));});
+line(ma5,'#3b82f6',1.5);
+// 收盘价线
+line(closes.map((c,i)=>CY(c)),'#f59e0b',1.2);
+// 0 轴
+const ax=document.createElementNS(NS,'line');
+ax.setAttribute('x1',20);ax.setAttribute('y1',220);ax.setAttribute('x2',940);ax.setAttribute('y2',220);
+ax.setAttribute('stroke','#555b66');ax.setAttribute('stroke-width','1');
+svg.appendChild(ax);
+// 日期标签
+const t0=document.createElementNS(NS,'text');t0.setAttribute('x',30);t0.setAttribute('y',435);t0.setAttribute('fill','#9aa0a6');t0.setAttribute('font-size','10');t0.textContent=D[0].d;
+svg.appendChild(t0);
+const t1=document.createElementNS(NS,'text');t1.setAttribute('x',X(n-1)-50);t1.setAttribute('y',435);t1.setAttribute('fill','#9aa0a6');t1.setAttribute('font-size','10');t1.textContent=D[n-1].d;
+svg.appendChild(t1);
+// table
+const tb=document.getElementById('tb');
+D.slice().reverse().forEach(d=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML='<td>'+d.d+'</td><td>'+d.close.toFixed(2)+'</td><td class="'+(d.pct>=0?'pos':'neg')+'">'+(d.pct>=0?'+':'')+d.pct.toFixed(2)+'</td>'+
+    '<td class="'+(d.main>=0?'pos':'neg')+'">'+(d.main>=0?'+':'')+d.main.toFixed(1)+'</td><td>'+(d.main_pct>=0?'+':'')+d.main_pct.toFixed(2)+'</td>'+
+    '<td class="'+(d.xbig>=0?'pos':'neg')+'">'+(d.xbig>=0?'+':'')+d.xbig.toFixed(1)+'</td><td class="'+(d.big>=0?'pos':'neg')+'">'+(d.big>=0?'+':'')+d.big.toFixed(1)+'</td>';
+  tb.appendChild(tr);
+});
+</script></body></html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>7维选股 持仓 7维 · 东财K线 embed</title>
+<style>
+:root{--accent:#3b5bdb;}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f3f4f6;color:#222}
+header{position:sticky;top:0;background:#212529;color:#fff;padding:14px 24px;display:flex;align-items:center;gap:14px;z-index:20}
+header h1{font-size:17px;margin:0} header .sub{font-size:12px;color:#adb5bd}
+#btn{background:var(--accent);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px}
+#drawer{position:fixed;top:0;left:-340px;width:320px;height:100%;background:#fff;box-shadow:2px 0 14px rgba(0,0,0,.2);transition:left .25s;overflow-y:auto;z-index:30;padding:16px}
+#drawer.open{left:0}
+#drawer h2{font-size:14px;margin:0 0 8px;color:#495057}
+#drawer ul{list-style:none;margin:0;padding:0}
+#drawer li{padding:7px 8px;border-bottom:1px solid #eee;font-size:13px}
+#drawer a{color:#212529;text-decoration:none}
+#drawer .vbadge{font-weight:700;margin-left:6px}
+#veil{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:25}
+.wrap{max-width:1080px;margin:20px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;margin:18px 0;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.08);scroll-margin-top:70px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.card-head .code{font-weight:800;color:var(--accent)} .card-head .meta{font-size:12px;color:#868e96}
+.verdict{padding:8px 12px;border-radius:8px;font-weight:700;margin:6px 0 12px}
+.imgs{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.imgs figure{margin:0;flex:1 1 480px}
+.imgs img{width:100%;height:auto;border:1px solid #e0e0e0;border-radius:8px}
+figcaption{font-size:12px;color:#868e96;text-align:center;margin-top:4px}
+table.lens{border-collapse:collapse;width:100%;font-size:13px}
+table.lens th,table.lens td{border:1px solid #e9ecef;padding:6px 10px;text-align:left}
+table.lens th{background:#f1f3f5} table.lens td.ll{font-weight:600;white-space:nowrap}
+</style></head><body>
+<header><button id="btn">☰ 目录 / TOC (21)</button>
+<div><h1>7维选股 持仓 · 7维结论 + 东财K线 embed</h1>
+<div class="sub">共 21 只 · 东财官方K线(RSI)+分时 · 2026-08-15 05:57</div></div></header>
+<nav id="drawer"><h2>持仓 7 维 TOC</h2><ul><li><a href="#s000831">000831 中国稀土</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s001257">001257 盛龙股份</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s002017">002017 东信和平</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s002125">002125 湘潭电化</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s002313">002313 日海智能</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s002533">002533 金杯电工</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s002709">002709 天赐材料</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s002902">002902 铭普光磁</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s300408">300408 三环集团</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s300409">300409 道氏技术</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s300414">300414 中光防雷</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s300620">300620 光库科技</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s300627">300627 华测导航</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s300638">300638 广和通</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s300698">300698 万马科技</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s300711">300711 广哈通信</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s301121">301121 紫建电子</a> <span class="vbadge" style="color:#c92a2a">多</span></li>
+<li><a href="#s301291">301291 明阳电气</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s600478">600478 科力远</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s603435">603435 嘉德利</a> <span class="vbadge" style="color:#868e96">中</span></li>
+<li><a href="#s603459">603459 红板科技</a> <span class="vbadge" style="color:#868e96">中</span></li></ul></nav>
+<div id="veil"></div>
+<div class="wrap">
+<section class="card" id="s000831">
+  <div class="card-head">
+    <a class="anchor" href="#s000831"></a>
+    <div><span class="code">000831</span> 中国稀土</div>
+    <div class="meta">仓位 5.8% 市值 48,760　盈亏 <span style="color:#c92a2a">+6.57%</span>　现价 60.95</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz000831.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.000831&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.000831&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 51.28，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>双底已破颈线(50.29)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 57.43>SMA20 51.39)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 82% → 高波动(警惕)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s001257">
+  <div class="card-head">
+    <a class="anchor" href="#s001257"></a>
+    <div><span class="code">001257</span> 盛龙股份</div>
+    <div class="meta">仓位 5.4% 市值 45,054　盈亏 <span style="color:#2f9e44">-6.01%</span>　现价 25.03</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（1 多 vs 0 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz001257.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.001257&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.001257&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 24.59，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>双底形态(待破颈线 26.28)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 25.56/S20 24.95)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 10% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002017">
+  <div class="card-head">
+    <a class="anchor" href="#s002017"></a>
+    <div><span class="code">002017</span> 东信和平</div>
+    <div class="meta">仓位 2.3% 市值 19,152　盈亏 <span style="color:#2f9e44">-2.08%</span>　现价 13.68</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002017.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002017&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002017&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-14，跌后)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 13.21，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 13.81/S20 13.42)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 35% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002125">
+  <div class="card-head">
+    <a class="anchor" href="#s002125"></a>
+    <div><span class="code">002125</span> 湘潭电化</div>
+    <div class="meta">仓位 12.0% 市值 101,120　盈亏 <span style="color:#c92a2a">+1.12%</span>　现价 12.64</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 1 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002125.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002125&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002125&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-14，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 12.05，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>双底已破颈线(12.44)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 12.69/S20 12.35)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 0% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002313">
+  <div class="card-head">
+    <a class="anchor" href="#s002313"></a>
+    <div><span class="code">002313</span> 日海智能</div>
+    <div class="meta">仓位 2.5% 市值 20,784　盈亏 <span style="color:#c92a2a">+5.61%</span>　现价 8.66</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002313.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002313&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002313&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 7.64，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 8.50>SMA20 7.98)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 65% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002533">
+  <div class="card-head">
+    <a class="anchor" href="#s002533"></a>
+    <div><span class="code">002533</span> 金杯电工</div>
+    <div class="meta">仓位 2.3% 市值 19,414　盈亏 <span style="color:#c92a2a">+0.26%</span>　现价 11.42</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002533.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002533&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002533&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-12，跌后)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 10.89，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 11.51/S20 11.24)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 45% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002709">
+  <div class="card-head">
+    <a class="anchor" href="#s002709"></a>
+    <div><span class="code">002709</span> 天赐材料</div>
+    <div class="meta">仓位 5.6% 市值 47,364　盈亏 <span style="color:#c92a2a">+0.53%</span>　现价 39.47</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 1 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002709.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002709&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002709&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-12，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 35.58，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 39.37>SMA20 37.52)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 12% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s002902">
+  <div class="card-head">
+    <a class="anchor" href="#s002902"></a>
+    <div><span class="code">002902</span> 铭普光磁</div>
+    <div class="meta">仓位 2.4% 市值 20,472　盈亏 <span style="color:#c92a2a">+4.36%</span>　现价 25.59</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 0 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz002902.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.002902&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.002902&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 21.26，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 24.81>SMA20 22.82)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 23% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300408">
+  <div class="card-head">
+    <a class="anchor" href="#s300408"></a>
+    <div><span class="code">300408</span> 三环集团</div>
+    <div class="meta">仓位 6.1% 市值 51,636　盈亏 <span style="color:#2f9e44">-1.46%</span>　现价 129.09</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 1 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300408.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300408&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300408&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-12，跌后)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 105.79，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 128.48>SMA20 115.31)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 42% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>顶背离(价格新高 RSI未新高)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300409">
+  <div class="card-head">
+    <a class="anchor" href="#s300409"></a>
+    <div><span class="code">300409</span> 道氏技术</div>
+    <div class="meta">仓位 11.8% 市值 99,587　盈亏 <span style="color:#c92a2a">+0.21%</span>　现价 18.79</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 1 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300409.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300409&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300409&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-13，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 17.28，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 18.86/S20 17.95)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 32% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300414">
+  <div class="card-head">
+    <a class="anchor" href="#s300414"></a>
+    <div><span class="code">300414</span> 中光防雷</div>
+    <div class="meta">仓位 2.3% 市值 19,329　盈亏 <span style="color:#2f9e44">-0.96%</span>　现价 11.37</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">中性（无方向信号）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300414.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300414&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300414&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-11，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 10.15，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 11.58/S20 10.99)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 87% → 高波动(警惕)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300620">
+  <div class="card-head">
+    <a class="anchor" href="#s300620"></a>
+    <div><span class="code">300620</span> 光库科技</div>
+    <div class="meta">仓位 3.8% 市值 32,191　盈亏 <span style="color:#c92a2a">+11.74%</span>　现价 321.91</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 1 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300620.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300620&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300620&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-10，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 240.75，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>双底已破颈线(252.90)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 302.11>SMA20 250.79)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 90% → 高波动(警惕)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300627">
+  <div class="card-head">
+    <a class="anchor" href="#s300627"></a>
+    <div><span class="code">300627</span> 华测导航</div>
+    <div class="meta">仓位 2.4% 市值 20,118　盈亏 <span style="color:#c92a2a">+2.06%</span>　现价 28.74</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（4 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300627.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300627&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300627&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-11，跌后)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 27.48，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 28.24>SMA20 27.94)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 20% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300638">
+  <div class="card-head">
+    <a class="anchor" href="#s300638"></a>
+    <div><span class="code">300638</span> 广和通</div>
+    <div class="meta">仓位 2.1% 市值 18,018　盈亏 <span style="color:#2f9e44">-3.89%</span>　现价 20.02</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">中性（无方向信号）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300638.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300638&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300638&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 20.46，现价下方(偏弱)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 20.72/S20 20.48)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 0% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300698">
+  <div class="card-head">
+    <a class="anchor" href="#s300698"></a>
+    <div><span class="code">300698</span> 万马科技</div>
+    <div class="meta">仓位 2.2% 市值 18,298　盈亏 <span style="color:#c92a2a">+2.19%</span>　现价 26.14</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 1 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300698.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300698&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300698&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-10，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 24.27，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 26.02>SMA20 24.63)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 35% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s300711">
+  <div class="card-head">
+    <a class="anchor" href="#s300711"></a>
+    <div><span class="code">300711</span> 广哈通信</div>
+    <div class="meta">仓位 2.2% 市值 18,400　盈亏 <span style="color:#2f9e44">-7.63%</span>　现价 18.4</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 0 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz300711.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.300711&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.300711&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 16.31，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 18.31>SMA20 16.08)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 98% → 高波动(警惕)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s301121">
+  <div class="card-head">
+    <a class="anchor" href="#s301121"></a>
+    <div><span class="code">301121</span> 紫建电子</div>
+    <div class="meta">仓位 8.8% 市值 73,840　盈亏 <span style="color:#c92a2a">+8.72%</span>　现价 36.92</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #c92a2a;background:#c92a2a15">🔴 看多共振（3 多 vs 1 空）→ 高置信偏多</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz301121.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.301121&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.301121&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-14，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 30.97，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>多头排列(SMA5 35.39>SMA20 32.26)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">波动率</td><td>带宽分位 85% → 高波动(警惕)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s301291">
+  <div class="card-head">
+    <a class="anchor" href="#s301291"></a>
+    <div><span class="code">301291</span> 明阳电气</div>
+    <div class="meta">仓位 2.4% 市值 19,850　盈亏 <span style="color:#2f9e44">-2.05%</span>　现价 39.7</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（1 多 vs 0 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sz301291.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=0.301291&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=0.301291&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 39.16，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>双底形态(待破颈线 40.36)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 40.05/S20 39.45)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 0% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s600478">
+  <div class="card-head">
+    <a class="anchor" href="#s600478"></a>
+    <div><span class="code">600478</span> 科力远</div>
+    <div class="meta">仓位 11.7% 市值 98,000　盈亏 <span style="color:#2f9e44">-1.61%</span>　现价 4.9</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 0 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sh600478.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=1.600478&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=1.600478&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 4.77，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 4.96/S20 4.92)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 0% → 挤压(突破前夜)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s603435">
+  <div class="card-head">
+    <a class="anchor" href="#s603435"></a>
+    <div><span class="code">603435</span> 嘉德利</div>
+    <div class="meta">仓位 1.3% 市值 10,782　盈亏 <span style="color:#2f9e44">-1.41%</span>　现价 53.91</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（2 多 vs 1 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sh603435.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=1.603435&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=1.603435&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>Doji(08-11，涨后)</td><td style="color:#2f9e44;font-weight:600">🟢看空</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 45.54，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 54.01/S20 49.13)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 37% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>底背离(价格新低 RSI未新低)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr></tbody></table>
+</section>
+
+<section class="card" id="s603459">
+  <div class="card-head">
+    <a class="anchor" href="#s603459"></a>
+    <div><span class="code">603459</span> 红板科技</div>
+    <div class="meta">仓位 4.6% 市值 38,932　盈亏 <span style="color:#2f9e44">-7.81%</span>　现价 97.33</div>
+  </div>
+  <div class="verdict" style="border-left:4px solid #495057;background:#49505715">偏多（1 多 vs 0 空）</div>
+  <div class="imgs">
+    <figure><a href="https://quote.eastmoney.com/sh603459.html" target="_blank"><img src="https://webquoteklinepic.eastmoney.com/GetPic.aspx?nid=1.603459&type=&unitWidth=-6&ef=&formula=RSI&AT=1&imageType=KXL&timespan=1786744629" alt="K线"></a><figcaption>东财K线(RSI)</figcaption></figure>
+    <figure><img src="https://webquotepic.eastmoney.com/GetPic.aspx?imageType=r&type=&token=44c9d251add88e27b65ed86506f6e5da&nid=1.603459&timespan=1786744629" alt="分时"><figcaption>分时</figcaption></figure>
+  </div>
+  <table class="lens"><thead><tr><th>维度</th><th>摘要</th><th>方向</th></tr></thead><tbody><tr><td class="ll">K线形态</td><td>无形态</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">谐波</td><td>未检出经典谐波(需严格比例)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">斐波那契</td><td>61.8%位 82.34，现价上方(偏强)</td><td style="color:#c92a2a;font-weight:600">🔴看多</td></tr><tr><td class="ll">价格结构</td><td>无双顶/双底</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">现代均线</td><td>纠缠(S5 99.02/S20 90.48)</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">波动率</td><td>带宽分位 43% → 正常</td><td style="color:#868e96;font-weight:600">➖中性</td></tr><tr><td class="ll">RSI背离</td><td>无背离</td><td style="color:#868e96;font-weight:600">➖中性</td></tr></tbody></table>
+</section></div>
+<script>
+var d=document.getElementById('drawer'),b=document.getElementById('btn'),veil=document.getElementById('veil');
+function open2(){d.classList.add('open');veil.style.display='block'}
+function close2(){d.classList.remove('open');veil.style.display='none'}
+b.onclick=open2;veil.onclick=close2;
+d.addEventListener('click',function(e){if(e.target.tagName==='A')close2();});
+</script></body></html>
